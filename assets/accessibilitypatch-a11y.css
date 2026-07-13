@@ -1,0 +1,13 @@
+/* AccessibilityPatch — generated accessibility styles.
+ * All AccessibilityPatch CSS fixes live in this one file; your theme's own
+ * CSS files are never edited in place. Safe to review, safe to remove. */
+
+/* @a11y:focus-visible — keyboard focus must be visible (WCAG 2.4.7) */
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
