@@ -14,7 +14,7 @@
         <div class="lg:hidden">
           <ul class="flex gap-4">
             <li>
-              <button class="js-nav__toggle cursor-pointer" aria-label="Open menu">
+              <button class="js-nav__toggle cursor-pointer" aria-label="Open menu" aria-expanded="false" aria-controls="header-navigation-id">
                 <span class="icon--menu">
                   {% render 'icon', icon: 'hamburger', class: 'h-5 w-5 md:h-6 md:w-6' %}
                 </span>
@@ -32,6 +32,7 @@
         </div>
 
         <div
+          id="header-navigation-id"
           class="header__navigation js-header__navigation w-full absolute top-full pb-20 h-screen overflow-scroll -translate-x-[calc(100%+20px)] [&[aria-hidden='false']]:-translate-x-[12px] md:[&[aria-hidden='false']]:-translate-x-[20px] transition-transform duration-300 ease-in-out bg-white lg:relative lg:h-auto lg:pb-0 lg:translate-x-0 lg:overflow-visible lg:z-[1] lg:bg-transparent"
           aria-hidden="true"
         >
@@ -79,7 +80,7 @@
         </a>
       </div>
 
-      <div role="navigation" aria-label="Utility navigation">
+      <div aria-label="Utility navigation">
         <ul class="flex justify-end gap-4">
           <li class="hidden lg:block">
             <button class="cursor-pointer" aria-label="Search">
