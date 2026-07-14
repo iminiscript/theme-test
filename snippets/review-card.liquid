@@ -1,0 +1,73 @@
+{%- liquid
+  assign headline = block.settings.headline
+  assign review_text = block.settings.review_text
+  assign reviewer_name = block.settings.reviewer_name
+  assign product_name = block.settings.product_name
+  assign product_url = block.settings.product_url
+-%}
+
+<div class="swiper-slide" {{ block.shopify_attributes }} data-placement="{{ defaultPlacement }}">
+  <div class="review-card bg-white flex flex-col items-center justify-between p-5 md:p-8 h-full w-full">
+    {%- comment -%} Top Content: Stars, Headline, Review Text {%- endcomment -%}
+    <div class="flex flex-col gap-2 items-center w-full">
+      {%- comment -%} 5 Star Rating {%- endcomment -%}
+      <div class="flex gap-0.5 items-center" aria-label="5 star rating">
+        {%- for i in (1..5) -%}
+          <svg class="w-3.5 h-3.5 text-brunt-orange fill-current" viewBox="0 0 20 19" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M10 0L12.9389 6.90983L20 7.93186L15 12.8197L16.1803 20L10 16.5902L3.81967 20L5 12.8197L0 7.93186L7.06107 6.90983L10 0Z" fill="currentColor"/>
+          </svg>
+        {%- endfor -%}
+      </div>
+
+      {%- comment -%} Headline {%- endcomment -%}
+      {%- if headline != blank -%}
+        <h3 class="text-heading-5 text-asphalt text-center">
+          {{ headline }}
+        </h3>
+      {%- endif -%}
+
+      {%- comment -%} Review Text {%- endcomment -%}
+      {%- if review_text != blank -%}
+        <p class="text-16-regular text-asphalt text-left">
+          {{ review_text }}
+        </p>
+      {%- endif -%}
+    </div>
+
+    {%- comment -%} Bottom Content: Reviewer Name and Info {%- endcomment -%}
+    <div class="flex flex-col gap-1 md:gap-2 items-center w-full mt-5">
+      {%- if reviewer_name != blank -%}
+        <p class="text-16-bold text-asphalt text-center">
+          {{ reviewer_name }}
+        </p>
+      {%- endif -%}
+
+      {%- comment -%} Reviewer Info: Verified Badge and Product Name {%- endcomment -%}
+      <div class="flex flex-col md:flex-row gap-7 md:gap-3 items-center justify-center w-full">
+        <div class="flex gap-1 items-center">
+          <svg class="w-4 h-4 text-brunt-orange fill-current" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M8 0C3.58172 0 0 3.58172 0 8C0 12.4183 3.58172 16 8 16C12.4183 16 16 12.4183 16 8C16 3.58172 12.4183 0 8 0ZM11.7071 6.70711C12.0976 6.31658 12.0976 5.68342 11.7071 5.29289C11.3166 4.90237 10.6834 4.90237 10.2929 5.29289L7 8.58579L5.70711 7.29289C5.31658 6.90237 4.68342 6.90237 4.29289 7.29289C3.90237 7.68342 3.90237 8.31658 4.29289 8.70711L6.29289 10.7071C6.68342 11.0976 7.31658 11.0976 7.70711 10.7071L11.7071 6.70711Z" fill="currentColor"/>
+          </svg>
+          <span class="text-16-regular text-asphalt">
+            Verified Buyer
+          </span>
+        </div>
+
+        {%- if product_name != blank -%}
+          <span class="hidden md:block text-16-bold text-asphalt">|</span>
+
+          {%- if product_url != blank -%}
+            <a href="{{ product_url }}" class="text-16-regular text-brunt-orange underline hover:no-underline transition-all cursor-pointer">
+              {{ product_name }}
+            </a>
+          {%- else -%}
+            <span class="text-16-regular text-brunt-orange">
+              {{ product_name }}
+            </span>
+          {%- endif -%}
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</div>
+

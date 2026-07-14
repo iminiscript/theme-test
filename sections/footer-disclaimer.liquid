@@ -1,0 +1,28 @@
+{% if section.settings.disclaimer != empty %}
+  <div class="container-content px-4 md:px-6 lg:px-16 py-6 text-center">
+    {{ section.settings.disclaimer | replace: '<p>', '<p class="text-12-light">' }}
+  </div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Footer Disclaimer",
+  "class": "section-wrapper",
+  "tag": "footer",
+  "settings": [
+    {
+      "type": "richtext",
+      "id": "disclaimer",
+      "label": "Disclaimer Copy"
+    }
+  ],
+  "blocks": [],
+  "enabled_on": { "groups": ["footer"] },
+  "presets": [
+    {
+      "name": "Footer Disclaimer",
+      "category": "Footer"
+    }
+  ]
+}
+{% endschema %}

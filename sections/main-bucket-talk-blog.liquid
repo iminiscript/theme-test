@@ -1,0 +1,29 @@
+
+{% content_for 'blocks' %}
+
+{% schema %}
+{
+  "name": "Bucket Talk Blog",
+  "blocks": [
+    {
+      "type": "latest-episodes"
+    },
+    {
+      "type": "all-episodes"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bucket Talk Blog",
+      "blocks": [
+        {
+          "type": "latest-episodes"
+        },
+        {
+          "type": "all-episodes"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,151 @@
+<script src="{{ 'dialog.js' | asset_url }}" defer="defer" type="module"></script>
+
+{% liquid
+  assign pre_order_content = pre_order_content | default: ''
+%}
+
+<dialog-component id="pre-order-modal" class="pre-order-modal">
+  <dialog
+    ref="dialog"
+    class="pre-order-modal__dialog dialog-modal dialog-modal-center dialog-modal-bottom"
+    aria-modal="true"
+    aria-labelledby="pre-order-modal-title"
+    scroll-lock
+    on:click="/closeDialogOnClickOutside"
+    on:keydown="/closeDialogOnEscapePress"
+  >
+    <div class="pre-order-modal__content">
+      <div class="pre-order-modal__header">
+        <h2 id="pre-order-modal-title" class="pre-order-modal__title">Pre-order</h2>
+        <button
+          ref="closeButton"
+          on:click="/closeDialog"
+          class="pre-order-modal__close button button-unstyled"
+          aria-label="Close pre-order modal"
+        >
+          {{- 'icon-close.svg' | inline_asset_content -}}
+        </button>
+      </div>
+
+      <div class="pre-order-modal__body">
+        {% if pre_order_content != blank %}
+          <div class="pre-order-modal__copy">
+            {{ pre_order_content }}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="pre-order-modal__footer">
+        <button
+          type="button"
+          class="pre-order-modal__confirm-btn btn btn-md btn-primary-orange w-full"
+          data-pre-order-confirm
+          aria-label="Confirm pre-order"
+        >
+          <span data-pre-order-confirm-text></span>
+        </button>
+      </div>
+    </div>
+  </dialog>
+</dialog-component>
+
+{% stylesheet %}
+  .pre-order-modal__dialog {
+    padding: 0;
+    border: var(--style-border-popover);
+    max-width: 500px;
+    width: 90%;
+    max-height: max-content;
+    overflow: hidden;
+    box-shadow: var(--shadow-popover);
+    border-radius: var(--style-border-radius-popover);
+  }
+
+  /* Desktop: Centered modal (uses dialog-modal-center) */
+  @media screen and (min-width: 768px) {
+    .pre-order-modal__dialog {
+      /* dialog-modal-center handles centering */
+    }
+  }
+
+  /* Mobile: Bottom slide modal (uses dialog-modal-bottom) */
+  @media screen and (max-width: 767px) {
+    .pre-order-modal__dialog {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      max-width: 100%;
+      border-radius: var(--style-border-radius-popover) var(--style-border-radius-popover) 0 0;
+      margin: 0;
+      max-height: max-content;
+      top: auto;
+    }
+  }
+
+  .pre-order-modal__content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: max-content;
+  }
+
+  .pre-order-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--padding-xl);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+
+  .pre-order-modal__title {
+    margin: 0;
+    font-size: var(--font-size--xl);
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+  }
+
+  .pre-order-modal__close {
+    padding: var(--padding-xs);
+    cursor: pointer;
+    transition: transform 0.15s var(--animation-timing-bounce);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pre-order-modal__close:active {
+    transform: scale(0.8);
+  }
+
+  .pre-order-modal__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--padding-xl);
+  }
+
+  .pre-order-modal__copy {
+    font-size: var(--font-size--md);
+    line-height: 1.6;
+  }
+
+  .pre-order-modal__copy :first-child {
+    margin-top: 0;
+  }
+
+  .pre-order-modal__copy :last-child {
+    margin-bottom: 0;
+  }
+
+  .pre-order-modal__footer {
+    padding: var(--padding-xl);
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+
+  .pre-order-modal__confirm-btn {
+    min-height: 56px;
+  }
+{% endstylesheet %}

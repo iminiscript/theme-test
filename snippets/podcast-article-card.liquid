@@ -1,0 +1,65 @@
+{%- liquid
+  # Podcast metafields (these would be set in Shopify admin)
+  assign podcast_duration_minutes = article.metafields.custom.podcast_duration | default: 35
+  assign podcast_duration_minutes = podcast_duration_minutes | plus: 0
+
+  # Calculate hours and minutes
+  if podcast_duration_minutes >= 60
+    assign hours = podcast_duration_minutes | divided_by: 60
+    assign minutes = podcast_duration_minutes | modulo: 60
+
+    if hours == 1
+      assign hours_text = "1 hour"
+    else
+      assign hours_text = hours | append: " hours"
+    endif
+
+    if minutes == 0
+      assign podcast_duration = hours_text
+    elsif minutes == 1
+      assign podcast_duration = hours_text | append: " 1 minute"
+    else
+      assign minutes_text = minutes | append: " minutes"
+      assign podcast_duration = hours_text | append: " " | append: minutes_text
+    endif
+  else
+    if podcast_duration_minutes == 1
+      assign podcast_duration = "1 minute"
+    else
+      assign podcast_duration = podcast_duration_minutes | append: " minutes"
+    endif
+  endif
+
+  if card_type == 'slide'
+    assign class = 'text-white swiper-slide max-w-[225px] md:max-w-[360px] lg:max-w-[320px]'
+    assign width = 640
+    assign widths = '320, 640'
+    assign description_clamp = 'line-clamp-5'
+  else
+    assign class = 'text-asphalt'
+    assign width = 864
+    assign widths = '432, 864'
+    assign description_clamp = 'line-clamp-4'
+  endif
+-%}
+
+<a href="{{ article.url }}" class="block no-underline  {{ class }}">
+  <div class="flex flex-col gap-3">
+    {%- if article.image -%}
+      <div class="aspect-square w-full bg-light-smoke overflow-hidden">
+        {{ article.image | image_url: width: width | image_tag:
+        width: article.image.width,
+        widths: widths,
+        height: article.image.height,
+        class: 'w-full h-full object-cover',
+        alt: article.image.alt
+        }}
+      </div>
+    {%- endif -%}
+    <div class="flex flex-col gap-1">
+      <p class="text-12-regular uppercase">{{ podcast_duration }}</p>
+      <h3 class="text-20-bold line-clamp-1">{{ article.title }}</h3>
+      <p class="text-14-light {{ description_clamp }}">{{ article.excerpt | default: article.summary | strip_html  }}</p>
+    </div>
+  </div>
+</a>

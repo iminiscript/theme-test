@@ -1,219 +1,164 @@
+{% liquid
+  assign section_settings = section.settings
+  assign section_blocks = section.blocks
+%}
 
-
-{% if section.blocks.size > 1 %}
-  <script
-    src="{{ 'announcement-bar.js' | asset_url }}"
-    type="module"
-    fetchpriority="low"
-  ></script>
-{% endif %}
-
-<div class="section-background color-{{ section.settings.color_scheme }}"></div>
-<aside
-  class="announcement-bar spacing-style section section--{{ section.settings.section_width }} color-{{ section.settings.color_scheme }}"
-  style="{% render 'spacing-padding', settings: section.settings %}; --border-bottom-width: {{ section.settings.divider_width }}px;"
->
-  {% liquid
-    assign autoplay = false
-    assign show_arrows = false
-    if section.blocks.size > 1
-      assign autoplay = true
-      assign show_arrows = true
-    endif
-  %}
-
-  <announcement-bar-component
-    class="announcement-bar__slider"
-    {% if autoplay == true %}
-      autoplay="{{ section.settings.speed }}" aria-live="polite"
-    {% endif %}
+<announcement-bar>
+  <div
+    class="swiper announcement-swiper"
+    style="background-color: {{ section_settings.announcement_bar_color }}; color: {{ section_settings.announcement_text_color }};"
   >
-    {% if show_arrows %}
-      {% render 'slideshow-arrows', icon_style: 'chevron' %}
-    {% endif %}
+    <div class="swiper-wrapper items-center">
+      {% comment %} Timer Slide - Independent slide with its own message and button {% endcomment %}
+      {% if section_settings.enable_timer %}
+        {% render 'announcement-slide',
+          slide_type: 'timer',
+          slide_id: 'timer-slide',
+          message: section_settings.timer_message,
+          show_timer: true,
+          timer_start: section_settings.timer_start,
+          timer_end: section_settings.timer_end,
+          button_text: section_settings.timer_btn,
+          button_link: section_settings.timer_btn_link
+        %}
+      {% endif %}
 
-    <div class="announcement-bar__slides">
-      {% content_for 'blocks' %}
+      {% comment %} Regular Announcement Blocks {% endcomment %}
+      {% for block in section_blocks %}
+        {% render 'announcement-slide',
+          slide_type: 'block',
+          slide_id: block.id,
+          message: block.settings.announcement_message,
+          show_timer: false,
+          button_text: block.settings.announcement_btn,
+          button_link: block.settings.announcement_btn_link
+        %}
+      {% endfor %}
     </div>
-  </announcement-bar-component>
-</aside>
 
-{% stylesheet %}
-  .announcement-bar {
-    border-block-end: var(--border-bottom-width) solid var(--color-border);
-  }
+    {% comment %} Navigation buttons {% endcomment %}
+    {% liquid
+      assign total_slides = section_blocks.size
+      if section_settings.enable_timer
+        assign total_slides = total_slides | plus: 1
+      endif
+    %}
+    {% if total_slides > 1 %}
+      <div class="announcement__left swiper-button-prev" aria-label="Previous announcement">
+        <div class="h-auto w-[6px] [&>svg]:h-full [&>svg]:w-full">
+          {% render 'icon', icon: 'arrow-left' %}
+        </div>
+      </div>
+      <div class="announcement__right swiper-button-next" aria-label="Next announcement">
+        <div class="h-auto w-[6px] [&>svg]:h-full [&>svg]:w-full">
+          {% render 'icon', icon: 'arrow-right' %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</announcement-bar>
 
-  .announcement-bar__slider {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    position: relative;
-
-    @media screen and (max-width: 749px) {
-      grid-column: 1 / -1;
-    }
-  }
-
-  .announcement-bar__slides {
-    display: grid;
-    grid: [stack] auto / [stack] auto;
-    width: calc(100% - var(--button-size) * 2);
-    max-width: 680px;
-    margin-inline: auto;
-  }
-
-  .announcement-bar__slides > * {
-    grid-area: stack;
-  }
-
-  .announcement-bar__slide {
-    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
-    content-visibility: visible;
-
-    &[aria-hidden='true'] {
-      opacity: 0;
-      visibility: hidden;
-    }
-  }
-
-  .announcement-bar__slider slideshow-arrows {
-    padding: 0;
-    mix-blend-mode: normal;
-  }
-
-  .announcement-bar__slider slideshow-arrows .slideshow-control {
-    color: var(--color-foreground);
-  }
-
-  .announcement-bar__slider .slideshow-control {
-    display: flex;
-    padding: 0;
-    width: var(--button-size);
-    height: var(--button-size);
-    align-items: center;
-    justify-content: center;
-    opacity: 1;
-    animation: none;
-
-    @media screen and (min-width: 750px) {
-      --slideshow-control-offset: calc((var(--button-size) - var(--icon-size-xs)) / 2);
-
-      .section--page-width &.slideshow-control--previous {
-        transform: translateX(var(--slideshow-control-offset));
-      }
-    }
-  }
-
-  .announcement-bar__slider .slideshow-control .svg-wrapper {
-    width: var(--icon-size-xs);
-    height: var(--icon-size-xs);
-  }
-
-  .announcement-bar__slide {
-    place-content: center;
-  }
-
-  .announcement-bar__text:first-child {
-    margin: 0;
-  }
-
-  .announcement-bar__link {
-    position: absolute;
-    inset: 0;
-  }
-{% endstylesheet %}
+<script
+  src="{{ 'announcement-bar.js' | asset_url }}"
+  type="module"
+  fetchpriority="high"
+></script>
 
 {% schema %}
 {
-  "name": "t:names.announcement_bar",
-  "blocks": [
-    {
-      "type": "_announcement"
-    }
-  ],
-  "enabled_on": {
-    "groups": ["header"]
-  },
+  "name": "Announcement Bar",
+  "class": "annoucement__section",
   "settings": [
     {
-      "type": "range",
-      "id": "speed",
-      "label": "t:settings.scroll_speed",
-      "min": 2,
-      "max": 10,
-      "default": 5,
-      "unit": "sec"
+      "type": "color",
+      "id": "announcement_bar_color",
+      "label": "Background Color Promo Bar",
+      "default": "#1E1B1C"
     },
     {
-      "type": "header",
-      "content": "t:content.appearance"
+      "type": "color",
+      "id": "announcement_text_color",
+      "label": "Text Color Promo Bar",
+      "default": "#FFFFFF"
     },
     {
-      "type": "select",
-      "id": "section_width",
-      "label": "t:settings.section_width",
-      "options": [
+      "type": "checkbox",
+      "id": "enable_timer",
+      "label": "Enable Timer"
+    },
+    {
+      "type": "text",
+      "id": "timer_start",
+      "label": "Timer Start",
+      "info": "Timer Start - YYYY-MM-DD HH:MM:SS. \n If provided, timer will be hidden until start date is reached"
+    },
+    {
+      "type": "text",
+      "id": "timer_end",
+      "label": "Timer End",
+      "info": "Timer End - YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "type": "textarea",
+      "id": "timer_message",
+      "label": "Timer Message"
+    },
+    {
+      "type": "url",
+      "id": "timer_btn_link",
+      "label": "timer Link",
+      "info": "Link unavailable will remove the button"
+    },
+    {
+      "type": "text",
+      "id": "timer_btn",
+      "label": "timer Button",
+      "default": "Shop now"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "announcement",
+      "name": "t:names.announcement",
+      "settings": [
         {
-          "value": "page-width",
-          "label": "t:options.page"
+          "type": "textarea",
+          "id": "announcement_message",
+          "label": "Announcement Message"
         },
         {
-          "value": "full-width",
-          "label": "t:options.full"
+          "type": "url",
+          "id": "announcement_btn_link",
+          "label": "Announcement Link",
+          "info": "Link unavailable will remove the button"
+        },
+        {
+          "type": "text",
+          "id": "announcement_btn",
+          "label": "Announcement Button",
+          "default": "Shop now"
         }
-      ],
-      "default": "page-width"
-    },
-    {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "default": "scheme-4",
-      "label": "t:settings.color_scheme"
-    },
-    {
-      "type": "range",
-      "id": "divider_width",
-      "label": "t:settings.divider_thickness",
-      "min": 0,
-      "max": 5,
-      "step": 0.5,
-      "unit": "px",
-      "default": 0
-    },
-    {
-      "type": "header",
-      "content": "t:content.padding"
-    },
-    {
-      "type": "range",
-      "id": "padding-block-start",
-      "label": "t:settings.top",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 15
-    },
-    {
-      "type": "range",
-      "id": "padding-block-end",
-      "label": "t:settings.bottom",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 15
+      ]
     }
   ],
   "presets": [
     {
       "name": "t:names.announcement_bar",
-      "blocks": {
-        "announcement_1": {
-          "type": "_announcement"
+      "blocks": [
+        {
+          "type": "announcement",
+          "settings": {
+            "announcement_message": "Announcement Message",
+            "announcement_btn_link": "https://bruntworkwear.com/",
+            "announcement_btn": "Shop now"
+          }
         }
-      },
-      "block_order": ["announcement_1"]
+      ],
+      "settings": {
+        "enable_timer": true,
+        "timer_start": "2025-01-01 00:00:00",
+        "timer_end": "2025-01-01 00:00:00"
+      }
     }
   ]
 }

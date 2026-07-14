@@ -1,45 +1,357 @@
 {%- doc -%}
-  Intended for use in a block similar to the button block.
+  BRUNT Button Component - Based on Figma design system
 
-  @param {string} link - link to render
-  @param {object} [block] - The block
+  Supports 3 sizes (small, medium, large), 3 styles (primary, secondary, link),
+  3 colors (orange, asphalt, white), optional icons (left/right), responsive widths, and all interaction states.
+
+  @param {string} label - Button text
+  @param {string} url - Link URL (optional)
+  @param {string} type - Button type: 'button', 'submit', 'reset' (default: 'button')
+  @param {string} target - Link target: true for '_blank' new window (optional)
+  @param {string} style - Button style: 'primary', 'secondary', 'link' (default: 'primary')
+  @param {string} color - Button color: 'orange', 'asphalt', 'white' (default: 'orange')
+  @param {string} size - Button size: 'small', 'medium', 'large' (default: 'medium')
+  @param {boolean} responsive_size - Responsive size: true, false (default: false)
+  @param {string} icon_left - Icon name for left position (optional)
+  @param {string} icon_right - Icon name for right position (optional)
+  @param {string} class - Additional CSS classes (optional)
+  @param {string} on_click - Custom on:click attribute value (optional)
+  @param {string} buttonRef - Ref attribute for component framework (optional)
+  @param {boolean} disabled - Disabled state for button (optional)
+  @param {string} width_small - Width for small screens: 'fit', 'fill', 'custom' (default: 'fit')
+  @param {number} custom_width_small - Custom width for small screens in px (optional)
+  @param {string} width_medium - Width for medium screens: 'fit', 'fill', 'custom' (default: 'fit')
+  @param {number} custom_width_medium - Custom width for medium screens in px (optional)
+  @param {string} width_large - Width for large screens: 'fit', 'fill', 'custom' (default: 'fit')
+  @param {number} custom_width_large - Custom width for large screens in px (optional)
+  @param {string} tracking_id - Custom tracking id for analytics tracking
+  @param {string} data_attrs - Custom data attributes as a string (optional, e.g., 'data-foo="bar" data-baz="qux"')
 
   @example
-  {% render 'button', link: '/collections/all' %}
+  {% render 'button', label: 'Shop Now', url: '/collections/all', style: 'primary', color: 'orange', size: 'large' %}
+  {% render 'button', label: 'Add to Cart', style: 'primary', color: 'white', size: 'medium', icon_left: 'cart' %}
+  {% render 'button', label: 'Learn More', style: 'link', color: 'asphalt' %}
+  {% render 'button', label: 'Responsive Button', style: 'primary', color: 'white', width_small: 'fill', width_medium: 'custom', custom_width_medium: 300, width_large: 'fit' %}
 {%- enddoc -%}
 
-{% assign block_settings = block.settings %}
+{%- liquid
+  # =============================================================================
+  # PARAMETER ASSIGNMENT & VALIDATION
+  # =============================================================================
 
-<a
-  {% if link == blank %}
-    role="link"
-    aria-disabled="true"
-  {% else %}
-    href="{{ link }}"
-  {% endif %}
-  class="
-    size-style
-    {{ block_settings.style_class }}
-    {{ block_settings.style_class }}--{{ block.id }}
-  "
-  style="{% render 'size-style', settings: block_settings %}"
-  {%- if block_settings.open_in_new_tab -%}
-    target="_blank"
-    rel="noopener noreferrer"
-  {%- endif -%}
-  {{ block.shopify_attributes }}
->
-  {{ block_settings.label }}
-</a>
+  # Core button properties with defaults
+  assign button_label = label | default: 'Button'
+  assign button_style = style | default: 'primary'
+  assign button_color = color | default: 'orange'
+  assign button_size = size | default: 'medium'
+  assign button_responsive_size = responsive_size | default: false
+  assign button_type = type | default: 'button'
 
-{% stylesheet %}
-  .link {
-    text-decoration: none;
-    text-decoration-color: currentcolor;
+  # Icon properties
+  assign button_icon_left = icon_left | default: blank
+  assign button_icon_right = icon_right | default: blank
 
-    &:hover {
-      color: var(--color-primary-hover);
-      text-decoration-color: transparent;
-    }
-  }
-{% endstylesheet %}
+  # Additional properties
+  assign button_class = class | default: ''
+  assign button_target = target | default: false
+  assign button_url = url | default: blank
+  assign button_tracking = tracking_id | default: blank
+  assign button_on_click = on_click | default: blank
+  assign button_ref = buttonRef | default: blank
+  assign button_disabled = disabled | default: false
+  assign button_data_attrs = data_attrs | default: blank
+
+  # Width properties for responsive design
+  assign button_width_small = width_small | default: 'fit'
+  assign button_custom_width_small = custom_width_small | default: null
+  assign button_width_medium = width_medium | default: 'fit'
+  assign button_custom_width_medium = custom_width_medium | default: null
+  assign button_width_large = width_large | default: 'fit'
+  assign button_custom_width_large = custom_width_large | default: null
+
+  # =============================================================================
+  # RESPONSIVE WIDTH LOGIC
+  # =============================================================================
+
+  # Initialize responsive width classes and custom CSS
+  assign button_responsive_width_classes = ''
+  assign button_custom_css = ''
+  assign button_custom_class = ''
+
+  # Check if all three width values are identical
+  # If same, only apply classes to small screen (no md/lg classes needed)
+  assign all_widths_same = false
+  if button_width_small != 'custom' and button_width_small == button_width_medium and button_width_medium == button_width_large
+    assign all_widths_same = true
+  endif
+
+  # Build responsive width classes based on optimization rules:
+  # 1. Same values: Only apply to small screen (no md/lg classes)
+  # 2. fit: No classes added (default behavior)
+  # 3. fill: Adds w-full (or responsive variants)
+  # 4. custom: Generates unique CSS class with responsive max-width
+
+  # Generate unique class name for custom widths
+  assign custom_width_class_name = 'btn-custom-width-'
+  if button_custom_width_small != blank
+    assign custom_width_class_name = custom_width_class_name | append: button_custom_width_small
+  else
+    assign custom_width_class_name = custom_width_class_name | append: 'auto'
+  endif
+  if button_custom_width_medium != blank
+    assign custom_width_class_name = custom_width_class_name | append: '-' | append: button_custom_width_medium
+  else
+    assign custom_width_class_name = custom_width_class_name | append: '-auto'
+  endif
+  if button_custom_width_large != blank
+    assign custom_width_class_name = custom_width_class_name | append: '-' | append: button_custom_width_large
+  else
+    assign custom_width_class_name = custom_width_class_name | append: '-auto'
+  endif
+
+  if all_widths_same
+    # All breakpoints have same value - optimize by only applying to small screen
+    case button_width_small
+      when 'fill'
+        assign button_responsive_width_classes = 'w-full'
+      when 'custom'
+        if button_custom_width_small != blank
+          assign button_responsive_width_classes = ''
+          assign button_custom_class = custom_width_class_name
+          assign button_custom_css = '.' | append: custom_width_class_name | append: ' { max-width: ' | append: button_custom_width_small | append: 'px; width: 100%; }'
+        endif
+    endcase
+  else
+    # Different values across breakpoints - apply responsive classes
+
+    # Small screen (base)
+    case button_width_small
+      when 'fill'
+        assign button_responsive_width_classes = 'w-full'
+      when 'custom'
+        if button_custom_width_small != blank
+          assign button_responsive_width_classes = ''
+          assign button_custom_class = custom_width_class_name
+          assign button_custom_css = '.' | append: custom_width_class_name | append: ' { max-width: ' | append: button_custom_width_small | append: 'px; width: 100%; }'
+        endif
+    endcase
+
+    # Medium screen (only if different from small)
+    if button_width_medium != button_width_small or button_width_medium == 'custom'
+      case button_width_medium
+        when 'fit'
+          assign button_responsive_width_classes = button_responsive_width_classes | append: ' md:w-fit'
+        when 'fill'
+          assign button_responsive_width_classes = button_responsive_width_classes | append: ' md:w-full'
+        when 'custom'
+          if button_custom_width_medium != blank
+            assign button_custom_class = custom_width_class_name
+            assign button_custom_css = button_custom_css | append: ' @media (min-width: 768px) { .' | append: custom_width_class_name | append: ' { max-width: ' | append: button_custom_width_medium | append: 'px; width: 100%; } }'
+          endif
+      endcase
+    endif
+
+    # Large screen (only if different from medium)
+    if button_width_large != button_width_medium or button_width_large == 'custom'
+      case button_width_large
+        when 'fit'
+          assign button_responsive_width_classes = button_responsive_width_classes | append: ' lg:w-fit'
+        when 'fill'
+          assign button_responsive_width_classes = button_responsive_width_classes | append: ' lg:w-full'
+        when 'custom'
+          if button_custom_width_large != blank
+            assign button_custom_class = custom_width_class_name
+            assign button_custom_css = button_custom_css | append: ' @media (min-width: 1280px) { .' | append: custom_width_class_name | append: ' { max-width: ' | append: button_custom_width_large | append: 'px; width: 100%; } }'
+          endif
+      endcase
+    endif
+  endif
+
+  # =============================================================================
+  # STYLE & SIZE CLASS GENERATION
+  # =============================================================================
+
+  # Determine base class and color class based on button style
+  if button_style == 'link'
+    # Link style buttons
+    assign base_class = 'link'
+
+    case button_color
+      when 'orange'
+        assign color_class = 'link-orange'
+      when 'white'
+        assign color_class = 'link-white'
+      when 'asphalt'
+        assign color_class = 'link-asphalt'
+    endcase
+
+    # Handle responsive sizing for links
+    if button_responsive_size == true
+      case button_size
+        when 'small'
+          assign base_class = base_class | append: ' link-sm md:link-md lg:link-lg'
+        when 'medium'
+          assign base_class = base_class | append: ' link-md lg:link-lg'
+        when 'large'
+          assign base_class = base_class | append: ' link-lg lg:link-lg'
+      endcase
+    else
+      # Static sizing for links
+      case button_size
+        when 'small'
+          assign base_class = base_class | append: ' link-sm'
+        when 'medium'
+          assign base_class = base_class | append: ' link-md'
+        when 'large'
+          assign base_class = base_class | append: ' link-lg'
+      endcase
+    endif
+  else
+    # Button style (primary/secondary)
+    assign base_class = 'btn'
+    assign primary = ''
+    assign secondary = ''
+    assign tertiary = ''
+
+    # Handle responsive sizing for buttons
+    if button_responsive_size == true
+      case button_size
+        when 'small'
+          assign base_class = base_class | append: ' btn-sm md:btn-md lg:btn-lg'
+        when 'medium'
+          assign base_class = base_class | append: ' btn-md lg:btn-lg'
+        when 'large'
+          assign base_class = base_class | append: ' btn-lg lg:btn-lg'
+      endcase
+    else
+      # Static sizing for buttons
+      case button_size
+        when 'small'
+          assign base_class = base_class | append: ' btn-sm'
+        when 'medium'
+          assign base_class = base_class | append: ' btn-md'
+        when 'large'
+          assign base_class = base_class | append: ' btn-lg'
+      endcase
+    endif
+
+    case button_color
+      when 'orange'
+        assign primary = 'btn-primary-orange'
+        assign secondary = 'btn-secondary-orange'
+        assign tertiary = 'link link-orange'
+      when 'white'
+        assign primary = 'btn-primary-white'
+        assign secondary = 'btn-secondary-white'
+        assign tertiary = 'link link-white'
+      when 'asphalt'
+        assign primary = 'btn-primary-asphalt'
+        assign secondary = 'btn-secondary-asphalt'
+        assign tertiary = 'link link-asphalt'
+    endcase
+
+    # Generate color class for button styles
+    case button_style
+      when 'primary'
+        assign color_class = primary
+      when 'secondary'
+        assign color_class = secondary
+      when 'tertiary'
+        assign color_class = tertiary
+    endcase
+  endif
+-%}
+
+{%- comment -%}
+  =============================================================================
+  HTML OUTPUT GENERATION
+  =============================================================================
+
+  Generate either an anchor tag (if URL provided) or button element
+  with appropriate classes and attributes.
+{%- endcomment -%}
+
+{%- comment -%} Generate style tag for custom widths {%- endcomment -%}
+{%- if button_custom_css != blank -%}
+  <style>
+    {{ button_custom_css }}
+  </style>
+{%- endif -%}
+
+{%- if button_url != blank -%}
+  {%- comment -%} Render as clickable link {%- endcomment -%}
+  <a
+    href="{{ button_url }}"
+    class="{{ base_class }} {{ color_class }} {{ button_responsive_width_classes }} {{ button_custom_class }} {{ button_class }}"
+    {% if button_target == true %}
+      target="_blank" rel="noopener noreferrer"
+    {% endif %}
+    {% if button_tracking != blank %}
+      data-track="{{ button_tracking }}"
+    {% endif %}
+    {% if button_on_click != blank %}
+      on:click="{{ button_on_click }}"
+    {% endif %}
+    {% if button_data_attrs != blank %}
+      {{ button_data_attrs }}
+    {% endif %}
+  >
+    {%- comment -%} Left icon {%- endcomment -%}
+    {% if button_icon_left != blank -%}
+      <span class="btn__icon btn__icon--left w-4 h-4 flex-shrink-0">
+        {%- render 'icons', icon: button_icon_left, width: 16, height: 16 -%}
+      </span>
+    {% endif -%}
+
+    {%- comment -%} Button label {%- endcomment -%}
+    <span class="btn__label">{{ button_label }}</span>
+
+    {%- comment -%} Right icon {%- endcomment -%}
+    {% if button_icon_right != blank -%}
+      <span class="btn__icon btn__icon--right w-4 h-4 flex-shrink-0">
+        {%- render 'icons', icon: button_icon_right, width: 16, height: 16 -%}
+      </span>
+    {% endif -%}
+  </a>
+{%- else -%}
+  {%- comment -%} Render as button element {%- endcomment -%}
+  <button
+    type="{{ button_type }}"
+    class="{{ base_class }} {{ color_class }} {{ button_responsive_width_classes }} {{ button_custom_class }} {{ button_class }}"
+    {%- if scroll_to_top -%}
+      onclick="window.scrollTo({top: 0, behavior: 'smooth'})" aria-label="Scroll to top"
+    {%- endif -%}
+    {% if button_tracking != blank  %}
+      data-track="{{ button_tracking }}"
+    {% endif %}
+    {% if button_on_click != blank %}
+      on:click="{{ button_on_click }}"
+    {% endif %}
+    {% if button_ref != blank %}
+      ref="{{ button_ref }}"
+    {% endif %}
+    {% if button_disabled %}
+      disabled
+    {% endif %}
+    {% if button_data_attrs != blank %}
+      {{ button_data_attrs }}
+    {% endif %}
+  >
+    {%- comment -%} Left icon {%- endcomment -%}
+    {%- if button_icon_left != blank -%}
+      <span class="btn__icon btn__icon--left w-4 h-4 flex-shrink-0">
+        {%- render 'icon', icon: button_icon_left -%}
+      </span>
+    {%- endif -%}
+
+    {%- comment -%} Button label {%- endcomment -%}
+    <span class="btn__label">{{ button_label }}</span>
+
+    {%- comment -%} Right icon {%- endcomment -%}
+    {%- if button_icon_right != blank -%}
+      <span class="btn__icon btn__icon--right w-4 h-4 flex-shrink-0">
+        {%- render 'icon', icon: button_icon_right -%}
+      </span>
+    {%- endif -%}
+  </button>
+{%- endif -%}

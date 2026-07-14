@@ -1,5 +1,3 @@
-
-
 {%- doc -%}
   Renders product recommendations.
   {section.id} - identifies the parent section for the Section Rendering API
@@ -26,9 +24,6 @@
   [data-section-id] {section.id} - used to fetch the product recommendations from the Section Rendering API
 {% endcomment %}
 
-{% render 'quick-add-styles' %}
-{% render 'quick-add-modal-styles' %}
-{% render 'product-badges-styles' %}
 <product-recommendations
   id="product-recommendations-{{ block.id }}"
   class="product-recommendations"
@@ -37,7 +32,6 @@
   data-product-id="{{ closest.product.id }}"
   data-intent="{{ block_settings.recommendation_type }}"
   data-recommendations-performed="{{ recommendations.performed }}"
-  data-hydration-key="product-recommendations-{{ block.id }}"
   {% if request.visual_preview_mode %}
     data-shopify-editor-preview
   {% endif %}
@@ -46,7 +40,7 @@
 >
   <div
     class="
-      {% if block_settings.inherit_color_scheme == false %}color-{{ block_settings.color_scheme }}{% endif %}
+      color-{{ section.settings.color_scheme }}
       block-resource-list
       spacing-style
       gap-style
@@ -57,7 +51,6 @@
       --resource-list-column-gap-desktop: {{ block_settings.columns_gap }}px;
       --resource-list-row-gap-desktop: {{ block_settings.rows_gap }}px;
       --resource-list-columns-mobile: repeat(auto-fill, minmax(9.25rem, 1fr));
-      --border-radius: {{ block_settings.border_radius }}px;
     "
   >
     <div class="section-resource-list__content">
@@ -92,7 +85,8 @@
             {% content_for 'block',
               type: '_product-card',
               id: 'static-product-card',
-              closest.product: product
+              closest.product: product,
+              section_name: 'product-recommendations'
             %}
           </div>
           {% if block_settings.layout_type == 'carousel' or block_settings.carousel_on_mobile %}
@@ -175,23 +169,23 @@
 </product-recommendations>
 
 {% stylesheet %}
-  .block-resource-list {
-    display: flex;
-    flex-direction: column;
-    row-gap: var(--gap);
-    min-width: 0;
-    min-height: 0;
-    container-type: inline-size;
-    container-name: resource-list;
-    border-radius: var(--border-radius, 0);
-  }
-
   .product-recommendations-wrapper {
     width: 100%;
   }
 
   .product-recommendations-wrapper:has(product-recommendations[data-shopify-editor-preview]) {
     width: 100vw;
+  }
+
+  .product-recommendations {
+    display: block;
+  }
+
+  .product-recommendations__skeleton-item {
+    aspect-ratio: 3 / 4;
+    background-color: var(--color-foreground);
+    opacity: var(--skeleton-opacity);
+    border-radius: 4px;
   }
 {% endstylesheet %}
 
@@ -360,27 +354,10 @@
       "default": 12
     },
     {
-      "type": "range",
-      "id": "border_radius",
-      "label": "t:settings.border_radius",
-      "min": 0,
-      "max": 32,
-      "step": 1,
-      "unit": "px",
-      "default": 0
-    },
-    {
-      "type": "checkbox",
-      "id": "inherit_color_scheme",
-      "label": "t:settings.inherit_color_scheme",
-      "default": true
-    },
-    {
       "type": "color_scheme",
       "id": "color_scheme",
       "label": "t:settings.color_scheme",
-      "default": "scheme-1",
-      "visible_if": "{{ block.settings.inherit_color_scheme == false }}"
+      "default": "scheme-1"
     },
     {
       "type": "header",
@@ -405,26 +382,6 @@
       "step": 1,
       "unit": "px",
       "default": 0
-    },
-    {
-      "type": "range",
-      "id": "padding-inline-start",
-      "label": "t:settings.left",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "padding-inline-end",
-      "label": "t:settings.right",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 0
     }
   ],
   "presets": [
@@ -432,87 +389,18 @@
       "name": "t:names.product_recommendations",
       "category": "t:categories.product",
       "settings": {
-        "recommendation_type": "related",
-        "border_radius": 0,
-        "padding-inline-start": 0,
-        "padding-inline-end": 0
+        "recommendation_type": "related"
       },
       "blocks": {
         "heading": {
           "type": "text",
           "settings": {
-            "text": "t:html_defaults.may_also_like"
+            "text": "<h4>You may also like</h4>"
           }
         },
         "static-product-card": {
           "type": "_product-card",
-          "static": true,
-          "settings": {
-            "product_card_gap": 4
-          },
-          "blocks": {
-            "product-card-gallery": {
-              "type": "_product-card-gallery",
-              "settings": {
-                "image_ratio": "adapt",
-                "border": "none",
-                "border_width": 1,
-                "border_opacity": 100,
-                "border_radius": 0,
-                "padding-block-start": 0,
-                "padding-block-end": 0,
-                "padding-inline-start": 0,
-                "padding-inline-end": 0
-              }
-            },
-            "product_title": {
-              "type": "product-title",
-              "name": "t:names.product_title",
-              "settings": {
-                "width": "fit-content",
-                "max_width": "normal",
-                "alignment": "left",
-                "type_preset": "paragraph",
-                "font": "var(--font-body--family)",
-                "font_size": "1rem",
-                "line_height": "normal",
-                "letter_spacing": "normal",
-                "case": "none",
-                "wrap": "pretty",
-                "color": "var(--color-foreground)",
-                "background": false,
-                "background_color": "#00000026",
-                "corner_radius": 0,
-                "padding-block-start": 4,
-                "padding-block-end": 0,
-                "padding-inline-start": 0,
-                "padding-inline-end": 0
-              }
-            },
-            "price": {
-              "type": "price",
-              "name": "t:names.product_price",
-              "settings": {
-                "show_sale_price_first": true,
-                "show_installments": false,
-                "show_tax_info": false,
-                "type_preset": "h6",
-                "width": "100%",
-                "alignment": "left",
-                "font": "var(--font-body--family)",
-                "font_size": "1rem",
-                "line_height": "normal",
-                "letter_spacing": "normal",
-                "case": "none",
-                "color": "var(--color-foreground)",
-                "padding-block-start": 0,
-                "padding-block-end": 0,
-                "padding-inline-start": 0,
-                "padding-inline-end": 0
-              }
-            }
-          },
-          "block_order": ["product-card-gallery", "product_title", "price"]
+          "static": true
         }
       },
       "block_order": ["heading"]

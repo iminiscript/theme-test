@@ -25,7 +25,7 @@
   }
 
   .accordion--dividers accordion-custom:not(:first-child) .details {
-    border-block-start: var(--style-border-width) solid var(--color-border);
+    border-block-start: 1.5px solid var(--color-border);
   }
 
   /* When accordion borders are not set, show fallback borders */
@@ -40,11 +40,11 @@
   }
 
   .accordion--dividers accordion-custom:first-child .details {
-    border-block-start: calc(var(--style-border-width) * var(--show-fallback-borders)) solid var(--color-border);
+    border-block-start: calc(1.5px * var(--show-fallback-borders)) solid var(--color-border);
   }
 
   .accordion--dividers accordion-custom:last-child .details {
-    border-block-end: calc(var(--style-border-width) * var(--show-fallback-borders)) solid var(--color-border);
+    border-block-end: calc( 1.5px * var(--show-fallback-borders)) solid var(--color-border);
   }
 
   .accordion--dividers .details-content {
@@ -260,13 +260,13 @@
           "type": "_accordion-row",
           "settings": {
             "open_by_default": true,
-            "heading": "t:text_defaults.return_policy"
+            "heading": "Return policy"
           },
           "blocks": {
             "text-1": {
               "type": "text",
               "settings": {
-                "text": "t:html_defaults.goal_for_every_customer",
+                "text": "<p>Our goal is for every customer to be totally satisfied with their purchase. If this isn't the case, let us know and we'll do our best to work with you to make it right.</p>",
                 "width": "100%"
               }
             }
@@ -276,13 +276,13 @@
         "row-2": {
           "type": "_accordion-row",
           "settings": {
-            "heading": "t:text_defaults.shipping"
+            "heading": "Shipping"
           },
           "blocks": {
             "text-1": {
               "type": "text",
               "settings": {
-                "text": "t:html_defaults.work_quickly_to_ship",
+                "text": "<p>We will work quickly to ship your order as soon as possible. Once your order has shipped, you will receive an email with further information. Delivery times vary depending on your location.</p>",
                 "width": "100%"
               }
             }
@@ -292,13 +292,13 @@
         "row-3": {
           "type": "_accordion-row",
           "settings": {
-            "heading": "t:text_defaults.manufacturing"
+            "heading": "Manufacturing"
           },
           "blocks": {
             "text-1": {
               "type": "text",
               "settings": {
-                "text": "t:html_defaults.made_local_and_global",
+                "text": "<p>Our products are manufactured both locally and globally. We carefully select our manufacturing partners to ensure our products are high quality and a fair value.</p>",
                 "width": "100%"
               }
             }

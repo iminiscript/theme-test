@@ -1,0 +1,112 @@
+{% liquid
+  assign title = metaobject.title.value
+  assign description = metaobject.description.value
+  assign text_color = metaobject.text_color.value
+  assign image = metaobject.image.value
+  assign background_image = metaobject.background_image.value
+  assign cta_url = metaobject.url_for_button.value
+  assign cta_label = metaobject.label_for_button.value
+  assign cta_text_color = metaobject.button_text_color.value
+  assign cta_background_color = metaobject.button_background_color.value
+  assign background_color = metaobject.background_color.value
+  assign text_alignment = metaobject.text_alignment.value
+  assign video_url = metaobject.video_url.value
+  assign trigger_compare_drawer = metaobject.trigger_compare_drawer.value
+  assign video_popup_id = 'video-popup-' | append: block_id | append: '-' | append: metaobject.id
+%}
+
+<in-grid-card-callout
+  data-video-url="{{ video_url }}"
+  data-trigger-compare-drawer="{{ trigger_compare_drawer }}"
+  data-cta-url="{{ cta_url }}"
+  data-video-popup-id="{{ video_popup_id }}"
+>
+  <div class="callout w-full h-full relative cursor-pointer">
+    {% if background_image != blank %}
+      <img
+        src="{{ background_image | image_url: width: background_image.width }}"
+        alt="{{ title }}"
+        width="{{ background_image.width }}"
+        height="{{ background_image.height }}"
+        class="w-full h-full object-cover absolute top-0 left-0 z-0"
+        loading="lazy"
+      >
+    {% else %}
+      <div
+        class="w-full h-full object-cover absolute top-0 left-0 z-0"
+        style="background-color: {{ background_color }}"
+      ></div>
+    {% endif %}
+    <div class="p-3 flex flex-col relative text-center z-10 h-full">
+      {% if image != blank %}
+        <div class="relative flex-grow">
+          <img
+            src="{{ image | image_url: width: image.width }}"
+            alt="{{ title }}"
+            class="max-w-full h-full object-cover min-h-[151px]"
+            width="{{ image.width }}"
+            height="{{ image.height }}"
+            loading="lazy"
+          >
+          {% if video_url != blank %}
+            <div class="w-12 h-12 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+              {% render 'icon', icon: 'video' %}
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+      <div class="callout__content--{{ text_alignment }} flex flex-col w-full">
+        <h3 class="font-brothers text-heading-5 mt-4" style="color: {{ text_color }}">{{ title }}</h3>
+
+        {% if video_url == blank %}
+          <p class="font-interstate text-14-regular mt-1" style="color: {{ text_color }}">{{ description }}</p>
+          <div class="mt-7">
+            {% if cta_url != blank and trigger_compare_drawer == false %}
+              {% comment %} compare drawer functionality is pending {% endcomment %}
+              {% render 'button',
+                label: cta_label,
+                url: cta_url,
+                style: 'primary',
+                color: 'white',
+                size: 'large',
+                full_width: true
+              %}
+            {% else %}
+              <button
+                type="button"
+                class="js-collection__heroBannerBtn w-full px-6 py-3 text-center font-interstate text-16-bold"
+                style="background-color: {{ cta_background_color | default: '#FFFFFF' }}; color: {{ cta_text_color | default: '#000000' }}"
+              >
+                {{ cta_label }}
+              </button>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</in-grid-card-callout>
+
+{% if video_url != blank %}
+  {% render 'video-popup', id: video_popup_id %}
+{% endif %}
+
+<script
+  src="{{ 'in-grid-card-callout.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+
+{% stylesheet %}
+  .callout__content--top {
+    margin-bottom: auto;
+  }
+
+  .callout__content--middle {
+    margin: auto;
+  }
+
+  .callout__content--bottom {
+    margin-top: auto;
+  }
+{% endstylesheet %}

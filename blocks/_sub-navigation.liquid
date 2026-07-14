@@ -1,0 +1,348 @@
+{%- if block.settings.navigation_style == 'link' -%}
+  <a
+    href="{{ block.settings.link_url }}"
+    class="sidebarMenu__navLink js-subNavTrigger flex items-center gap-2 grow font-bold text-2xl leading-[1.875rem] text-start  no-underline hover:text-[#c74f1f]{% if block.settings.highlight_link %} sidebarMenu__navLink--red text-[#c74f1f] {% else %} text-asphalt {% endif %}"
+    data-nav-child="false">
+    {{ block.settings.link_title }}
+    {%- if block.settings.enable_tag and block.settings.link_tag != blank -%}
+      <span class='sidebarMenu__tag py-0.5 px-1.5 inline-block -skew-x-[15deg] rounded-[0.1875rem] font-brothers-bold text-[0.625rem] leading-[0.875rem] bg-brunt-orange text-white'>{{ block.settings.link_tag }}</span>
+    {%- endif -%}
+  </a>
+{%- elsif block.settings.navigation_style == 'quiz' -%}
+  <a
+    href='/?bsci=gcd'
+    class="bsai-ci sidebarMenu__navLink js-subNavTrigger js-quizTrigger flex items-center gap-2 grow font-bold text-2xl leading-[1.875rem] text-start no-underline text-asphalt"
+    data-nav-child="false"
+    data-bsai-ci="gcd">
+    {{ block.settings.link_title }}
+  </a>
+{%- else -%}
+  <div class="sidebarMenu__navOption">
+    <button class="sidebarMenu__trigger js-subNavTrigger flex items-center gap-1.5 w-full" data-nav-child="true">
+      <span class="sidebarMenu__navLink sidebarMenu__triggerText flex items-center gap-2 grow font-bold text-2xl leading-[1.875rem] text-start text-asphalt">{{ block.settings.menu.title }}</span>
+      {% render 'icons'
+        , icon: 'caret-right' %}
+    </button>
+    <div class="sidebarMenu__subMenu fixed w-full bg-white h-full top-0 left-0 z-10 translate-x-full pointer-events-none transition-transform duration-500 ease-in-out block pb-40 overflow-y-scroll lg:pt-16 lg:absolute lg:top-[-61px] lg:w-[27.5rem] lg:translate-x-0 lg:-z-10 lg:invisible lg:transition-all lg:duration-300 lg:pb-[50px] lg:bg-light-smoke lg:shadow-[2px_0px_10px_rgba(0,0,0,0.1)] lg:overflow-scroll [&.is--active]:translate-x-0 [&.is--active]:pointer-events-auto [&.is--active]:visible lg:[&.is--active]:translate-x-[25rem] lg:[&.is--visible]:visible">
+      <div class='js-collapsible-back menuDrawer__backWrapper mt-4 mb-6 flex pl-3 items-center [&_svg]:h-5 lg:hidden'>
+        {%- render 'icons'
+          , icon: 'caret-left' -%}
+        <span class='sidebarMenu__navTitle ml-2 font-normal text-sm leading-5 capitalize'>Back</span>
+      </div>
+      {%- if block.settings.enable_collection_link -%}
+        <a
+          href={{ block.settings.collection_link}}
+          data-bww-id='main-nav-level-2-shopAll-{{ block.settings.menu.handle }}-mobile'
+          class='sidebarMenu__shopAll flex justify-between items-center px-3 pb-6 font-bold text-2xl leading-[1.875rem] border-b border-[#aeaea4] lg:px-8 lg:hover:text-[#c74f1f] lg:[&:hover_svg_g]:stroke-[#c74f1f] no-underline text-asphalt'>
+          <span>{{ block.settings.collection_title }}</span>
+          {% render 'icons'
+            , icon: 'pop-out'
+            , class: 'sidebarMenu__shopAll--icon w-5 h-5' %}
+        </a>
+      {%- endif -%}
+      <div class="sidebarMenu__subNavInner py-6 px-3 lg:px-8 js-navContent ">
+        {% content_for 'block'
+          , type: '_shop-by-feature'
+          , id: 'shop-by-feature' %}
+        {%- assign menu_links = linklists[block.settings.menu] -%}
+        <div class="sidebarMenu__subNavWrapper lg:flex lg:flex-col lg:h-full lg:overflow-auto">
+          {%- if block.settings.enable_collection_callout -%}
+            <p class="sidebarMenu__collectionCallout font-bold text-sm leading-5 uppercase">{{ block.settings.collection_callout_title }}</p>
+          {%- endif -%}
+          {%- for link in menu_links.links -%}
+            {%- assign flag_identifier = link.title | split: '$' -%}
+            {%- if flag_identifier[1] -%}
+              {%- assign show_usa_flag = true -%}
+              {%- assign combined_title = flag_identifier[1] | split: ' @ ' -%}
+            {%- else -%}
+              {%- assign show_usa_flag = false -%}
+              {%- assign combined_title = flag_identifier[0] | split: ' @ ' -%}
+            {%- endif -%}
+            {%- if link.levels == 0 -%}
+              {%- if block.settings.show_image and link.object.metafields.custom.navigation_image -%}
+                <a href="{{ link.url }}" class="subMenu__navGrandLink subMenu__navGrandLink--image link-inline font-bold py-2 flex gap-2 items-center border-b-[0.5px] border-medium-asphalt no-underline text-asphalt">
+                  {%- render 'image' with imageData: link.object.metafields.custom.navigation_image
+                    , width: 64
+                    , aspectRatio: 1.0
+                    , class: 'subMenu__navGrandLinkImage grow'
+                    , alt_text: combined_title.first -%}
+                  <div class='subMenu__navGrandTitleTagDesc text-start'>
+                    <p class='subMenu__navGrandTitleTag flex gap-1 items-center'>
+                      <span class='subMenu__navGrandTitle text-lg leading-6'>{{ combined_title.first | escape }}</span>
+                      {%- if combined_title.first != combined_title.last -%}
+                        <span class='sidebarMenu__tag py-0.5 px-1.5 inline-block -skew-x-[15deg] rounded-[0.1875rem] font-brothers-bold text-[0.625rem] leading-[0.875rem] bg-brunt-orange text-white'>{{ combined_title.last | upcase | escape }}</span>
+                      {%- endif -%}
+                    </p>
+                    {%- if link.object.metafields.nav.description != blank -%}
+                      <p class='sidebarMenu__description il text-sm leading-5 md:mt-0.5'>
+                        {{- link.object.metafields.nav.description -}}
+                      </p>
+                    {%- endif -%}
+                  </div>
+                </a>
+              {%- else -%}
+                <a
+                  href='{{ link.url }}'
+                  class='subMenu__subLink link-inline flex items-center gap-2 py-2 border-b border-[#aeaea4] font-normal text-lg leading-6 lg:py-6 lg:font-bold lg:text-2xl lg:leading-[1.875rem] no-underline text-asphalt font-bold '
+                  data-bww-id='main-nav-level-2-accordion-content-{{ combined_title.first | replace: ' ', '-' | replace: '(', '' | replace: ')', ''  | downcase }}-mobile'>
+                  <span class='subMenu__subTitle'>{{ combined_title.first | escape }}</span>
+                  {%- if show_usa_flag -%}
+                    {% render 'icons'
+                      , icon: 'flag' %}
+                  {%- endif -%}
+                  {%- if combined_title.first != combined_title.last -%}
+                    <span class='subMenu__tag py-0 px-1.5 inline-block mb-[0.1875rem] -skew-x-[15deg] rounded-[0.1875rem] font-brothers-bold text-[0.625rem] leading-[0.875rem] bg-brunt-orange text-white'>{{ combined_title.last | upcase | escape }}</span>
+                  {%- endif -%}
+                </a>
+              {%- endif -%}
+            {%- else -%}
+              <button class='subMenu__navItemToggle subMenu__menuAccordion js-menuAccordion flex pt-3 w-full gap-4 items-center justify-between lg:pt-3' data-sub-nav="{{ combined_title.first | escape | handleize }}">
+                <div class='subMenu__navToggleButton js-collapsible subMenu__navLink ' data-bww-id='main-nav-level-2-accordion-{{ combined_title.first | replace: ' ', '-' | replace: '(', '' | replace: ')', '' | downcase  }}-mobile'>
+                  <div class='subMenu__navSubTitleTagDesc text-start'>
+                    <p class='subMenu__navSubTitleTag flex gap-1 items-center'>
+                      <span class='subMenu__navSubTitle font-bold text-2xl leading-[1.875rem] lg:text-2xl lg:leading-[1.875rem]'>{{ combined_title.first | escape }}</span>
+                      {%- if show_usa_flag -%}
+                        {% render 'icons'
+                          , icon: 'flag' %}
+                      {%- endif -%}
+                      {%- if combined_title.first != combined_title.last -%}
+                        <span class='subMenu__tag py-0 px-1.5 inline-block mb-[0.1875rem] -skew-x-[15deg] rounded-[0.1875rem] font-brothers-bold text-[0.625rem] leading-[0.875rem] bg-brunt-orange text-white'>{{ combined_title.last | upcase | escape }}</span>
+                      {%- endif -%}
+                    </p>
+                    {%- if link.object.metafields.nav.description != blank -%}
+                      <p class='subMenu__description il text-sm leading-5 min-[64rem]:mt-0.5'>
+                        {{- link.object.metafields.nav.description -}}
+                      </p>
+                    {%- endif -%}
+                  </div>
+                </div>
+                <div class='caratDown pointer-events-none'>
+                  {% render 'icons'
+                    , icon: 'caret-down' %}
+                </div>
+              </button>
+              <div class='subMenu__navAccordion js-navAccordion h-0 overflow-hidden transition-[height] duration-300 ease-in-out' data-sub-nav="{{ combined_title.first | escape | handleize }}">
+                <ul class='subMenu__navGrandList'>
+                  {%- for sub_link in link.links -%}
+                    {%- assign flag_identifier = sub_link.title | split: '$' -%}
+                    {%- if flag_identifier[1] -%}
+                      {%- assign show_usa_flag = true -%}
+                      {%- assign combined_sub_title = flag_identifier[1] | split: ' @ ' -%}
+                    {%- else -%}
+                      {%- assign show_usa_flag = false -%}
+                      {%- assign combined_sub_title = flag_identifier[0] | split: ' @ ' -%}
+                    {%- endif -%}
+                    <li class='subMenu__navGrandItem subMenu__navSubItem'>
+                      {%- if block.settings.show_image and sub_link.object.metafields.custom.navigation_image -%}
+                        <a
+                          href='{{ sub_link.url }}'
+                          class='subMenu__navGrandLink subMenu__navGrandLink--image link-inline font-bold py-2 flex gap-2 items-center border-b-[0.5px] border-medium-asphalt no-underline text-asphalt'
+                          data-bww-id='main-nav-level-2-accordion-content-{{ combined_sub_title.first | replace: ' ', '-' | replace: '(', '' | replace: ')', ''  | downcase }}-mobile'>
+                          {%- render 'image' with imageData: sub_link.object.metafields.custom.navigation_image
+                            , width: 64
+                            , aspectRatio: 1.0
+                            , class: 'subMenu__navGrandLinkImage grow'
+                            , alt_text: combined_sub_title.first -%}
+                          <div class="subMenu__navGrandTitleTagDesc text-start">
+                            <p class="subMenu__navGrandTitleTag flex gap-1 items-center">
+                              <span class='subMenu__navGrandTitle text-lg leading-6'>{{ combined_sub_title.first | escape }}</span>
+                              {%- if show_usa_flag -%}
+                                {% render 'icons'
+                                  , icon: 'flag' %}
+                              {%- endif -%}
+                              {%- if combined_sub_title.first != combined_sub_title.last -%}
+                                <span class='subMenu__tag py-0 px-1.5 inline-block mb-[0.1875rem] -skew-x-[15deg] rounded-[0.1875rem] font-brothers-bold text-[0.625rem] leading-[0.875rem] bg-brunt-orange text-white'>{{ combined_sub_title.last | upcase | escape }}</span>
+                              {%- endif -%}
+                            </p>
+                            {%- if sub_link.object.metafields.nav.description != blank -%}
+                              <p class='subMenu__description il text-sm leading-5 min-[64rem]:mt-0.5'>
+                                {{- sub_link.object.metafields.nav.description -}}
+                              </p>
+                            {%- endif -%}
+                          </div>
+                        </a>
+                      {%- else -%}
+                        <a
+                          href='{{ sub_link.url }}'
+                          class='subMenu__navGrandLink link-inline block pt-3 pr-0 pb-0 pl-7 font-normal no-underline text-asphalt'
+                          data-bww-id='main-nav-level-2-accordion-content-{{ combined_sub_title.first | replace: ' ', '-' | replace: '(', '' | replace: ')', ''  | downcase }}-mobile'>
+                          <span class='subMenu__navGrandTitle text-lg leading-6'>{{ combined_sub_title.first | escape }}</span>
+                          {%- if show_usa_flag -%}
+                            {% render 'icons'
+                              , icon: 'flag' %}
+                          {%- endif -%}
+                          {%- if combined_sub_title.first != combined_sub_title.last -%}
+                            <span class='subMenu__tag py-0 px-1.5 inline-block mb-[0.1875rem] -skew-x-[15deg] rounded-[0.1875rem] font-brothers-bold text-[0.625rem] leading-[0.875rem] bg-brunt-orange text-white'>{{ combined_sub_title.last | upcase | escape }}</span>
+                          {%- endif -%}
+                        </a>
+                      {%- endif -%}
+                    </li>
+                  {%- endfor -%}
+                </ul>
+              </div>
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+      </div>
+      {%- if block.settings.enable_women_link -%}
+        <div class="sidebarMenu__womenLinkOut border-t-[0.5px] border-[#aeaea4]">
+          <a
+            href={{ block.settings.women_link}}
+            data-bww-id='main-nav-level-2-shopAll-{{ block.settings.menu.handle }}-mobile'
+            class='sidebarMenu__shopAll flex justify-between items-center py-4 px-3 font-bold text-2xl leading-[1.875rem] border-none lg:px-8 lg:hover:text-[#c74f1f] lg:[&:hover_svg_g]:stroke-[#c74f1f] no-underline text-asphalt'>
+            <span>{{ block.settings.women_collection_title }}</span>
+            {% render 'icons'
+              , icon: 'pop-out'
+              , class: 'sidebarMenu__shopAll--icon w-5 h-5' %}
+          </a>
+          <a
+            href={{ block.settings.collection_link}}
+            data-bww-id='main-nav-level-2-shopAll-{{ block.settings.menu.handle }}-mobile'
+            class='sidebarMenu__shopAll flex justify-between items-center py-4 px-3 font-bold text-2xl leading-[1.875rem] border-none lg:px-8 lg:hover:text-[#c74f1f] lg:[&:hover_svg_g]:stroke-[#c74f1f] no-underline text-asphalt'>
+            <span>{{ block.settings.collection_title }}</span>
+            {% render 'icons'
+              , icon: 'pop-out'
+              , class: 'sidebarMenu__shopAll--icon w-5 h-5' %}
+          </a>
+        </div>
+      {%- endif -%}
+      {% content_for 'block'
+        , type: '_feature-carousel'
+        , id: 'feature-carousel' %}
+    </div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+  {
+    "name": "Sub Navigation",
+    "tag": "div",
+    "class": "sidebarMenu__subNav pt-5 px-3 bg-white",
+    "settings": [
+      {
+        "type": "select",
+        "id": "navigation_style",
+        "label": "Navigation Style",
+        "options": [
+          {
+            "value": "menu",
+            "label": "Menu"
+          },
+          {
+            "value": "link",
+            "label": "Link"
+          },
+          {
+            "value": "quiz",
+            "label": "Quiz"
+          }
+        ],
+        "default": "link"
+      },
+      {
+        "type": "text",
+        "id": "link_title",
+        "label": "Link Title",
+        "visible_if": "{{ block.settings.navigation_style == 'link' or block.settings.navigation_style == 'quiz' }}"
+      },
+      {
+        "type": "url",
+        "id": "link_url",
+        "label": "Link URL",
+        "visible_if": "{{ block.settings.navigation_style == 'link' }}"
+      },
+      {
+        "type": "checkbox",
+        "id": "highlight_link",
+        "label": "Highlight Link",
+        "default": false,
+        "visible_if": "{{ block.settings.navigation_style == 'link' }}"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_tag",
+        "label": "Enable Tag on Link",
+        "visible_if": "{{ block.settings.navigation_style == 'link' }}"
+      },
+      {
+        "type": "text",
+        "id": "link_tag",
+        "label": "Link Tag",
+        "default": "New",
+        "visible_if": "{{ block.settings.enable_tag and block.settings.navigation_style == 'link' }}"
+      },
+      {
+        "type": "link_list",
+        "id": "menu",
+        "label": "Menu",
+        "visible_if": "{{ block.settings.navigation_style == 'menu' }}"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_collection_callout",
+        "label": "Enable Collection Callout",
+        "default": false,
+        "visible_if": "{{ block.settings.navigation_style == 'menu' }}"
+      },
+      {
+        "type": "text",
+        "id": "collection_callout_title",
+        "label": "Collection Callout Title",
+        "default": "Shop by Collection:",
+        "visible_if": "{{ block.settings.enable_collection_callout }}"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_image",
+        "label": "Show Image",
+        "default": false,
+        "visible_if": "{{ block.settings.navigation_style == 'menu' }}"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_collection_link",
+        "label": "Enable Collection Link",
+        "info": "This will add a link to the collection page in the sub navigation.",
+        "visible_if": "{{ block.settings.navigation_style == 'menu' }}"
+      },
+      {
+        "type": "text",
+        "id": "collection_title",
+        "label": "Collection Title",
+        "default": "Shop All",
+        "visible_if": "{{ block.settings.enable_collection_link }}"
+      },
+      {
+        "type": "url",
+        "id": "collection_link",
+        "label": "Collection link",
+        "visible_if": "{{ block.settings.enable_collection_link }}"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_women_link",
+        "label": "Enable Women Link",
+        "visible_if": "{{ block.settings.enable_collection_link }}"
+      },
+      {
+        "type": "text",
+        "id": "women_collection_title",
+        "label": "Collection Title",
+        "default": "Shop Women's",
+        "visible_if": "{{ block.settings.enable_women_link }}"
+      },
+      {
+        "type": "url",
+        "id": "women_link",
+        "label": "Women's collection link",
+        "visible_if": "{{ block.settings.enable_women_link }}"
+      }
+    ],
+    "presets": [
+      {
+        "name": "Sub Navigation",
+        "category": "Navigation"
+      }
+    ]
+  }
+{% endschema %}

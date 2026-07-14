@@ -1,0 +1,42 @@
+{% doc %}
+  Discount tier block for the Bulk Discount section.
+  Displays a discount percentage and minimum unit quantity.
+
+  @example
+  {% content_for 'block', type: '_discount-tier', id: 'tier-1' %}
+{% enddoc %}
+
+<div class="discount-tier flex-1" {{ block.shopify_attributes }}>
+  <div class="tier-label bg-[#f2f2f2] p-3 text-16 font-bold">
+    {{ block.settings.discount_percentage }}
+  </div>
+  <div class="tier-units p-3 text-16">
+    {{ block.settings.unit_quantity }}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Discount Tier",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "discount_percentage",
+      "label": "Discount Percentage",
+      "default": "5%"
+    },
+    {
+      "type": "text",
+      "id": "unit_quantity",
+      "label": "Minimum Units",
+      "default": "5 Units"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Discount Tier"
+    }
+  ]
+}
+{% endschema %}

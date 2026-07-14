@@ -1,115 +1,219 @@
-
-{% render 'button', link: block.settings.link %}
+{%
+  render 'button'
+  , label: block.settings.label
+  , url: block.settings.link
+  , style: block.settings.style_class
+  , color: block.settings.color
+  , background_color: block.settings.background_color
+  , border_color: block.settings.border_color
+  , size: block.settings.size
+  , responsive_size: block.settings.responsive_size
+  , target: block.settings.open_in_new_tab
+  , class: block.settings.class
+  , width_small: block.settings.width_small
+  , custom_width_small: block.settings.custom_width_small
+  , width_medium: block.settings.width_medium
+  , custom_width_medium: block.settings.custom_width_medium
+  , width_large: block.settings.width_large
+  , custom_width_large: block.settings.custom_width_large
+  , tracking_id: block.settings.tracking_id
+%}
 
 {% schema %}
-{
-  "name": "t:names.button",
-  "tag": null,
-  "settings": [
-    {
-      "type": "text",
-      "id": "label",
-      "label": "t:settings.label",
-      "default": "t:text_defaults.button_label"
-    },
-    {
-      "type": "url",
-      "id": "link",
-      "label": "t:settings.link"
-    },
-    {
-      "type": "checkbox",
-      "id": "open_in_new_tab",
-      "label": "t:settings.open_new_tab",
-      "default": false
-    },
-    {
-      "type": "select",
-      "id": "style_class",
-      "label": "t:settings.style",
-      "options": [
-        {
-          "value": "button",
-          "label": "t:options.primary"
-        },
-        {
-          "value": "button-secondary",
-          "label": "t:options.secondary"
-        },
-        {
-          "value": "link",
-          "label": "t:options.link"
-        }
-      ],
-      "default": "button"
-    },
-    {
-      "type": "header",
-      "content": "t:content.size"
-    },
-    {
-      "type": "select",
-      "id": "width",
-      "label": "t:settings.width_desktop",
-      "options": [
-        {
-          "value": "fit-content",
-          "label": "t:options.fit_content"
-        },
-        {
-          "value": "custom",
-          "label": "t:options.custom"
-        }
-      ],
-      "default": "fit-content"
-    },
-    {
-      "type": "range",
-      "id": "custom_width",
-      "label": "t:settings.custom_width",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "%",
-      "default": 100,
-      "visible_if": "{{ block.settings.width == \"custom\" }}"
-    },
-    {
-      "type": "select",
-      "id": "width_mobile",
-      "label": "t:settings.width_mobile",
-      "options": [
-        {
-          "value": "fit-content",
-          "label": "t:options.fit_content"
-        },
-        {
-          "value": "custom",
-          "label": "t:options.custom"
-        }
-      ],
-      "default": "fit-content"
-    },
-    {
-      "type": "range",
-      "id": "custom_width_mobile",
-      "label": "t:settings.custom_width",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "%",
-      "default": 100,
-      "visible_if": "{{ block.settings.width_mobile == \"custom\" }}"
-    }
-  ],
-  "presets": [
-    {
-      "name": "t:names.button",
-      "category": "t:categories.basic",
-      "settings": {
-        "link": "shopify://collections/all"
+  {
+    "name": "t:names.button",
+    "settings": [
+      {
+        "type": "text",
+        "id": "label",
+        "label": "t:settings.label",
+        "default": "t:text_defaults.button_label"
+      },
+      {
+        "type": "url",
+        "id": "link",
+        "label": "t:settings.link"
+      },
+      {
+        "type": "text",
+        "id": "tracking_id",
+        "label": "Tracking ID",
+        "info": "Optional ID for analytics tracking through data-track"
+      },
+      {
+        "type": "checkbox",
+        "id": "open_in_new_tab",
+        "label": "t:settings.open_new_tab",
+        "default": false
+      },
+      {
+        "type": "select",
+        "id": "style_class",
+        "label": "button style",
+        "options": [
+          {
+            "value": "primary",
+            "label": "Primary"
+          },
+          {
+            "value": "secondary",
+            "label": "Secondary"
+          },
+          {
+            "value": "link",
+            "label": "link"
+          }
+        ],
+        "default": "primary"
+      },
+      {
+        "type": "select",
+        "id": "color",
+        "label": "t:settings.color",
+        "options": [
+          {
+            "value": "orange",
+            "label": "Orange"
+          },
+          {
+            "value": "asphalt",
+            "label": "Asphalt"
+          },
+          {
+            "value": "white",
+            "label": "White"
+          }
+        ],
+        "default": "orange"
+      },
+      {
+        "type": "select",
+        "id": "size",
+        "label": "t:settings.size",
+        "options": [
+          {
+            "value": "small",
+            "label": "t:options.small"
+          },
+          {
+            "value": "medium",
+            "label": "t:options.medium"
+          },
+          {
+            "value": "large",
+            "label": "t:options.large"
+          }
+        ],
+        "default": "medium"
+      },
+      {
+        "type": "checkbox",
+        "id": "responsive_size",
+        "label": "Responsive Size",
+        "info": "Increases size on large screens",
+        "default": false
+      },
+      {
+        "type": "text",
+        "id": "class",
+        "label": "t:settings.additional_classes",
+        "info": "t:settings.additional_classes_info"
+      },
+      {
+        "type": "header",
+        "content": "t:content.size"
+      },
+      {
+        "type": "select",
+        "id": "width_small",
+        "label": "Width - Small Screens",
+        "options": [
+          {
+            "value": "fit",
+            "label": "Fit"
+          },
+          {
+            "value": "fill",
+            "label": "Fill"
+          },
+          {
+            "value": "custom",
+            "label": "Custom"
+          }
+        ],
+        "default": "fit"
+      },
+      {
+        "type": "number",
+        "id": "custom_width_small",
+        "label": "Custom Width - Small Screens",
+        "info": "Max-width in px",
+        "visible_if": "{{ block.settings.width_small == \"custom\" }}"
+      },
+      {
+        "type": "select",
+        "id": "width_medium",
+        "label": "Width - Medium Screens",
+        "options": [
+          {
+            "value": "fit",
+            "label": "Fit"
+          },
+          {
+            "value": "fill",
+            "label": "Fill"
+          },
+          {
+            "value": "custom",
+            "label": "Custom"
+          }
+        ],
+        "default": "fit"
+      },
+      {
+        "type": "number",
+        "id": "custom_width_medium",
+        "label": "Custom Width - Medium Screens",
+        "info": "Max-width in px",
+        "visible_if": "{{ block.settings.width_medium == \"custom\" }}"
+      },
+      {
+        "type": "select",
+        "id": "width_large",
+        "label": "Width - Large Screens",
+        "options": [
+          {
+            "value": "fit",
+            "label": "Fit"
+          },
+          {
+            "value": "fill",
+            "label": "Fill"
+          },
+          {
+            "value": "custom",
+            "label": "Custom"
+          }
+        ],
+        "default": "fit"
+      },
+      {
+        "type": "number",
+        "id": "custom_width_large",
+        "label": "Custom Width - Large Screens",
+        "info": "Max-width in px",
+        "visible_if": "{{ block.settings.width_large == \"custom\" }}"
       }
-    }
-  ]
-}
+    ],
+
+    "presets": [
+      {
+        "name": "t:names.button",
+        "category": "t:categories.basic",
+        "settings": {
+          "link": "shopify://collections/all"
+        }
+      }
+    ]
+  }
 {% endschema %}

@@ -1,0 +1,219 @@
+{% liquid
+  assign vertical_position = section.settings.vertical_position
+  assign horizontal_position = section.settings.horizontal_position
+%}
+
+<div class="swiper-slide relative flex items-center justify-center" data-slide-delay="{{ block.settings.slide_delay_override }}" style="background-color: {{ block.settings.background_color }};">
+  <div class="hero-carousel__media-wrapper absolute inset-0 w-full h-full flex items-center justify-center">
+    <div class="hero-carousel__media relative w-full max-w-[1540px] h-full overflow-hidden">
+      {% if block.settings.media_type == 'video' and block.settings.video != blank %}
+        {% if block.settings.video != blank %}
+          <div class="hero-carousel__video absolute inset-0 w-full h-full {% if block.settings.video_mobile != blank  %}hidden md:block{% endif %}">
+            {{ block.settings.video | video_tag: autoplay: true, loop: true, muted: true, controls: false, playsinline: true, preload: 'auto', class: 'w-full h-full object-cover' }}
+          </div>
+        {% endif %}
+        {% if block.settings.video_mobile != blank  %}
+          <div class="hero-carousel__video absolute inset-0 w-full h-full block md:hidden">
+            {{ block.settings.video_mobile | video_tag: autoplay: true, loop: true, muted: true, controls: false, playsinline: true, preload: 'auto', class: 'w-full h-full object-cover' }}
+          </div>
+        {% endif %}
+      {% elsif block.settings.image != blank  %}
+        <div class="hero-carousel__image absolute inset-0 w-full h-full">
+          {{ block.settings.image | image_url: width: 2400 | image_tag: loading: 'eager', widths: '375, 550, 750, 1100, 1500, 1780, 2000, 2400', class: 'w-full h-full object-cover', alt: image.alt | escape }}
+        </div>
+      {% else %}
+        <div class="hero-carousel__image absolute inset-0 w-full h-full bg-gray-200">
+          {{ 'hero-apparel-1' | placeholder_svg_tag: 'w-full h-full object-cover' }}
+        </div>
+      {% endif %}
+
+      {% if block.settings.edge_gradient_enabled %}
+        <div
+          class="hero-carousel__fade-left absolute top-0 left-0 bottom-0 w-[220px] pointer-events-none opacity-0 transition-opacity duration-300 z-[2]"
+          style="background: linear-gradient(to right, {{ block.settings.background_color }} 0%, transparent 100%);">
+        </div>
+        <div
+          class="hero-carousel__fade-right absolute top-0 right-0 bottom-0 w-[220px] pointer-events-none opacity-0 transition-opacity duration-300 z-[2]"
+          style="background: linear-gradient(to left, {{ block.settings.background_color }} 0%, transparent 100%);">
+        </div>
+      {% endif %}
+
+      {% if block.settings.text_gradient_enabled %}
+        <div class="absolute h-full w-full pointer-events-none hidden lg:block {% if horizontal_position == 'right' %}flip-x{% endif %}" style="background: {{ block.settings.gradient_color }};"></div>
+        <div class="absolute h-full w-full pointer-events-none block lg:hidden {% if vertical_position == 'top' %}flip-y{% endif %}" style="background: {{ block.settings.gradient_color_mobile }};"></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="hero-carousel__content-wrapper relative z-10 h-full max-w-[1440px] flex items-end mx-auto p-3 md:p-8 lg:p-12">
+    <div class="hero-carousel__content w-[480px] max-w-full px-4 sm:px-0 mx-auto lg:mx-0 {% if horizontal_position == 'right' %}lg:ml-auto lg:text-right{% else %}lg:mr-auto lg:text-left{% endif %} {% if vertical_position == 'top' %}mb-auto{% else %}mb-5 md:mb-9 lg:mb-8{% endif %} flex flex-col items-center text-center">
+      <div class="flex flex-col gap-0.5 w-full">
+        {% if block.settings.eyebrow_text != blank %}
+          <p class="text-subheading-2 uppercase {{ block.settings.text_color }}">
+            {{ block.settings.eyebrow_text }}
+          </p>
+        {% endif %}
+
+        {% if block.settings.heading != blank %}
+          <h1 class="{{ block.settings.text_color }}">
+            {{ block.settings.heading }}
+          </h1>
+        {% endif %}
+
+        {% if block.settings.subheading != blank %}
+          <div class="text-16-regular {{ block.settings.text_color }}">
+            {{ block.settings.subheading }}
+          </div>
+        {% endif %}
+      </div>
+
+      {% if block.blocks != empty %}
+        <div class="hero-carousel__cta-group flex flex-col sm:flex-row gap-3 mt-5 md:mt-6 lg:mt-10 w-full justify-center {% if horizontal_position == 'right' %}lg:justify-end{% else %}lg:justify-start{% endif %}">
+          {% content_for 'blocks'%}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+{% schema %}
+  {
+  "name": "t:names.hero",
+  "tag": null,
+  "blocks": [
+    {
+      "type": "button"
+    }
+  ],
+  "settings": [
+    {
+      "type": "header",
+      "content": "t:content.media"
+    },
+    {
+      "type": "select",
+      "id": "media_type",
+      "label": "t:settings.media_type",
+      "options": [
+        {
+          "value": "image",
+          "label": "t:options.image"
+        },
+        {
+          "value": "video",
+          "label": "t:options.video"
+        }
+      ],
+      "default": "image"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image",
+      "info": "Recommended: 2400x1000px",
+      "visible_if": "{{ block.settings.media_type == 'image' }}"
+    },
+    {
+      "type": "video",
+      "id": "video",
+      "label": "t:settings.desktop_video",
+      "info": "Video will autoplay, loop, and be muted",
+      "visible_if": "{{ block.settings.media_type == 'video' }}"
+    },
+    {
+      "type": "video",
+      "id": "video_mobile",
+      "label": "t:settings.mobile_video",
+      "info": "Video will autoplay, loop, and be muted",
+      "visible_if": "{{ block.settings.media_type == 'video' }}"
+    },
+    {
+      "type": "range",
+      "id": "slide_delay_override",
+      "label": "Slide duration override",
+      "info": "Override the default autoplay delay for this specific slide. Leave at 0 to use the section's default delay.",
+      "min": 0,
+      "max": 60,
+      "step": 1,
+      "unit": "s",
+      "default": 0
+    },
+    {
+      "type": "header",
+      "content": "t:content.content"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow_text",
+      "label": "t:settings.eyebrow_text",
+      "default": "New Collection"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:settings.heading",
+      "default": "Hero Heading"
+    },
+    {
+      "type": "richtext",
+      "id": "subheading",
+      "label": "t:settings.subheading",
+      "default": "<p>Describe your hero section with engaging copy that highlights your value proposition.</p>"
+    },
+    {
+      "type": "header",
+      "content": "t:content.colors"
+    },
+    {
+      "type": "select",
+      "id": "text_color",
+      "label": "t:settings.text_color",
+      "options": [
+        { "value": "text-black", "label": "Black" },
+        { "value": "text-asphalt", "label": "Asphalt" },
+        { "value": "text-medium-smoke", "label": "Medium Smoke" },
+        { "value": "text-light-smoke", "label": "Light Smoke" },
+        { "value": "text-white","label": "White" }
+      ],
+      "default": "text-white"
+    },
+    {
+      "type": "checkbox",
+      "id": "edge_gradient_enabled",
+      "label": "Enable Edge Gradient",
+      "default": true
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background & Edge Fade Color",
+      "default": "#000000",
+      "info": "Color that extends past the hero image on left and right edges (for ultra-wide screens)"
+    },
+    {
+      "type": "checkbox",
+      "id": "text_gradient_enabled",
+      "label": "Enable Text Background Gradient",
+      "default": true
+    },
+    {
+      "type": "color_background",
+      "id": "gradient_color",
+      "label": "Gradient Desktop",
+      "default": "linear-gradient(252deg, rgba(0, 0, 0, 0.00) 50%, #000 100%)"
+    },
+    {
+      "type": "color_background",
+      "id": "gradient_color_mobile",
+      "label": "Gradient Mobile",
+      "default": "linear-gradient(180deg, rgba(4, 11, 28, 0.00) 40%, rgba(0, 0, 0, 0.55) 75%)"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Hero Slide"
+    }
+  ]
+}
+{% endschema %}

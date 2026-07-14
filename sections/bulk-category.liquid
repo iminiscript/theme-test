@@ -1,0 +1,40 @@
+<!-- Section: Product Categories -->
+<section class="product-categories-section  py-12 md:py-16">
+  <div class="container-content">
+    <div class="categories-content text-center px-3 md:px-0">
+      <h4 class="pb-8">{{ section.settings.title }}</h4>
+      
+      <div class="categories-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6">
+        {% content_for 'blocks' %}
+      </div>
+    </div>
+  </div>
+</section>
+
+
+{% schema %}
+{
+  "name": "Bulk Product Categories",
+  "tag": "section",
+  "class": "section-product-categories",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "WHAT PRODUCTS ARE INCLUDED IN EACH CATEGORY?"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "_bulk-category"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bulk Product Categories",
+      "category": "Products Collections"
+    }
+  ]
+}
+{% endschema %}

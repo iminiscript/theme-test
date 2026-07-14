@@ -1,0 +1,28 @@
+<a
+  href="{{ block.settings.link }}"
+  class="shopByFeature__link inline-flex p-[0.4375rem_0.75rem] bg-light-smoke border-[0.03125rem] border-[#121212] rounded font-normal text-sm leading-5 lg:bg-white no-underline text-asphalt"
+  aria-label="{{ block.settings.title | escape }}">{{ block.settings.title }}</a>
+
+{% schema %}
+  {
+    "name": "Feature Link",
+    "settings": [
+      {
+        "type": "text",
+        "id": "title",
+        "label": "Title"
+      },
+      {
+        "type": "url",
+        "id": "link",
+        "label": "Link"
+      }
+    ],
+    "presets": [
+      {
+        "name": "Feature Link",
+        "category": "Navigation"
+      }
+    ]
+  }
+{% endschema %}

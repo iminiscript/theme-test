@@ -1,0 +1,45 @@
+{%- doc -%}
+  Renders the active filters section with clear all button and filter chips.
+
+  @param {object} filters - The collection filters
+  @param {number} active_filters_count - Number of active filters
+  @param {boolean} has_active_filters - Whether there are active filters
+{%- enddoc -%}
+
+{% if has_active_filters %}
+  <div class="flex flex-col gap-2 border-y border-[#E1E1D9] text-asphalt">
+    <div class="flex items-center justify-between h-[44px]">
+      <p class="text-14-regular">Applied Filters ({{ active_filters_count }})</p>
+      <facet-clear-component>
+        <button
+          type="button"
+          class="text-12-regular font-bold uppercase underline"
+          ref="clearButton"
+          on:click="/clearFilter"
+        >
+          Clear All
+        </button>
+      </facet-clear-component>
+    </div>
+
+    <div class="flex flex-wrap gap-2 pb-5">
+      {%- for filter in filters -%}
+        {%- for value in filter.active_values -%}
+          <facet-remove-component
+            class="inline-flex items-center gap-2 py-[6px] px-3 text-14-light transition-colors cursor-pointer border border-medium-smoke"
+            data-url="{{ value.url_to_remove }}"
+            tabindex="0"
+            role="button"
+            on:click="/removeFilter?form="
+          >
+            <span>{{ value.label | escape }}</span>
+            <svg class="w-[14px] h-[14px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            <span class="sr-only">Remove filter</span>
+          </facet-remove-component>
+        {%- endfor -%}
+      {%- endfor -%}
+    </div>
+  </div>
+{% endif %}

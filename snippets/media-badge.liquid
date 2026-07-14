@@ -1,0 +1,128 @@
+{%- doc -%}
+  Renders media badges for product images, including limited edition, sold out, metafield badges,
+  alt text badges, and USA flag badges. Badges are displayed in the top-left corner of media elements.
+
+  @param {object} product - The product object containing tags and metafields
+  @param {object} selected_variant - The currently selected product variant
+  @param {boolean} enable_alt_text_badge - Whether to enable alt text badge extraction (default: false)
+  @param {string} alt_text - Alt text string that may contain badge text after '#' separator (default: '')
+  @param {string} metafield_badge - Badge text from product metafields (default: '')
+  @param {boolean} enable_sold_out - Whether to show sold out badge when product is unavailable (default: false)
+  @param {boolean} is_available - Whether the product variant is currently available
+  @param {boolean} enable_usa_flag - Whether to show USA flag badge for products tagged 'made in USA' (default: false)
+  @param {string} selected_option - Currently selected color option value for limited edition checking (default: '')
+  @param {boolean} enable_limited_edition - Whether to check and display limited edition badge (default: false)
+
+  @example
+  {% render 'media-badge',
+    product: product,
+    selected_variant: selected_variant,
+    enable_alt_text_badge: true,
+    alt_text: 'Product image #New',
+    enable_sold_out: true,
+    is_available: product.selected_or_first_available_variant.available,
+    enable_usa_flag: true,
+    selected_option: 'Red',
+    enable_limited_edition: true
+  %}
+{%- enddoc -%}
+{% liquid
+  assign product = product
+  assign selected_variant = selected_variant
+  assign product_options = product.options_with_values
+  assign color_metaobject = product.metafields.custom.color.value
+
+  assign enable_alt_text_badge = enable_alt_text_badge | default: false
+  assign alt_text = alt_text | default: ''
+  assign enable_sold_out = enable_sold_out | default: false
+  assign is_available = is_available
+  assign metafield_badge = metafield_badge | default: ''
+  assign enable_usa_flag = enable_usa_flag | default: false
+  assign selected_option = selected_option | default: ''
+  assign enable_limited_edition = enable_limited_edition | default: false
+
+  assign enable_usa_flag_badge = false
+  if enable_usa_flag
+    for tag in product.tags
+      if tag == 'made in USA'
+        assign enable_usa_flag_badge = true
+        break
+      endif
+    endfor
+  endif
+
+  assign alt_text_badge = null
+  if enable_alt_text_badge
+    assign alt_text_array = alt_text | split: '#'
+    if alt_text_array.size > 1 and alt_text_array.first != alt_text_array.last
+      assign alt_text_badge = alt_text_array.last
+    endif
+  endif
+
+  assign limited_edition = false
+  if enable_limited_edition
+    assign has_color_option = false
+
+    for option in product_options
+      assign option_name_lower = option.name | downcase
+      if option_name_lower contains 'color'
+        assign has_color_option = true
+        break
+      endif
+    endfor
+
+    if has_color_option
+      for color_option in color_metaobject
+        if selected_option contains color_option.name.value and color_option.limited_edition.value == true
+          assign limited_edition = true
+          break
+        endif
+      endfor
+    endif
+  endif
+
+  assign show_alt_badge = false
+  if enable_alt_text_badge and alt_text_badge != blank
+    assign show_alt_badge = true
+  endif
+
+  assign show_sold_out_badge = false
+  if enable_sold_out and is_available == false
+    assign show_sold_out_badge = true
+  endif
+
+  assign show_badges = false
+  if limited_edition or metafield_badge != blank or enable_usa_flag_badge or show_alt_badge or show_sold_out_badge
+    assign show_badges = true
+  endif
+%}
+
+{% if show_badges %}
+  <div class="media__badge absolute top-0 left-2 z-10 flex flex-col gap-1 items-start">
+    {% if limited_edition %}
+      <span class="media__badge-text text-badge bg-(--color-asphalt) text-white px-2 py-1 uppercase">
+        Limited Edition
+      </span>
+    {% endif %}
+    {% if enable_sold_out and is_available == false %}
+      <span class="media__badge-text text-badge bg-(--color-brunt-orange) text-white px-2 py-1 uppercase">
+        Sold Out
+      </span>
+    {% endif %}
+    {% if metafield_badge != blank %}
+      <span class="media__badge-text text-badge bg-(--color-brunt-orange) text-white px-2 py-1 uppercase">
+        {{ metafield_badge | escape }}
+      </span>
+    {% endif %}
+    {% if enable_alt_text_badge and alt_text_badge != blank %}
+      <span class="media__badge-text text-badge bg-(--color-brunt-orange) text-white px-2 py-1 uppercase">
+        {{ alt_text_badge | escape }}
+      </span>
+    {% endif %}
+    {% if enable_usa_flag_badge %}
+      <span class="media__badge-text">
+        {% render 'icons', icon: 'brunt-usa-flag' %}
+      </span>
+    {% endif %}
+  </div>
+{% endif %}

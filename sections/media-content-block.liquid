@@ -1,0 +1,465 @@
+{%- assign _section = section.settings -%}
+{%- assign has_jump_links = false -%}
+{%- for block in section.blocks -%}
+  {% if block.settings.title != blank %}
+    {%- assign has_jump_links = true -%}
+    {% break %}
+  {% endif %}
+{%- endfor -%}
+
+{% if section.blocks.size > 1 and has_jump_links and _section.enable_jump_links %}
+  <div class="{{ _section.background_color }} {{ _section.text_color }}">
+    <div class="container-content text-center pb-3 md:pb-8 pt-8 px-3 md:px-16">
+      {% if _section.jumpTitle != blank %}
+        <h3 class="text-16-bold mb-2.5 md:mb-3.5">{{ _section.jumpTitle }}</h3>
+      {% endif %}
+      <nav aria-label="Jump to section">
+        <ul class="flex flex-wrap gap-x-6 gap-y-2 justify-center">
+          {% for block in section.blocks %}
+            {% assign jump_id = 'block-' | append: block.id %}
+            {% if block.settings.title != blank %}
+              <li>
+                <a
+                  href="#{{ jump_id }}"
+                  class="inline-flex uppercase text-14-light no-underline {{ _section.text_color }}"
+                  aria-label="Jump to {{ block.settings.title }}"
+                >
+                  {{ block.settings.title }}
+                </a>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </nav>
+    </div>
+  </div>
+{% endif %}
+
+{% for block in section.blocks %}
+  <div
+    class="py-12 md:py-16 px-3 md:px-8 lg:px-12 {{ block.settings.background_color }} {{ block.settings.text_color }}"
+    id="block-{{ block.id }}"
+  >
+    <div class="container-content flex flex-col gap-5 md:gap-8">
+      {% if block.settings.title != blank or block.settings.description != blank %}
+        <div class="text-center">
+          {% if block.settings.title != blank %}
+            <h4 class="mb-2">{{ block.settings.title }}</h4>
+          {% endif %}
+          {% if block.settings.description != blank %}
+            <div>{{ block.settings.description }}</div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% case block.settings.source %}
+        {% when 'youtube' %}
+          {% if block.settings.youtube_id != blank %}
+            <div class="relative aspect-[2/1] js-video__container  bg-asphalt">
+              <button
+                tabindex="0"
+                class="absolute inset-0 js-video__trigger cursor-pointer w-full h-full border-0 p-0 bg-transparent focus-visible:outline-2 focus-visible:outline-brunt-orange"
+                aria-label="Play video{% if block.settings.title != blank %}: {{ block.settings.title }}{% endif %}"
+                type="button"
+              >
+                {% if block.settings.thumbnail %}
+                  {% render 'image',
+                    imageData: block.settings.thumbnail,
+                    class: 'w-full h-full object-cover',
+                    alt_text: 'Video thumbnail',
+                    fit: 'cover'
+                  %}
+                {% else %}
+                  {%- assign youtube_thumbnail_url = 'https://i.ytimg.com/vi/'
+                    | append: block.settings.youtube_id
+                    | append: '/maxresdefault.jpg'
+                  -%}
+                  <img
+                    src="{{ youtube_thumbnail_url }}"
+                    alt="Video thumbnail{% if block.settings.title != blank %} for {{ block.settings.title }}{% endif %}"
+                    class="w-full h-full object-cover block"
+                    onerror="this.onerror=null; this.src='https://i.ytimg.com/vi/{{ block.settings.youtube_id }}/hqdefault.jpg';"
+                  >
+                {% endif %}
+                <div
+                  class="absolute inset-0 flex items-center justify-center transition-all duration-300 pointer-events-none"
+                  aria-hidden="true"
+                >
+                  <div class="transform group-hover:scale-110 group-focus-visible:scale-110 transition-all duration-300">
+                    {% render 'icon', icon: 'video' %}
+                  </div>
+                </div>
+              </button>
+
+              {% assign player_id = block.id | append: '-player' %}
+              <div
+                class="absolute inset-0 hidden js-video__iframe"
+                data-video-id="{{ block.settings.youtube_id }}"
+                data-player-id="{{ player_id }}"
+              >
+                <div id="{{ player_id }}" class="w-full h-full"></div>
+              </div>
+            </div>
+          {% endif %}
+        {% when 'shopify' %}
+          {% if block.settings.shopify_video != blank %}
+            <div class="relative aspect-[2/1] js-video__container shadow-lg bg-black">
+              <button
+                tabindex="0"
+                class="absolute inset-0 js-video__trigger cursor-pointer w-full h-full border-0 p-0 bg-transparent focus-visible:outline-2 focus-visible:outline-brunt-orange"
+                aria-label="Play video{% if block.settings.title != blank %}: {{ block.settings.title }}{% endif %}"
+                type="button"
+              >
+                {% if block.settings.thumbnail %}
+                  {% render 'image',
+                    imageData: block.settings.thumbnail,
+                    class: 'w-full h-full object-cover',
+                    alt_text: 'Video thumbnail',
+                    fit: 'cover'
+                  %}
+                {% elsif block.settings.shopify_video.preview_image %}
+                  {% render 'image',
+                    imageData: block.settings.shopify_video.preview_image,
+                    class: 'w-full h-full object-cover',
+                    alt_text: 'Video thumbnail',
+                    fit: 'cover'
+                  %}
+                {% else %}
+                  <div class="w-full h-full bg-gray-900 flex items-center justify-center">
+                    <span class="text-gray-500 text-sm">Video Preview</span>
+                  </div>
+                {% endif %}
+                <div
+                  class="absolute inset-0 flex items-center justify-center transition-all duration-300 pointer-events-none"
+                  aria-hidden="true"
+                >
+                  <div class="transform group-hover:scale-110 group-focus-visible:scale-110 transition-all duration-300">
+                    {% render 'icon', icon: 'video' %}
+                  </div>
+                </div>
+              </button>
+              <div class="absolute inset-0 js-video__native" style="display: none;">
+                {{
+                  block.settings.shopify_video
+                  | video_tag:
+                    controls: true,
+                    autoplay: false,
+                    loop: false,
+                    muted: false,
+                    preload: 'auto',
+                    class: 'w-full h-full object-cover js-video__nativePlayer'
+                }}
+              </div>
+            </div>
+          {% endif %}
+        {% when 'image' %}
+          {% if block.settings.image_id != blank %}
+            <div class="relative aspect-[2/1] overflow-hidden">
+              <div class="w-full h-full">
+                {% render 'image', imageData: block.settings.image_id, class: 'w-full h-full object-cover', alt_text: block.settings.title | default: 'Content image', fit: 'cover' %}
+              </div>
+            </div>
+          {% endif %}
+      {% endcase %}
+
+      {% if block.settings.products != blank %}
+        <div class="product-grouping flex items-stretch gap-6 md:gap-8 mb-8">
+          {% for product in block.settings.products %}
+            <div class="product-card-wrapper flex-1 flex{% if forloop.index > 2 %} hidden md:flex{% endif %}">
+              {% render 'product-card', product: product, section_name: _section.title %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if block.settings.enable_cta == true and block.settings.btn_label != blank %}
+        <div class="flex justify-center">
+          {% if block.settings.btn_link == blank %}
+            {% assign scroll_to_top = true %}
+          {% endif %}
+
+          {% render 'button',
+            label: block.settings.btn_label,
+            url: block.settings.btn_link,
+            scroll_to_top: scroll_to_top,
+            style: block.settings.btn_style_class,
+            color: block.settings.btn_color,
+            size: block.settings.btn_size,
+            target: block.settings.btn_open_in_new_tab,
+            class: 'w-full md:w-[336px]'
+          %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endfor %}
+
+{{ 'media-content.js' | asset_url | script_tag }}
+
+
+{% schema %}
+{
+  "name": "Media Content Block",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enable_jump_links",
+      "label": "Enable jump links",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "jumpTitle",
+      "label": "Jump link Section Title",
+      "visible_if": "{{ section.settings.enable_jump_links }}"
+    },
+    {
+      "type": "select",
+      "id": "background_color",
+      "label": "Background Color",
+      "options": [
+        { "value": "bg-white", "label": "White" },
+        { "value": "bg-light-smoke", "label": "Light Smoke" },
+        { "value": "bg-medium-smoke", "label": "Medium Smoke" },
+        { "value": "bg-asphalt", "label": "Asphalt" }
+      ],
+      "default": "bg-white",
+      "visible_if": "{{ section.settings.enable_jump_links }}"
+    },
+    {
+      "type": "select",
+      "id": "text_color",
+      "label": "Text Color",
+      "options": [
+        { "value": "text-black", "label": "Black" },
+        { "value": "text-asphalt", "label": "Asphalt" },
+        { "value": "text-medium-smoke", "label": "Medium Smoke" },
+        { "value": "text-light-smoke", "label": "Light Smoke" },
+        { "value": "text-white", "label": "White" }
+      ],
+      "default": "text-asphalt",
+      "visible_if": "{{ section.settings.enable_jump_links }}"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "@app"
+    },
+    {
+      "type": "content",
+      "name": "Content",
+      "settings": [
+        {
+          "type": "header",
+          "content": "Section"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title"
+        },
+        {
+          "type": "richtext",
+          "id": "description",
+          "label": "Description"
+        },
+        {
+          "type": "select",
+          "id": "background_color",
+          "label": "Background Color",
+          "options": [
+            { "value": "bg-white", "label": "White" },
+            { "value": "bg-light-smoke", "label": "Light Smoke" },
+            { "value": "bg-medium-smoke", "label": "Medium Smoke" },
+            { "value": "bg-asphalt", "label": "Asphalt" }
+          ],
+          "default": "bg-white"
+        },
+        {
+          "type": "select",
+          "id": "text_color",
+          "label": "Text Color",
+          "options": [
+            { "value": "text-black", "label": "Black" },
+            { "value": "text-asphalt", "label": "Asphalt" },
+            { "value": "text-medium-smoke", "label": "Medium Smoke" },
+            { "value": "text-light-smoke", "label": "Light Smoke" },
+            { "value": "text-white", "label": "White" }
+          ],
+          "default": "text-asphalt"
+        },
+        {
+          "type": "header",
+          "content": "Content"
+        },
+        {
+          "type": "select",
+          "id": "source",
+          "label": "Source",
+          "options": [
+            {
+              "value": "youtube",
+              "label": "YouTube"
+            },
+            {
+              "value": "shopify",
+              "label": "Shopify Video"
+            },
+            {
+              "value": "image",
+              "label": "Image"
+            },
+            {
+              "value": "none",
+              "label": "None"
+            }
+          ],
+          "default": "youtube"
+        },
+        {
+          "type": "text",
+          "id": "youtube_id",
+          "label": "YouTube Video ID",
+          "info": "The part after v= in YouTube URL (e.g., 'dQw4w9WgXcQ')",
+          "visible_if": "{{ block.settings.source == 'youtube' }}"
+        },
+        {
+          "type": "video",
+          "id": "shopify_video",
+          "label": "Shopify Video",
+          "info": "Upload or select a video from your media library",
+          "visible_if": "{{ block.settings.source == 'shopify' }}"
+        },
+        {
+          "type": "image_picker",
+          "id": "thumbnail",
+          "label": "Video Thumbnail (Optional)",
+          "info": "Overrides the default thumbnail for the video.",
+          "visible_if": "{{ block.settings.source == 'youtube' or block.settings.source == 'shopify' }}"
+        },
+        {
+          "type": "image_picker",
+          "id": "image_id",
+          "label": "Image",
+          "visible_if": "{{ block.settings.source == 'image' }}"
+        },
+        {
+          "type": "header",
+          "content": "Products"
+        },
+        {
+          "type": "product_list",
+          "id": "products",
+          "label": "Products",
+          "limit": 3
+        },
+        {
+          "type": "header",
+          "content": "Button/Link"
+        },
+        {
+          "type": "checkbox",
+          "id": "enable_cta",
+          "label": "Enable CTA",
+          "default": false
+        },
+        {
+          "type": "text",
+          "id": "btn_label",
+          "label": "Button Text",
+          "default": "SHOP NOW",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "url",
+          "id": "btn_link",
+          "label": "Button Link",
+          "info": "Leave blank to create a 'scroll to top' button",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "checkbox",
+          "id": "btn_open_in_new_tab",
+          "label": "Open in new tab",
+          "default": false,
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "select",
+          "id": "btn_style_class",
+          "label": "Style",
+          "options": [
+            {
+              "value": "primary",
+              "label": "Primary"
+            },
+            {
+              "value": "secondary",
+              "label": "Secondary"
+            },
+            {
+              "value": "tertiary",
+              "label": "Tertiary"
+            }
+          ],
+          "default": "primary",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "select",
+          "id": "btn_color",
+          "label": "Color",
+          "options": [
+            {
+              "value": "orange",
+              "label": "Orange"
+            },
+            {
+              "value": "asphalt",
+              "label": "Dark"
+            },
+            {
+              "value": "white",
+              "label": "Light"
+            }
+          ],
+          "default": "orange",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "select",
+          "id": "btn_size",
+          "label": "Size",
+          "options": [
+            {
+              "value": "small",
+              "label": "Small"
+            },
+            {
+              "value": "medium",
+              "label": "Medium"
+            },
+            {
+              "value": "large",
+              "label": "Large"
+            }
+          ],
+          "default": "medium",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Media Content",
+      "category": "t:categories.storytelling",
+      "blocks": [
+        {
+          "type": "content"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

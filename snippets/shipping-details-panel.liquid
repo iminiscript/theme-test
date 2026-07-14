@@ -1,0 +1,88 @@
+<div
+        class="grid grid-cols-1 md:grid-cols-2 items-start gap-x-5 lg:gap-x-16 gap-y-10 md:gap-y-0"
+        data-shipping-details
+>
+  <!-- LEFT COLUMN: stacked sections (desktop) + full flow (mobile) -->
+  <div class="flex flex-col gap-y-10 md:gap-y-12 md:col-span-1">
+    <!-- SHIPPING DETAILS -->
+    <div class="shipping-details-section w-full">
+      <h3 class="text-subheading-1 uppercase pb-3 mb-3 md:mb-5 border-b border-medium-smoke">
+        Shipping Details
+      </h3>
+
+      <div class="shipping-carrier-info mb-6" data-carrier-info>
+        <div class="flex items-center gap-2">
+          <div class="w-5 h-5">
+            {% render 'icons',icon: 'shipping-truck', class: 'w-5 h-5' %}
+          </div>
+          <div>
+            <p class="text-16-light">
+              <span data-carrier-name>Shipped via Carrier</span>
+            </p>
+          </div>
+        </div>
+        <p class="text-16-light mt-1">
+          Tracking Number:
+          <a
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="ml-2 text-brunt-orange hover:underline font-bold transition-colors duration-200"
+            data-tracking-link
+          >
+            <span data-tracking-number></span>
+          </a>
+        </p>
+      </div>
+
+      <div class="shipping-address" data-shipping-address>
+        <p class="text-18-bold mb-1" data-recipient-name></p>
+        <p class="text-16-light" data-address-line1></p>
+        <p class="text-16-light" data-address-line2></p>
+      </div>
+    </div>
+
+    <!-- YOUR ORDER — MOBILE VERSION (between shipping & tracking) -->
+    <div class="your-order-section w-full md:hidden">
+      <div class="flex items-center justify-between pb-3 mb-3 md:mb-5 border-b border-medium-smoke">
+        <h3 class="text-subheading-1 uppercase">Your Order</h3>
+        <span class="text-16-regular-caps">QTY</span>
+      </div>
+
+      <div class="order-items-list space-y-4" data-order-items-mobile data-order-items></div>
+    </div>
+
+    <!-- TRACKING ACTIVITY -->
+    <div class="tracking-activity-section w-full">
+      <h3 class="text-subheading-1 uppercase pb-3 mb-3 md:mb-5 border-b border-medium-smoke">
+        Tracking Activity
+      </h3>
+
+      <div class="tracking-events space-y-5 md:space-y-6 mb-5 md:mb-6" id="tracking-events" data-tracking-events data-collapsed="true"></div>
+
+      <button
+        type="button"
+        class="show-more-button link link-md link-orange uppercase"
+        data-show-more
+        data-expanded="false"
+        aria-expanded="false"
+        aria-controls="tracking-events"
+      >
+        <span class="btn__label" data-show-more-text>Show More</span>
+        <span class="btn__icon btn__icon--right w-4.5 h-4.5 flex-shrink-0 transition-transform duration-300" data-show-more-icon>
+          {% render 'icons', icon:'chevron-down', width: 18, height: 18, fill:'#c74f1f'   %}
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: YOUR ORDER — DESKTOP VERSION -->
+  <div class="your-order-section w-full hidden md:block md:col-span-1">
+    <div class="flex items-center justify-between pb-3 mb-3 md:mb-5 border-b border-medium-smoke">
+      <h3 class="text-subheading-1 uppercase">Your Order</h3>
+      <span class="text-16-regular-caps">QTY</span>
+    </div>
+
+    <div class="order-items-list space-y-4" data-order-items-desktop data-order-items></div>
+  </div>
+</div>

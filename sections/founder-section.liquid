@@ -1,0 +1,111 @@
+<div class="bg-asphalt px-3 md:px-8 lg:px-12 py-12 md:py-16">
+  <div class="container-content flex flex-col lg:flex-row gap-8 lg:gap-6">
+    <div class="w-full lg:w-1/2 mx-auto">
+      {% render 'image',
+        imageData: section.settings.founder_image,
+        class: 'w-[240px] h-[320px] md:w-[368px] md:h-[491px] lg:w-[375px] lg:h-[500px] object-cover mx-auto',
+        alt_text: title,
+        fit: 'cover'
+      %}
+    </div>
+    <div class="w-full lg:w-1/2 mx-auto lg:mx-0 flex flex-col justify-center gap-5 md:gap-6">
+      <h3 class="text-heading-4 text-white text-center lg:text-left">
+        {{ section.settings.heading }}
+      </h3>
+      <p class="text-16-regular text-white text-center lg:text-left">
+        {{ section.settings.body_text | replace: '<p>', '' | replace: '</p>', '' }}
+      </p>
+      {% render 'image',
+        imageData: section.settings.signature_image,
+        class: 'w-[244px] object-cover mx-auto lg:mx-0',
+        alt_text: title,
+        fit: 'cover'
+      %}
+      <div>
+        <p class="text-18-bold text-white text-center lg:text-left">
+          {{ section.settings.founder_name }}
+        </p>
+        <p class="text-18-light text-white text-center lg:text-left">
+          {{ section.settings.founder_position }}
+        </p>
+      </div>
+      <div class="text-center lg:text-left">
+        {% content_for 'blocks' %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Founder Section",
+  "tag": "section",
+  "class": "section",
+  "max_blocks": 1,
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  },
+  "blocks": [
+    {
+      "type": "button"
+    }
+  ],
+  "settings": [
+    {
+      "type": "header",
+      "content": "Founder Image"
+    },
+    {
+      "type": "image_picker",
+      "id": "founder_image",
+      "label": "Founder Image",
+      "info": "Recommended: Square or 3:4 aspect ratio for best results"
+    },
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Why I Started BRUNT"
+    },
+    {
+      "type": "richtext",
+      "id": "body_text",
+      "label": "Body Text",
+      "default": "<p>Growing up in a blue collar household, I spent my teenage years roofing and landscaping alongside my childhood buddies. Most of my best friends are still in the trades, and I started BRUNT for them. I'm proud to be building a brand and community with and for the men and women across the country that are doing the hard work and making their own way. Welcome to the BRUNT family.</p>"
+    },
+    {
+      "type": "header",
+      "content": "Founder Details"
+    },
+    {
+      "type": "image_picker",
+      "id": "signature_image",
+      "label": "Signature Image",
+      "info": "PNG with transparent background recommended"
+    },
+    {
+      "type": "text",
+      "id": "founder_name",
+      "label": "Name",
+      "default": "Eric Girouard"
+    },
+    {
+      "type": "text",
+      "id": "founder_position",
+      "label": "Position",
+      "default": "Founder & CEO at BRUNT Workwear"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Founder Section",
+      "category": "Storytelling"
+    }
+  ]
+}
+{% endschema %}
+

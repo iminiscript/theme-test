@@ -1,0 +1,31 @@
+{%- liquid
+  assign has_bulk_discount = false
+  for discount in item.line_level_discount_allocations
+    assign discount_title = discount.discount_application.title | downcase
+    if discount_title contains 'bulk'
+      assign has_bulk_discount = true
+      break
+    endif
+  endfor
+-%}
+{% if has_bulk_discount %}
+  <ul
+    class="list-unstyled"
+    role="list"
+  >
+    {%- for discount in item.line_level_discount_allocations -%}
+      {%- assign discount_title = discount.discount_application.title | downcase -%}
+      {%- if discount_title contains 'bulk' -%}
+        {%- assign full_title = discount.discount_application.title -%}
+        {%- assign title_parts = full_title | split: ' / ' -%}
+        <li class="text-12-regular uppercase bg-[#f2f2f2] py-1 px-2 flex items-center justify-center my-2">
+          <span class="cart-items__discountSVG pr-2">
+            {% render 'icon', icon: 'discount-tick' %}
+          </span>
+          {{ title_parts[0] | escape }}
+        </li>
+      {%- endif -%}
+    {%- endfor -%}
+  </ul>
+{% endif %}
+

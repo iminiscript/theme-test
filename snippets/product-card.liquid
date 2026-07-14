@@ -1,127 +1,489 @@
 {%- doc -%}
-  This snippet is used to render a product card.
-  It is used in the product block, featured product block, and the product card block.
-  The product object is null or when placeholders are rendered.
+  Renders a product card based on the new design system.
+  
+  Features:
+  - Swiper carousel for product images
+  - Image source priority: variant metafields > alt text *index filter > all product media
+  - Color swatches with image switching per color option
+  - Sold out state when all variants are out of stock and inventory_policy = deny
+  - Star ratings from metafields
+  - Price range when prices vary
+  - Compare at price with strikethrough formatting
 
   @param {object} product - The product object
-  @param {object} children - The children of the product card
-  @param {object} [block] - The block object
-  @param {number} [product_card_gap] - The gap between the product card children (overrides block settings)
+  @param {string} section_name - Section Name where the product card is rendered
 {%- enddoc -%}
-
-{% assign block_settings = block.settings %}
-
-{% style %}
-  {% if request.visual_preview_mode %}
-    product-card[data-product-transition] {
-      width: 100%;
-      min-width: 250px;
-    }
-  {% endif %}
-{% endstyle %}
-
 {% liquid
-  assign has_quick_add = false
-  if settings.quick_add and product.available
-    assign has_quick_add = true
-  endif
-
-  assign has_mobile_quick_add = false
-  if has_quick_add and settings.mobile_quick_add
-    assign has_mobile_quick_add = true
-  endif
-
-  assign product_card_id = 'product-card-link-' | append: block.id | append: '-' | append: product.id
-  assign product_card_gap_value = product_card_gap | default: block_settings.product_card_gap
-
-  # Logic to determine which variant URL to use (matching swatch selection logic)
-  assign variant_to_link = product.selected_or_first_available_variant
-
-  if settings.transition_to_main_product
-    assign featured_image = variant_to_link.featured_image
-    if featured_image == blank
-      assign featured_image = product.featured_media.preview_image
+  # Determine image source
+  assign has_color_option = false
+  assign color_option_name = 'color'
+  for option in product.options_with_values
+    assign option_name_lower = option.name | downcase
+    if option_name_lower contains color_option_name
+      assign has_color_option = true
+      assign color_option = option
+      break
     endif
+  endfor
 
-    if featured_image != blank
-      assign featured_media_url = featured_image | image_url: width: 500
+  # Track product media index for fallback when variants don't have images
+  assign product_media_index = 0
+
+  assign is_available = product.available
+
+  # Get description from metafield
+  assign product_description = product.metafields.my_fields.short_description | default: ''
+  # Badge metafield - check if string value exists
+  assign badge_text = product.metafields.my_fields.product_badge
+  # Check if any color option has limited_edition metafield set to true
+  assign has_limited_edition_option = false
+  assign show_timer = false
+  assign timer_start = blank
+  assign timer_end = blank
+  assign is_product_launched = false
+  for swatch in product.metafields.custom.color.value
+    if swatch.limited_edition.value == true
+      assign has_limited_edition_option = true
+      assign show_timer = true
+      assign timer_start = product.metafields.custom.launch_timer_start
+      assign timer_end = product.metafields.custom.launch_timer_end
+      break
     endif
-  endif
+  endfor
 
-  assign onboarding = false
-  if product.id == empty or product == blank
-    assign onboarding = true
+  # Check if product is launched (timer ended or no timer exists)
+  assign is_timer_active = false
+  if timer_end != blank and timer_start != blank
+    # Timer dates exist - check if current time is after timer_end
+    assign now_timestamp = 'now' | date: '%s' | times: 1
+    assign timer_end_timestamp = timer_end.value | date: '%s' | times: 1
+    assign timer_start_timestamp = timer_start.value | date: '%s' | times: 1
+    if now_timestamp >= timer_end_timestamp
+      assign is_product_launched = true
+    elsif now_timestamp >= timer_start_timestamp
+      # Timer is currently active (started but not ended)
+      assign is_timer_active = true
+    endif
+  else
+    # No timer means product is always launched
+    assign is_product_launched = true
   endif
-%}
+  # Price calculations
+  assign on_sale_class = blank
+  if product.price < product.compare_at_price
+    assign on_sale_class = 'text-(--color-brunt-orange)'
+  endif
+  assign price_varies = product.price_varies
+  assign compare_at_price_varies = product.compare_at_price_varies
 
+  # check if product tag has made in USA
+  assign is_made_in_us = false
+  for tag in product.tags
+    if tag contains 'made in USA'
+      assign is_made_in_us = true
+      break
+    endif
+  endfor
+-%}
 <product-card
-  class="product-card size-style"
-  style="{% render 'size-style', settings: block_settings %}"
+  class="productCard flex flex-col h-full w-full{% unless is_product_launched %} productCard--timer-active{% endunless %} {% unless has_limited_edition_option == false %}bg-asphalt{% endunless %} {{ class }}"
   data-product-id="{{ product.id }}"
-  id="product-card-{{ block.id }}"
-  {% if settings.transition_to_main_product %}
-    data-product-transition="true"
-    data-featured-media-url="{{ featured_media_url }}"
-    on:click="/handleViewTransition"
+  {% if show_timer and timer_start != blank and timer_end != blank %}
+    data-timer-start="{{ timer_start.value }}"
+    data-timer-end="{{ timer_end.value }}"
+    data-has-timer="true"
   {% endif %}
-  {{ block.shopify_attributes }}
-  {% if onboarding %}
-    data-placeholder="true"
-  {% endif %}
+  data-bww-id="{{ section_name | handle | append:'-product-card' }}"
 >
   <a
-    id="{{ product_card_id | md5 }}"
-    {% unless onboarding %}
-      href="{{ variant_to_link.url }}"
-    {% endunless %}
-    class="product-card__link"
+    href="{{ product.url }}"
     ref="productCardLink"
+    class="productCard__link flex flex-col h-full no-underline text-inherit{% unless is_product_launched %} productCard__link--timer-active{% endunless %}"
+    aria-labelledby="productCard-title-{{ product.id }}"
+    {% unless is_product_launched %}
+      data-timer-click-handler="true"
+    {% endunless %}
   >
-    <span class="visually-hidden">
-      {{ product.title }}
-    </span>
+    {%- comment -%} Product Image Section with Swiper {%- endcomment -%}
+    <div class="productCard__image group relative aspect-square w-full overflow-hidden{% unless is_product_launched %} productCard__image-container--blurred{% endunless %}">
+      {%- if has_color_option -%}
+        {%- comment -%} Render swiper for each color option {%- endcomment -%}
+        {%- assign option_index = 0 -%}
+        {%- for option_value in color_option.values -%}
+          {%- assign variant = option_value.variant -%}
+          {%- assign option_media_id = option_index -%}
+
+          {%- comment -%} Determine media source: metafield > alt-filtered > all product media {%- endcomment -%}
+          {%- assign use_metafield = false -%}
+          {%- assign use_alt_filter = false -%}
+          {%- assign media_count = 0 -%}
+
+          {%- comment -%} Check metafield first {%- endcomment -%}
+          {%- if variant != blank -%}
+            {%- assign variant_image_metafield = variant.metafields.data.media -%}
+            {%- if variant_image_metafield != blank
+              and variant_image_metafield.value != blank
+              and variant_image_metafield.value.size > 0
+            -%}
+              {%- assign use_metafield = true -%}
+              {%- assign media_count = variant_image_metafield.value.size -%}
+            {%- endif -%}
+          {%- endif -%}
+
+          {%- comment -%} Check alt text filter if no metafield {%- endcomment -%}
+          {%- unless use_metafield -%}
+            {%- for media_item in product.media -%}
+              {%- assign media_alt = media_item.alt | default: '' -%}
+              {%- assign alt_parts = media_alt | split: '*' -%}
+              {%- if alt_parts.size > 1 -%}
+                {%- assign alt_index = alt_parts.last | strip | plus: 0 -%}
+                {%- if alt_index == option_index -%}
+                  {%- assign media_count = media_count | plus: 1 -%}
+                {%- endif -%}
+              {%- endif -%}
+            {%- endfor -%}
+            {%- if media_count > 0 -%}
+              {%- assign use_alt_filter = true -%}
+            {%- else -%}
+              {%- assign media_count = product.media.size -%}
+            {%- endif -%}
+          {%- endunless -%}
+
+          {%- comment -%} Render single swiper with determined media source {%- endcomment -%}
+          {%- if media_count > 0 -%}
+            <div
+              class="swiper productCard__swiper w-full h-full overflow-hidden absolute inset-0{% unless option_index == 0 %} hidden{% endunless %}"
+              data-option-media-id="{{ option_media_id }}"
+              data-variant-image="true"
+              data-slide-id="{{ option_media_id }}"
+            >
+              <div class="swiper-wrapper h-full flex">
+                {%- if use_metafield -%}
+                  {%- for media_item in variant_image_metafield.value -%}
+                    <div class="swiper-slide w-full h-full flex-shrink-0">
+                      {% render 'image',
+                        imageData: media_item,
+                        width: 1200,
+                        class: 'w-full h-full object-cover',
+                        alt_text: product.title,
+                        fit: 'cover'
+                      %}
+                    </div>
+                  {%- endfor -%}
+                {%- elsif use_alt_filter -%}
+                  {%- for media_item in product.media -%}
+                    {%- assign media_alt = media_item.alt | default: '' -%}
+                    {%- assign alt_parts = media_alt | split: '*' -%}
+                    {%- if alt_parts.size > 1 -%}
+                      {%- assign alt_index = alt_parts.last | strip | plus: 0 -%}
+                      {%- if alt_index == option_index -%}
+                        <div class="swiper-slide h-full">
+                          {% render 'image',
+                            imageData: media_item,
+                            width: 1200,
+                            class: 'w-full h-full object-cover',
+                            alt_text: product.title,
+                            fit: 'cover'
+                          %}
+                        </div>
+                      {%- endif -%}
+                    {%- endif -%}
+                  {%- endfor -%}
+                {%- else -%}
+                  {%- for media_item in product.media -%}
+                    <div class="swiper-slide h-full">
+                      {% render 'image',
+                        imageData: media_item,
+                        width: 1200,
+                        class: 'w-full h-full object-cover',
+                        alt_text: product.title,
+                        fit: 'cover'
+                      %}
+                    </div>
+                  {%- endfor -%}
+                {%- endif -%}
+              </div>
+              {%- if media_count > 1 -%}
+                <div class="productCard__nav productCard__nav--prev swiper-button-prev">
+                  {% render 'icon', icon: 'caret-left', class: 'w-6 h-6' %}
+                </div>
+                <div class="productCard__nav productCard__nav--next swiper-button-next">
+                  {% render 'icon', icon: 'caret-right', class: 'w-6 h-6' %}
+                </div>
+              {%- endif -%}
+              {% render 'media-badge',
+                product: product,
+                selected_variant: variant,
+                enable_alt_text_badge: false,
+                alt_text: '',
+                metafield_badge: product.metafields.my_fields.product_badge,
+                enable_sold_out: true,
+                enable_usa_flag: true,
+                selected_option: option_value,
+                enable_limited_edition: true,
+                is_available: product.available
+              %}
+
+              {%- unless is_available -%}
+                <div class="productCard__soldout-overlay"></div>
+              {%- endunless -%}
+            </div>
+          {%- endif -%}
+
+          {%- assign option_index = option_index | plus: 1 -%}
+        {%- endfor -%}
+      {%- else -%}
+        {%- comment -%} No color option - use all product media {%- endcomment -%}
+        {%- if product.media.size > 0 -%}
+          <div class="swiper productCard__swiper absolute inset-0">
+            <div class="swiper-wrapper h-full">
+              {%- for media in product.media -%}
+                <div class="swiper-slide h-full">
+                  {% render 'image',
+                    imageData: media,
+                    width: 1200,
+                    class: 'w-full h-full object-cover',
+                    alt_text: product.title,
+                    fit: 'cover'
+                  %}
+                </div>
+              {%- endfor -%}
+              {% render 'media-badge',
+                product: product,
+                selected_variant: product.selected_or_first_available_variant,
+                enable_alt_text_badge: false,
+                alt_text: '',
+                metafield_badge: product.metafields.my_fields.product_badge,
+                enable_sold_out: true,
+                enable_usa_flag: true,
+                selected_option: product.selected_or_first_available_variant.options.first,
+                enable_limited_edition: true,
+                is_available: product.available
+              %}
+
+              {%- unless is_available -%}
+                <div class="productCard__soldout-overlay"></div>
+              {%- endunless -%}
+            </div>
+            {%- if product.media.size > 1 -%}
+              <div class="productCard__nav productCard__nav--prev swiper-button-prev">
+                {% render 'icon', icon: 'caret-left', class: 'w-6 h-6' %}
+              </div>
+              <div class="productCard__nav productCard__nav--next swiper-button-next">
+                {% render 'icon', icon: 'caret-right', class: 'w-6 h-6' %}
+              </div>
+            {%- endif -%}
+          </div>
+        {%- else -%}
+          <div class="absolute inset-0">
+            <div class="w-full h-full bg-[#f2f2f2]"></div>
+          </div>
+        {%- endif -%}
+      {%- endif -%}
+    </div>
+    <div class="pt-2 {% if has_limited_edition_option %} pb-2 px-1 bg-(--color-asphalt) text-white{%endif %}">
+      {%- comment -%} Timer Section {%- endcomment -%}
+      {%- if show_timer and timer_start != blank and timer_end != blank -%}
+        <div class="productCard__timer flex flex-col gap-1">
+          <div class="productCard__timer-label text-12-bold uppercase">
+            {%- if is_available == false -%}
+              {{ 'content.product_badge_sold_out' | t | default: 'Sold Out' }}
+            {%- elsif is_product_launched == false -%}
+              {{ product.metafields.custom.coming_soon.value | default: 'Coming Soon' }}
+            {%- else -%}
+              {{ product.metafields.custom.post_launch.value | default: '' }}
+            {%- endif -%}
+          </div>
+          {%- comment -%} Only render countdown-timer if timer is currently active {%- endcomment -%}
+          {%- if is_timer_active -%}
+            <div
+              class="productCard__countdown py-1 px-2 w-fit bg-(--color-brunt-orange) text-12-bold uppercase"
+              aria-label="Countdown timer"
+            >
+              <countdown-timer
+                data-start="{{ timer_start.value | date: '%Y-%m-%d %H:%M:%S' }}"
+                data-end="{{ timer_end.value | date: '%Y-%m-%d %H:%M:%S' }}"
+                data-unlock-on-complete="true"
+                data-unlock-wrapper="productCard"
+                data-unlock-link="[ref='productCardLink']"
+                data-unlock-remove-class="productCard--timer-active"
+                data-unlock-remove-link-class="productCard__link--timer-active"
+                data-completion-callback="handleProductCardTimerComplete"
+                role="timer"
+                aria-live="polite"
+                aria-label="Countdown timer"
+              ></countdown-timer>
+            </div>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
+      {%- comment -%} Product Details Section {%- endcomment -%}
+      {%- comment -%} Color Swatches {%- endcomment -%}
+      {%- if has_color_option and has_limited_edition_option == false -%}
+        <div
+          class="productCard__swatches flex flex-wrap items-center gap-[2px] lg:pt-2"
+          role="list"
+          aria-label="Color options"
+        >
+          {%- assign visible_swatch_count = 5 -%}
+          {%- assign swatch_index = 0 -%}
+          {%- assign option_index = 0 -%}
+          {%- for option_value in color_option.values -%}
+            {% liquid
+              assign swatch_image = blank
+              assign swatch_color = blank
+              assign swatch_name = option_value.name
+
+              for swatch in product.metafields.custom.color.value
+                if swatch.admin_name.value == option_value
+                  assign swatch_image = swatch.image.value
+                  assign swatch_color = swatch.value.value
+                  assign swatch_name = swatch.name.value | default: option_value.name
+                endif
+              endfor
+            %}
+            {%- if swatch_index < visible_swatch_count -%}
+              <div
+                class="350 productCard__swatch relative w-[26px] h-[26px] md:w-[32px] md:h-[32px] shrink-0 cursor-pointer{% if option_value.selected %} swatch-selected{% endif %}"
+                data-option-value="{{ swatch_name }}"
+                data-option-media-id="{{ option_index }}"
+                title="{{ swatch_name }}"
+                role="listitem"
+                aria-label="{{ swatch_name }}"
+              >
+                {%- if option_value.available == false -%}
+                  <span class="358 swatch-unavailable"></span>
+                {%- endif -%}
+                {%- if swatch_image != blank or swatch_color != blank -%}
+                  <span
+                    class="362 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 md:w-[24px] md:h-[24px] rounded-full"
+                    style="background-color: {{ swatch_color }} !important; background-image: url({{ swatch_image | image_url: width: 40 }}); background-size: contain; background-position: center; background-repeat: no-repeat;"
+                  ></span>
+                {%- else -%}
+                  <span
+                    class="364 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 md:w-[24px] md:h-[24px] rounded-full"
+                    style="background-color: {{ option_value.name | split: ' ' | last | downcase  }} !important;"
+                  ></span>
+                {%- endif -%}
+              </div>
+              {%- assign swatch_index = swatch_index | plus: 1 -%}
+            {%- endif -%}
+            {%- assign option_index = option_index | plus: 1 -%}
+          {%- endfor -%}
+          {%- if color_option.values.size > visible_swatch_count -%}
+            <span class="productCard__swatch-more text-sm leading-5 underline">
+              +{{ color_option.values.size | minus: visible_swatch_count }}
+            </span>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
+      <div class="productCard__details flex flex-col gap-[2px] pt-2">
+        {%- comment -%} Reviews/Ratings {%- endcomment -%}
+        {%- if has_limited_edition_option == false -%}
+          <div class="productCard__rating">{% render 'okendo-reviews-product-rating-summary', product: product %}</div>
+        {%- endif -%}
+        {%- comment -%} Product Title {%- endcomment -%}
+        <h3
+          id="productCard-title-{{ product.id }}"
+          class="productCard__title text-16-bold m-0 capitalize"
+        >
+          {{ product.title }}
+        </h3>
+        {%- comment -%} Product Description {%- endcomment -%}
+        {%- if product_description != blank -%}
+          <p class="productCard__description text-14-regular m-0">{{ product_description }}</p>
+        {%- endif -%}
+        {%- comment -%} Price {%- endcomment -%}
+        <div
+          class="productCard__price flex items-center gap-1 flex-wrap"
+          aria-label="{{ 'content.price' | t | default: 'Price' }}"
+        >
+          {% render 'price',
+            product_resource: product,
+            show_price_range: true,
+            price_class: 'productCard__price text-16-bold',
+            compare_at_price_class: 'productCard__price-compare text-(--color-gray-accessible) text-12-regular line-through'
+          %}
+        </div>
+      </div>
+    </div>
   </a>
-  <div
-    class="
-      product-card__content
-      layout-panel-flex
-      layout-panel-flex--column
-      product-grid__card
-      spacing-style
-      border-style
-      gap-style
-      {% if block_settings.inherit_color_scheme == false %} color-{{ block_settings.color_scheme }}{% endif %}
-    "
-    style="
-      {% render 'border-override', settings: block_settings %}
-      {% render 'layout-panel-style', settings: block_settings %}
-      {% render 'spacing-style', settings: block_settings %}
-      {% render 'gap-style', value: product_card_gap_value, name: 'product-card-gap' %}
-      --quick-add-display: {% if has_quick_add %}flex{% else %}none{% endif %};
-      --quick-add-mobile-display: {% if has_mobile_quick_add %}flex{% else %}none{% endif %};
-      --quick-add-mobile-opacity: {% if has_mobile_quick_add %}1{% else %}0{% endif %};
-      {% if block_settings.padding-inline-start > 0 %}--zoom-out-padding-inline-start: min(var(--padding-xs), {{ block_settings.padding-inline-start | times: 0.7}}px);{% endif %}
-      {% if block_settings.padding-inline-end > 0 %}--zoom-out-padding-inline-end: min(var(--padding-xs), {{ block_settings.padding-inline-end | times: 0.7}}px);{% endif %}
-      {% if block_settings.padding-block-start > 0 %}--zoom-out-padding-block-start: min(var(--padding-xs), {{ block_settings.padding-block-start | times: 0.7}}px);{% endif %}
-      {% if block_settings.padding-block-end > 0 %}--zoom-out-padding-block-end: min(var(--padding-xs), {{ block_settings.padding-block-end | times: 0.7}}px);{% endif %}
-    "
-  >
-    {{ children }}
-  </div>
 </product-card>
-
 {% stylesheet %}
-  .product-card__placeholder-image svg {
-    height: 100%;
+  /* Blur effect for product image when timer is active and product not launched */
+  .productCard--timer-active .productCard__image-container--blurred img,
+  .productCard--timer-active .productCard__image-container--blurred picture {
+    filter: blur(8px);
+    transition: filter 0.3s ease;
+  }
+  .productCard--timer-active .productCard__image-container--blurred:hover img,
+  .productCard--timer-active .productCard__image-container--blurred:hover picture {
+    filter: blur(8px);
   }
 
-  .product-card__content slideshow-component {
-    --cursor: pointer;
+  /* Product Card Swiper Styles */
+
+  /* Navigation arrows */
+  .productCard__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 10;
   }
 
-  @media screen and (max-width: 749px) {
-    .product-card slideshow-arrows .slideshow-control {
-      display: none;
+  .productCard__nav svg,
+  .productCard__nav--prev,
+  .productCard__nav--next {
+    width: 16px;
+    height: 16px;
+    top: 60% !important;
+  }
+
+  @media (min-width: 768px) {
+    .productCard__nav svg,
+    .productCard__nav--prev,
+    .productCard__nav--next {
+      width: 24px;
+      height: 24px;
+      top: 50% !important;
     }
+  }
+
+  .productCard__nav--prev {
+    left: 0;
+  }
+  .productCard__nav--next {
+    right: 0;
+  }
+
+  @media (min-width: 768px) {
+    .productCard__nav--prev {
+      left: 8px;
+    }
+    .productCard__nav--next {
+      right: 8px;
+    }
+  }
+  .productCard__nav.swiper-button-disabled {
+    opacity: 0 !important;
+    cursor: default;
+  }
+  .productCard__nav::after {
+    display: none;
+  }
+
+  /* Ensure hidden class works on swiper containers */
+  .productCard__swiper.hidden {
+    display: none !important;
+  }
+
+  /* Sold Out Overlay */
+  .productCard__soldout-overlay {
+    position: absolute;
+    inset: 0;
+    background-color: #00000080;
+    z-index: 9;
+    pointer-events: none;
   }
 {% endstylesheet %}

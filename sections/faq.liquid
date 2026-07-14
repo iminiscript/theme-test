@@ -1,0 +1,207 @@
+{%- assign _section = section.settings -%}
+{%- assign _template = template.name -%}
+{%- if _template == 'product' -%}
+  {%- assign _metafield = product.metafields -%}
+{% elsif _template contains 'collection'  %}
+  {%- assign _metafield = collection.metafields -%}
+{%- else -%}
+  {%- assign _metafield = page.metafields -%}
+{%- endif -%}
+{% assign showSection = true %}
+{% if _section.enable_metafields and _metafield.custom.faq.value == blank %}
+  {% assign showSection = false %}
+{% endif %}
+
+{%- if showSection -%}
+<div class="bg-light-smoke py-14 md:py-17 px-3 md:px-12">
+    <div class="flex flex-col gap-8 md:gap-7 max-w-[1000px] mx-auto">
+      {% if _section.title != blank %}
+        <h4 class="text-center">
+          {{ _section.title }}
+        </h4>
+      {% endif %}
+      <div class="accordion accordion--{{ section.id }} md:mb-7" aria-label="{{ _section.title }}">
+        {% if _section.enable_metafields == true and _metafield.custom.faq.value != blank %}
+          {% assign accordions = _metafield.custom.faq.value %}
+        {% else %}
+          {% assign accordions = section.blocks %}
+        {% endif %}
+
+        {% for item in accordions %}
+          <accordion-custom>
+            <details
+              class="border-medium-smoke border-b-1 text-lg p-4 md:p-5 lg:py-6 lg:px-10"
+              data-testid="accordion-details"
+            >
+              <summary 
+                id="faq-trigger-{{ section.id }}-{{ forloop.index }}"
+                class="flex p-0 font-bold cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-12 focus-visible:outline-brunt-orange"
+                aria-expanded="false"
+                aria-controls="faq-content-{{ section.id }}-{{ forloop.index }}"
+                role="button"
+                tabindex="0"
+                aria-describedby="faq-description-{{ section.id }}-{{ forloop.index }}"
+              >
+                <h5 class="text-18-bold m-0 p-0 normal-case">
+                  {% if item.title %}
+                    {{ item.title }}
+                  {% else %}
+                    {{ item.settings.heading }}
+                  {% endif %}
+                </h5>
+                <span 
+                  id="faq-description-{{ section.id }}-{{ forloop.index }}"
+                  class="svg-wrapper icon-caret icon-animated w-6 h-6"
+                  aria-hidden="true"
+                >
+                  {{- 'icon-caret.svg' | inline_asset_content -}}
+                </span>
+              </summary>
+
+              <div 
+                id="faq-content-{{ section.id }}-{{ forloop.index }}"
+                class="details-content pt-4 md:pt-5"
+                role="region"
+                aria-labelledby="faq-trigger-{{ section.id }}-{{ forloop.index }}"
+              >
+                {% if item.answer_rich_text %}
+                  {{ item.answer_rich_text | metafield_tag }}
+                {% else %}
+                  {{ item.settings.content }}
+                {% endif %}
+              </div>
+            </details>
+          </accordion-custom>
+        {% endfor %}
+        <script type="application/ld+json">
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+            {%- for item in accordions -%}
+              {
+                "@type": "Question",
+                "name": "{{ item.settings.heading | default: item.title | strip_html }}",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "{% if item.answer_rich_text %}{{ item.answer_rich_text | metafield_tag | strip_html }}{% else %}{{ item.settings.content | strip_html }}{% endif %}"
+                }
+              }{% unless forloop.last %},{% endunless %}
+            {%- endfor -%}
+            ]
+          }
+        </script>
+      </div>
+      <div class="text-center">
+        {% if _section.footer_copy != blank %}
+          <p class="mb-4">
+            {{ _section.footer_copy }}
+          </p>
+        {% endif %}
+        {% if _section.footer_link != blank and _section.footer_link_label != blank %}
+          <a class="text-asphalt text-base py-4 underline font-bold uppercase" href="{{ _section.footer_link | relative_url }}">
+            {{ _section.footer_link_label }}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+</div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "FAQ",
+  "disabled_on": {
+    "groups": ["header"]
+  },
+  "blocks": [
+    {
+      "type": "faq_item",
+      "name": "Question & Answer",
+      "settings": [
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "Question",
+          "default": "Question?"
+        },
+        {
+          "type": "richtext",
+          "id": "content",
+          "label": "Answer",
+          "default": "<p>Answer to the question</p>"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "FAQ",
+      "category": "t:categories.storytelling",
+      "blocks": [
+        {
+          "type": "faq_item",
+          "settings": {
+            "heading": "What is your return policy?",
+            "content": "<p>Our goal is for every customer to be totally satisfied with their purchase. If this isn't the case, let us know and we'll do our best to work with you to make it right.</p>"
+          }
+        },
+        {
+          "type": "faq_item",
+          "settings": {
+            "heading": "Are any purchases final sale?",
+            "content": "<p>We are unable to accept returns on certain items. These will be carefully marked before purchase.</p>"
+          }
+        },
+        {
+          "type": "faq_item",
+          "settings": {
+            "heading": "When will I get my order?",
+            "content": "<p>We will work quickly to ship your order as soon as possible. Once your order has shipped, you will receive an email with further information. Delivery times vary depending on your location.</p>"
+          }
+        }
+      ],
+      "settings": {
+        "title": "FREQUENTLY ASKED QUESTIONS",
+        "footer_copy": "Don't see the answer you are looking for?",
+        "footer_link_label": "See All FAQS"
+      }
+    }
+  ],
+  "settings": [
+    {
+      "type": "header",
+      "content": "FAQ Settings"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "type": "text",
+      "id": "footer_copy",
+      "label": "Footer Copy",
+      "default": "Don’t see the answer you are looking for?"
+    },
+    {
+      "type": "text",
+      "id": "footer_link_label",
+      "label": "Footer Link Label",
+      "default": "See All FAQS"
+    },
+    {
+      "type": "url",
+      "id": "footer_link",
+      "label": "Footer Link"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_metafields",
+      "label": "Generate FAQs from metafields",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,361 @@
+{% liquid
+  assign style_selector_collection = block.settings.style_selector
+  assign product = closest.product
+  assign current_product_style = product.metafields.custom.product_style.value
+  assign style_selector_list = style_selector_collection.metafields.custom.product_style.value
+%}
+
+<script src="{{ 'product-style-selector.js' | asset_url }}" defer="defer" type="module"></script>
+
+{% comment %} Persistent wrapper that always exists to prevent removal during section updates {% endcomment %}
+<product-style-selector
+  data-block-id="{{ block.id }}"
+  data-section-id="{{ section.id }}"
+  data-skip-subtree-update="true"
+  {{ block.shopify_attributes }}
+>
+  {% if style_selector_list != blank %}
+    {% comment %} Pass collection products data to JavaScript {% endcomment %}
+    {% if style_selector_collection != blank and style_selector_collection.products.size > 0 %}
+      {% capture products_data %}
+      {
+        "currentProductHandle": {{ product.handle | json }},
+        "products": [
+          {% for collection_product in style_selector_collection.products %}
+            {
+              "id": {{ collection_product.id }},
+              "handle": {{ collection_product.handle | json }},
+              "title": {{ collection_product.title | json }},
+              "product_style": {{ collection_product.metafields.custom.product_style.value | json }}
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ],
+        "categories": [
+          {% for style_category in style_selector_list %}
+            {
+              "name": {{ style_category.category.value | json }},
+              "options": [
+                {% assign category_options = style_category.category_options.value %}
+                {% for option in category_options %}
+                  {% if option.value != blank %}
+                    {{ option.value | json }}
+                  {% else %}
+                    {{ option | json }}
+                  {% endif %}{% unless forloop.last %},{% endunless %}
+                {% endfor %}
+              ]
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ]
+      }
+    {% endcapture %}
+      <script id="styleSelectorData-{{ block.id }}" type="application/json">
+        {{ products_data }}
+      </script>
+    {% endif %}
+
+    <div class="product__styleSelector flex flex-col gap-3">
+      {% for style_category in style_selector_list %}
+        {% assign category_name = style_category.category.value %}
+        {% assign category_options = style_category.category_options.value %}
+
+        {% if category_name != blank and category_options != blank %}
+          {% assign category_id = 'style-category-' | append: block.id | append: '-' | append: forloop.index %}
+
+          <fieldset class="product__styleCategory flex flex-col gap-3 border-0 p-0 m-0">
+            {% comment %} Feature Label Section {% endcomment %}
+            {% assign selected_option_value = blank %}
+            {% for option in category_options %}
+              {% if option.value != blank %}
+                {% assign option_value = option.value %}
+              {% else %}
+                {% assign option_value = option %}
+              {% endif %}
+              {% if current_product_style != blank %}
+                {% for product_style_value in current_product_style %}
+                  {% if product_style_value == option_value %}
+                    {% assign selected_option_value = option_value %}
+                    {% break %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+              {% if selected_option_value != blank %}
+                {% break %}
+              {% endif %}
+            {% endfor %}
+
+            <div class="product__styleCategoryHeader flex gap-5 items-center w-full">
+              <div class="product__styleCategoryLabel flex flex-1 gap-2 items-center">
+                <p class="product__styleCategoryLabelText text-14-bold m-0 uppercase text-asphalt">
+                  {{ category_name }}:
+                </p>
+                <p class="product__styleCategorySelection flex-1 text-14-regular m-0 text-asphalt">
+                  {% if selected_option_value != blank %}{{ selected_option_value }}{% else %}Selection{% endif %}
+                </p>
+              </div>
+              {% comment %} More Info Block - Conditional {% endcomment %}
+              {% assign enable_additional_info = style_category.enable_additional_information.value %}
+              {% if enable_additional_info == true %}
+                {% assign additional_info_label = style_category.additional_information_label.value %}
+                {% assign additional_info_type = style_category.additional_information_type.value %}
+                {% assign modal_id = 'style-info-modal-' | append: block.id | append: '-' | append: forloop.index %}
+
+                {% if additional_info_type == 'Popup' %}
+                  {% comment %} Popup Modal - Centered on both mobile and desktop {% endcomment %}
+                  <dialog-component id="{{ modal_id }}">
+                    <button
+                      type="button"
+                      on:click="/showDialog"
+                      class="product__styleInfoButton flex flex-col justify-center cursor-pointer"
+                      aria-label="More information about {{ category_name }}"
+                    >
+                      <p class="product__styleInfoLabel text-12-light leading-4 underline text-asphalt whitespace-nowrap">
+                        {% if additional_info_label != blank %}{{ additional_info_label }}{% else %}More Info{% endif %}
+                      </p>
+                    </button>
+
+                    <dialog
+                      ref="dialog"
+                      class="dialog-modal dialog-modal-center p-4 md:p-8 product__styleInfoModal"
+                      scroll-lock
+                    >
+                      <div class="product__styleInfoModalInner flex flex-col gap-4">
+                        {% comment %} Modal Header {% endcomment %}
+                        <div class="product__styleInfoModalHeader flex items-center justify-between">
+                          {% assign popup_title = style_category.additional_information_title.value %}
+                          {% if popup_title != blank %}
+                            <h2 class="product__styleInfoModalTitle text-heading-4 m-0 uppercase text-asphalt">
+                              {{ popup_title }}
+                            </h2>
+                          {% endif %}
+                          <button
+                            ref="closeButton"
+                            type="button"
+                            on:click="/closeDialog"
+                            class="product__styleInfoModalClose w-8 h-8 flex items-center justify-center cursor-pointer"
+                            aria-label="Close modal"
+                          >
+                            {% render 'icons', icon: 'close' %}
+                          </button>
+                        </div>
+
+                        {% comment %} Modal Content - Metaobject List {% endcomment %}
+                        {% assign popup_content_list = style_category.additional_information_content.value %}
+                        {% if popup_content_list != blank %}
+                          <div class="product__styleInfoModalContent flex flex-col gap-6">
+                            {% for content_item in popup_content_list %}
+                              <div class="product__styleInfoModalItem flex gap-4 items-start">
+                                {% comment %} Image on Left {% endcomment %}
+                                {% if content_item.image.value != blank %}
+                                  {% assign item_image = content_item.image.value %}
+                                  <div class="product__styleInfoModalItemImage flex-shrink-0">
+                                    {% render 'image',
+                                      imageData: item_image,
+                                      width: 200,
+                                      class: 'w-full h-auto',
+                                      fit: 'cover',
+                                      alt_text: content_item.title.value,
+                                      load: false,
+                                      priority: false,
+                                      objectPosition: 'center',
+                                      aspectRatio: 'auto'
+                                    %}
+                                  </div>
+                                {% endif %}
+
+                                {% comment %} Title and Content on Right {% endcomment %}
+                                <div class="product__styleInfoModalItemText flex flex-col gap-2 flex-1">
+                                  {% if content_item.title.value != blank %}
+                                    <h3 class="product__styleInfoModalItemTitle text-14-bold m-0 text-asphalt">
+                                      {{ content_item.title.value }}
+                                    </h3>
+                                  {% endif %}
+                                  {% if content_item.content.value != blank %}
+                                    <div class="product__styleInfoModalItemContent text-14-regular text-asphalt">
+                                      {{ content_item.content.value | metafield_tag }}
+                                    </div>
+                                  {% endif %}
+                                </div>
+                              </div>
+                            {% endfor %}
+                          </div>
+                        {% endif %}
+                      </div>
+                    </dialog>
+                  </dialog-component>
+                {% elsif additional_info_type == 'Tooltip' %}
+                  {% comment %} Tooltip - Bottom modal on mobile, hover tooltip on desktop {% endcomment %}
+                  {% assign tooltip_description = style_category.additional_information_description.value %}
+                  {% if tooltip_description != blank %}
+                    <div class="product__styleInfoTooltip relative group">
+                      {% comment %} Mobile: Bottom Modal {% endcomment %}
+                      <dialog-component id="{{ modal_id }}-mobile" class="lg:hidden">
+                        <button
+                          type="button"
+                          on:click="/showDialog"
+                          class="product__styleInfoButton product__styleInfoButton--mobile flex flex-col justify-center cursor-pointer"
+                          aria-label="More information about {{ category_name }}"
+                        >
+                          <p class="product__styleInfoLabel text-12-light leading-4 underline text-asphalt whitespace-nowrap">
+                            {% if additional_info_label != blank %}
+                              {{- additional_info_label -}}
+                            {% else -%}
+                              More Info
+                            {% endif %}
+                          </p>
+                        </button>
+
+                        <dialog
+                          ref="dialog"
+                          class="dialog-modal dialog-modal-bottom dialog-modal-bottom-mobile p-4 product__styleInfoTooltipModal"
+                          scroll-lock
+                        >
+                          <div class="product__styleInfoTooltipModalInner flex flex-col gap-4">
+                            <div class="product__styleInfoTooltipModalHeader flex items-center justify-between">
+                              <h2 class="product__styleInfoTooltipModalTitle text-heading-4 m-0 uppercase text-asphalt">
+                                More Info
+                              </h2>
+                              <button
+                                ref="closeButton"
+                                type="button"
+                                on:click="/closeDialog"
+                                class="product__styleInfoTooltipModalClose w-8 h-8 flex items-center justify-center cursor-pointer"
+                                aria-label="Close modal"
+                              >
+                                {% render 'icons', icon: 'close' %}
+                              </button>
+                            </div>
+                            <div class="product__styleInfoTooltipModalContent text-14-regular text-asphalt">
+                              {{ tooltip_description | metafield_tag }}
+                            </div>
+                          </div>
+                        </dialog>
+                      </dialog-component>
+
+                      {% comment %} Desktop: Hover Tooltip {% endcomment %}
+                      <button
+                        type="button"
+                        class="product__styleInfoButton product__styleInfoButton--desktop hidden lg:flex flex-col justify-center cursor-pointer"
+                        aria-label="More information about {{ category_name }}"
+                      >
+                        <p class="product__styleInfoLabel text-12-light leading-4 underline text-asphalt whitespace-nowrap">
+                          {% if additional_info_label != blank %}
+                            {{- additional_info_label -}}
+                          {% else -%}
+                            More Info
+                          {% endif %}
+                        </p>
+                      </button>
+
+                      <div
+                        class="product__styleInfoTooltipContent hidden lg:block absolute z-50 bg-white border border-medium-smoke rounded p-3 max-w-xs shadow-lg pointer-events-none opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                        style="bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);"
+                      >
+                        <div class="text-14-regular text-asphalt">
+                          {{ tooltip_description | metafield_tag }}
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+              {% endif %}
+            </div>
+
+            {% comment %} Feature Selector Buttons {% endcomment %}
+            <div
+              class="product__styleCategoryOptions flex flex-wrap gap-2 items-center w-full"
+              role="group"
+              aria-label="{{ category_name }}"
+            >
+              {% for option in category_options %}
+                {% comment %} Handle both direct text values and objects with .value property {% endcomment %}
+                {% if option.value != blank %}
+                  {% assign option_value = option.value %}
+                {% else %}
+                  {% assign option_value = option %}
+                {% endif %}
+
+                {% assign is_selected = false %}
+
+                {% comment %} Check if this option matches any value in current_product_style {% endcomment %}
+                {% if current_product_style != blank %}
+                  {% for product_style_value in current_product_style %}
+                    {% if product_style_value == option_value %}
+                      {% assign is_selected = true %}
+                      {% break %}
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+
+                {% assign option_id = 'style-option-'
+                  | append: block.id
+                  | append: '-'
+                  | append: forloop.parentloop.index
+                  | append: '-'
+                  | append: forloop.index
+                %}
+                {% assign option_label = category_name | append: ': ' | append: option_value %}
+
+                <button
+                  type="button"
+                  id="{{ option_id }}"
+                  class="product__styleOption h-12 px-4 py-3 flex items-center justify-center overflow-clip text-14-light{% if is_selected %} product__styleOption--selected{% endif %}"
+                  data-category="{{ category_name }}"
+                  data-option="{{ option_value }}"
+                  aria-pressed="{{ is_selected }}"
+                  aria-label="{{ option_label }}"
+                  aria-describedby="{{ category_id }}-description"
+                >
+                  <span class="product__styleOptionText">{{ option_value }}</span>
+                  {% if is_selected %}
+                    <span class="visually-hidden">Selected</span>
+                  {% endif %}
+                </button>
+              {% endfor %}
+              <span id="{{ category_id }}-description" class="visually-hidden">
+                Select a style option for {{ category_name }}
+              </span>
+            </div>
+          </fieldset>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+</product-style-selector>
+{% stylesheet %}
+  .product__styleOption {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-medium-smoke);
+    color: var(--color-asphalt);
+  }
+  .product__styleOption--selected {
+    background-color: var(--color-asphalt);
+    color: var(--color-white);
+    font-weight: 700;
+  }
+  .product__styleOption--disabled {
+    color: var(--color-medium-asphalt);
+    cursor: not-allowed;
+    background-color: var(--color-light-smoke);
+    pointer-events: none;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Product Style Selector",
+  "tag": null,
+  "settings": [
+    {
+      "type": "collection",
+      "id": "style_selector",
+      "label": "Style Selector"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product Style Selector"
+    }
+  ]
+}
+{% endschema %}

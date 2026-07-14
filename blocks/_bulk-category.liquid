@@ -1,0 +1,56 @@
+{% doc %}
+  Category block for the Bulk Product Categories section.
+  Displays a category with image, name, and link.
+
+  @example
+  {% content_for 'block', type: '_bulk-category', id: 'category-1' %}
+{% enddoc %}
+
+<div class="category-item" {{ block.shopify_attributes }}>
+  <a href="{{ block.settings.category_url }}" class="category-link text-18-regular text-asphalt no-underline">
+    <div class="category-image">
+      {% if block.settings.category_image != blank %}
+        {% render 'image',
+          imageData: block.settings.category_image,
+          width: 400,
+          alt_text: block.settings.category_name,
+          class: 'category-image__img',
+          load: false,
+          priority: false
+        %}
+      {% endif %}
+    </div>
+    <p class="text-18-regular color-asphalt pt-2">{{ block.settings.category_name }}</p>
+  </a>
+</div>
+
+{% schema %}
+{
+  "name": "Category",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "category_name",
+      "label": "Category Name",
+      "default": "Category Name"
+    },
+    {
+      "type": "image_picker",
+      "id": "category_image",
+      "label": "Category Image"
+    },
+    {
+      "type": "url",
+      "id": "category_url",
+      "label": "Category URL",
+      "info": "Link to collection, product, or any page"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Category"
+    }
+  ]
+}
+{% endschema %}

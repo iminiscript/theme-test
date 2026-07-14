@@ -1,0 +1,91 @@
+{% if block.settings.bg_image %}
+  <div class='featureCallout__mediaItem w-full'>
+    {% render 'image'
+      , imageData: block.settings.bg_image
+      , class: 'featureCallout__mediaImg'
+      , width: 1024
+      , aspectRatio: 0.66
+    %}
+  </div>
+{% endif %}
+<div class='featureCallout__content absolute flex p-4 top-0 left-0 w-full h-full flex-col justify-between bg-[linear-gradient(106.2deg,rgba(0,0,0,0.55)_10.62%,rgba(0,0,0,0)_55.93%)]'>
+  <h3 class='featureCallout__featureTitle bb text-[1.375rem] leading-[1.625rem] uppercase max-w-[14rem] [&_strong]:text-[#c74f1f] [&_b]:text-[#c74f1f]' style='color: {{ block.settings.title_color }};'>
+    {{ block.settings.callout_title }}
+  </h3>
+  <a
+    href='{{ block.settings.link }}'
+    class='featureCallout__contentBtn inline-block !p-[0.4375rem_0.75rem] font-bold text-xs leading-[1.125rem] rounded w-[8.25rem] uppercase no-underline text-center cursor-pointer {% if block.settings.button_behavior == 'sms' %} js-postScript Mobile{% endif %}'
+    aria-label='{{ block.settings.callout_title | prepend: 'Link to ' }}'
+    style='
+        background-color: {{ block.settings.btn_color }};
+        color: {{ block.settings.btn_text_color }};
+    '>
+    {{- block.settings.btn_text -}}
+  </a>
+</div>
+{% schema %}
+  {
+    "name": "Feature",
+    "tag": "div",
+    "class": "featureCallout__feature swiper-slide",
+    "settings": [
+      {
+        "type": "text",
+        "id": "callout_title",
+        "label": "Callout Title"
+      },
+      {
+        "type": "color",
+        "id": "title_color",
+        "label": "Callout Title Color"
+      },
+      {
+        "type": "image_picker",
+        "id": "bg_image",
+        "label": "Background Image"
+      },
+      {
+        "type": "text",
+        "id": "btn_text",
+        "label": "Callout Button Text"
+      },
+      {
+        "type": "color",
+        "id": "btn_color",
+        "label": "Callout Button Color"
+      },
+      {
+        "type": "color",
+        "id": "btn_text_color",
+        "label": "Callout Button Text Color"
+      },
+      {
+        "type": "select",
+        "id": "button_behavior",
+        "label": "Button Behavior",
+        "options": [
+          {
+            "value": "link",
+            "label": "Link"
+          },
+          {
+            "value": "sms",
+            "label": "SMS Sign Up"
+          }
+        ]
+      },
+      {
+        "type": "url",
+        "id": "link",
+        "label": "Callout button Link",
+        "visible_if": "{{ block.settings.button_behavior == 'link' }}"
+      }
+    ],
+    "presets": [
+      {
+        "name": "Feature",
+        "category": "Navigation"
+      }
+    ]
+  }
+{% endschema %}

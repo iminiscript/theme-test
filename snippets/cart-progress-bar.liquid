@@ -1,0 +1,78 @@
+{%- comment -%}
+  Cart Progress Bar Snippet
+  
+  Displays a progress bar showing cart total progress toward a goal.
+  
+  @param {number} [threshold=1000] - Progress goal in dollars (default: $1000)
+{%- endcomment -%}
+
+{%- liquid
+  assign threshold_dollars = threshold | default: 1000
+  assign threshold_cents = threshold_dollars | times: 100
+-%}
+
+<div 
+  id="cart-progress-bar" 
+  class="w-full h-1 bg-gray-100 rounded-full mb-3"
+  data-threshold="{{ threshold_cents }}"
+  style="display: none;"
+>
+  <div 
+    id="cart-progress-bar-fill" 
+    class="h-full bg-blue-600 transition-all duration-300 ease-out rounded-full"
+    style="width: 0%;"
+  ></div>
+</div>
+
+<script>
+  (function() {
+    const progressBar = document.getElementById('cart-progress-bar');
+    const progressFill = document.getElementById('cart-progress-bar-fill');
+    if (!progressBar || !progressFill) return;
+    
+    const threshold = parseInt(progressBar.dataset.threshold) || 100000;
+    
+    function updateProgressBar(cartTotal) {
+      const total = cartTotal || 0;
+      const percentage = Math.min((total / threshold) * 100, 100);
+      
+      progressFill.style.width = `${percentage}%`;
+      progressBar.style.display = total > 0 ? 'block' : 'none';
+      
+      if (percentage >= 100) {
+        progressFill.classList.remove('bg-blue-600');
+        progressFill.classList.add('bg-green-600');
+      } else {
+        progressFill.classList.remove('bg-green-600');
+        progressFill.classList.add('bg-blue-600');
+      }
+    }
+    
+    // Watch cart state using BWWState
+    if (window.BWW && typeof window.BWW.ready === 'function') {
+      window.BWW.ready((state) => {
+        const cart = state.state.cartState;
+        if (cart) updateProgressBar(cart.total_price);
+        
+        state.watch('cartState', (newCart) => {
+          if (newCart) updateProgressBar(newCart.total_price);
+        }, { immediate: true });
+      });
+    } else {
+      const checkBWW = setInterval(() => {
+        if (window.BWW?.ready) {
+          clearInterval(checkBWW);
+          window.BWW.ready((state) => {
+            const cart = state.state.cartState;
+            if (cart) updateProgressBar(cart.total_price);
+            state.watch('cartState', (newCart) => {
+              if (newCart) updateProgressBar(newCart.total_price);
+            }, { immediate: true });
+          });
+        }
+      }, 100);
+      setTimeout(() => clearInterval(checkBWW), 5000);
+    }
+  })();
+</script>
+

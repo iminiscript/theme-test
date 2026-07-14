@@ -2,7 +2,7 @@
   {
     "name": "theme_info",
     "theme_name": "Horizon",
-    "theme_version": "3.5.1",
+    "theme_version": "2.1.6",
     "theme_author": "Shopify",
     "theme_documentation_url": "https://help.shopify.com/manual/online-store/themes",
     "theme_support_url": "https://support.shopify.com/"
@@ -24,30 +24,6 @@
         "id": "logo_inverse",
         "label": "t:settings.inverse_logo",
         "info": "t:content.inverse_logo_info"
-      },
-      {
-        "type": "range",
-        "id": "logo_height",
-        "label": "t:settings.desktop_height",
-        "min": 12,
-        "max": 100,
-        "step": 1,
-        "unit": "px",
-        "default": 36,
-        "visible_if": "{{ settings.logo != blank or settings.logo_inverse != blank }}",
-        "info": "t:info.logo_height"
-      },
-      {
-        "type": "range",
-        "id": "logo_height_mobile",
-        "label": "t:settings.mobile_height",
-        "min": 12,
-        "max": 100,
-        "step": 1,
-        "unit": "px",
-        "default": 28,
-        "visible_if": "{{ settings.logo != blank or settings.logo_inverse != blank }}",
-        "info": "t:info.logo_height"
       },
       {
         "type": "image_picker",
@@ -88,14 +64,14 @@
             "type": "color",
             "id": "primary",
             "label": "t:settings.primary_color",
-            "default": "#000F9F",
+            "default": "#C74F1F",
             "alpha": true
           },
           {
             "type": "color",
             "id": "primary_hover",
             "label": "t:settings.primary_hover_color",
-            "default": "#000000",
+            "default": "#E05D29",
             "alpha": true
           },
           {
@@ -120,7 +96,7 @@
             "type": "color",
             "id": "primary_button_background",
             "label": "t:settings.background",
-            "default": "#000F9F",
+            "default": "#C74F1F",
             "alpha": true
           },
           {
@@ -134,14 +110,14 @@
             "type": "color",
             "id": "primary_button_border",
             "label": "t:settings.borders",
-            "default": "#000F9F",
+            "default": "#C74F1F",
             "alpha": true
           },
           {
             "type": "color",
             "id": "primary_button_hover_background",
             "label": "t:settings.hover_background",
-            "default": "#000F9F",
+            "default": "#E05D29",
             "alpha": true
           },
           {
@@ -155,7 +131,7 @@
             "type": "color",
             "id": "primary_button_hover_border",
             "label": "t:settings.hover_borders",
-            "default": "#000F9F",
+            "default": "#E05D29",
             "alpha": true
           },
           {
@@ -173,35 +149,35 @@
             "type": "color",
             "id": "secondary_button_text",
             "label": "t:settings.text",
-            "default": "#000000",
+            "default": "#1E1B1C",
             "alpha": true
           },
           {
             "type": "color",
             "id": "secondary_button_border",
             "label": "t:settings.borders",
-            "default": "#000000",
+            "default": "#1E1B1C",
             "alpha": true
           },
           {
             "type": "color",
             "id": "secondary_button_hover_background",
             "label": "t:settings.hover_background",
-            "default": "#FFFFFF",
+            "default": "#F2F2F2",
             "alpha": true
           },
           {
             "type": "color",
             "id": "secondary_button_hover_text",
             "label": "t:settings.hover_text",
-            "default": "#000000",
+            "default": "#1E1B1C",
             "alpha": true
           },
           {
             "type": "color",
             "id": "secondary_button_hover_border",
             "label": "t:settings.hover_borders",
-            "default": "#000000",
+            "default": "#A2A1A4",
             "alpha": true
           },
           {
@@ -341,1044 +317,6 @@
           "on_secondary_button": "secondary_button_text",
           "secondary_button_border": "secondary_button_border"
         }
-      }
-    ]
-  },
-  {
-    "name": "t:names.typography",
-    "settings": [
-      {
-        "type": "header",
-        "content": "t:content.fonts"
-      },
-      {
-        "type": "font_picker",
-        "id": "type_body_font",
-        "default": "work_sans_n4",
-        "label": "t:options.body"
-      },
-      {
-        "type": "font_picker",
-        "id": "type_subheading_font",
-        "default": "work_sans_n5",
-        "label": "t:options.subheading"
-      },
-      {
-        "type": "font_picker",
-        "id": "type_heading_font",
-        "default": "anonymous_pro_n4",
-        "label": "t:options.heading"
-      },
-      {
-        "type": "font_picker",
-        "id": "type_accent_font",
-        "default": "anonymous_pro_n4",
-        "label": "t:options.accent"
-      },
-      {
-        "type": "header",
-        "content": "t:content.text_presets"
-      },
-      {
-        "type": "paragraph",
-        "content": "t:content.responsive_font_sizes"
-      },
-      {
-        "type": "header",
-        "content": "t:content.paragraph"
-      },
-      {
-        "type": "select",
-        "id": "type_size_paragraph",
-        "label": "t:settings.size",
-        "options": [
-          {
-            "value": "10",
-            "label": "10px"
-          },
-          {
-            "value": "12",
-            "label": "12px"
-          },
-          {
-            "value": "14",
-            "label": "14px"
-          },
-          {
-            "value": "16",
-            "label": "16px"
-          },
-          {
-            "value": "18",
-            "label": "18px"
-          }
-        ],
-        "default": "14"
-      },
-      {
-        "type": "select",
-        "id": "type_line_height_paragraph",
-        "label": "t:settings.line_height",
-        "options": [
-          {
-            "value": "body-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "body-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "body-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "body-normal"
-      },
-      {
-        "type": "header",
-        "content": "t:options.h1"
-      },
-      {
-        "type": "select",
-        "id": "type_font_h1",
-        "label": "t:settings.font",
-        "options": [
-          {
-            "value": "heading",
-            "label": "t:options.heading"
-          },
-          {
-            "value": "accent",
-            "label": "t:options.accent"
-          }
-        ],
-        "default": "heading"
-      },
-      {
-        "type": "select",
-        "id": "type_size_h1",
-        "label": "t:settings.size",
-        "options": [
-          {
-            "value": "10",
-            "label": "10px"
-          },
-          {
-            "value": "12",
-            "label": "12px"
-          },
-          {
-            "value": "14",
-            "label": "14px"
-          },
-          {
-            "value": "16",
-            "label": "16px"
-          },
-          {
-            "value": "18",
-            "label": "18px"
-          },
-          {
-            "value": "20",
-            "label": "20px"
-          },
-          {
-            "value": "24",
-            "label": "24px"
-          },
-          {
-            "value": "32",
-            "label": "32px"
-          },
-          {
-            "value": "40",
-            "label": "40px"
-          },
-          {
-            "value": "48",
-            "label": "48px"
-          },
-          {
-            "value": "56",
-            "label": "56px"
-          },
-          {
-            "value": "72",
-            "label": "72px"
-          },
-          {
-            "value": "88",
-            "label": "88px"
-          },
-          {
-            "value": "120",
-            "label": "120px"
-          },
-          {
-            "value": "152",
-            "label": "152px"
-          },
-          {
-            "value": "184",
-            "label": "184px"
-          }
-        ],
-        "default": "72"
-      },
-      {
-        "type": "select",
-        "id": "type_line_height_h1",
-        "label": "t:settings.line_height",
-        "options": [
-          {
-            "value": "display-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "display-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "display-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "display-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_letter_spacing_h1",
-        "label": "t:settings.letter_spacing",
-        "options": [
-          {
-            "value": "heading-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "heading-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "heading-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "heading-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_case_h1",
-        "label": "t:settings.text_case",
-        "options": [
-          {
-            "value": "none",
-            "label": "t:options.default"
-          },
-          {
-            "value": "uppercase",
-            "label": "t:options.uppercase"
-          }
-        ],
-        "default": "none"
-      },
-      {
-        "type": "header",
-        "content": "t:options.h2"
-      },
-      {
-        "type": "select",
-        "id": "type_font_h2",
-        "label": "t:settings.font",
-        "options": [
-          {
-            "value": "heading",
-            "label": "t:options.heading"
-          },
-          {
-            "value": "accent",
-            "label": "t:options.accent"
-          }
-        ],
-        "default": "heading"
-      },
-      {
-        "type": "select",
-        "id": "type_size_h2",
-        "label": "t:settings.size",
-        "options": [
-          {
-            "value": "10",
-            "label": "10px"
-          },
-          {
-            "value": "12",
-            "label": "12px"
-          },
-          {
-            "value": "14",
-            "label": "14px"
-          },
-          {
-            "value": "16",
-            "label": "16px"
-          },
-          {
-            "value": "18",
-            "label": "18px"
-          },
-          {
-            "value": "20",
-            "label": "20px"
-          },
-          {
-            "value": "24",
-            "label": "24px"
-          },
-          {
-            "value": "32",
-            "label": "32px"
-          },
-          {
-            "value": "40",
-            "label": "40px"
-          },
-          {
-            "value": "48",
-            "label": "48px"
-          },
-          {
-            "value": "56",
-            "label": "56px"
-          },
-          {
-            "value": "72",
-            "label": "72px"
-          },
-          {
-            "value": "88",
-            "label": "88px"
-          },
-          {
-            "value": "120",
-            "label": "120px"
-          },
-          {
-            "value": "152",
-            "label": "152px"
-          },
-          {
-            "value": "184",
-            "label": "184px"
-          }
-        ],
-        "default": "48"
-      },
-      {
-        "type": "select",
-        "id": "type_line_height_h2",
-        "label": "t:settings.line_height",
-        "options": [
-          {
-            "value": "display-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "display-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "display-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "display-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_letter_spacing_h2",
-        "label": "t:settings.letter_spacing",
-        "options": [
-          {
-            "value": "heading-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "heading-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "heading-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "heading-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_case_h2",
-        "label": "t:settings.text_case",
-        "options": [
-          {
-            "value": "none",
-            "label": "t:options.default"
-          },
-          {
-            "value": "uppercase",
-            "label": "t:options.uppercase"
-          }
-        ],
-        "default": "none"
-      },
-      {
-        "type": "header",
-        "content": "t:options.h3"
-      },
-      {
-        "type": "select",
-        "id": "type_font_h3",
-        "label": "t:settings.font",
-        "options": [
-          {
-            "value": "heading",
-            "label": "t:options.heading"
-          },
-          {
-            "value": "accent",
-            "label": "t:options.accent"
-          },
-          {
-            "value": "subheading",
-            "label": "t:options.subheading"
-          },
-          {
-            "value": "body",
-            "label": "t:options.body"
-          }
-        ],
-        "default": "heading"
-      },
-      {
-        "type": "select",
-        "id": "type_size_h3",
-        "label": "t:settings.size",
-        "options": [
-          {
-            "value": "10",
-            "label": "10px"
-          },
-          {
-            "value": "12",
-            "label": "12px"
-          },
-          {
-            "value": "14",
-            "label": "14px"
-          },
-          {
-            "value": "16",
-            "label": "16px"
-          },
-          {
-            "value": "18",
-            "label": "18px"
-          },
-          {
-            "value": "20",
-            "label": "20px"
-          },
-          {
-            "value": "24",
-            "label": "24px"
-          },
-          {
-            "value": "32",
-            "label": "32px"
-          },
-          {
-            "value": "40",
-            "label": "40px"
-          },
-          {
-            "value": "48",
-            "label": "48px"
-          },
-          {
-            "value": "56",
-            "label": "56px"
-          },
-          {
-            "value": "72",
-            "label": "72px"
-          },
-          {
-            "value": "88",
-            "label": "88px"
-          },
-          {
-            "value": "120",
-            "label": "120px"
-          },
-          {
-            "value": "152",
-            "label": "152px"
-          },
-          {
-            "value": "184",
-            "label": "184px"
-          }
-        ],
-        "default": "32"
-      },
-      {
-        "type": "select",
-        "id": "type_line_height_h3",
-        "label": "t:settings.line_height",
-        "options": [
-          {
-            "value": "display-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "display-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "display-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "display-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_letter_spacing_h3",
-        "label": "t:settings.letter_spacing",
-        "options": [
-          {
-            "value": "heading-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "heading-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "heading-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "heading-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_case_h3",
-        "label": "t:settings.text_case",
-        "options": [
-          {
-            "value": "none",
-            "label": "t:options.default"
-          },
-          {
-            "value": "uppercase",
-            "label": "t:options.uppercase"
-          }
-        ],
-        "default": "none"
-      },
-      {
-        "type": "header",
-        "content": "t:options.h4"
-      },
-      {
-        "type": "select",
-        "id": "type_font_h4",
-        "label": "t:settings.font",
-        "options": [
-          {
-            "value": "heading",
-            "label": "t:options.heading"
-          },
-          {
-            "value": "accent",
-            "label": "t:options.accent"
-          },
-          {
-            "value": "subheading",
-            "label": "t:options.subheading"
-          },
-          {
-            "value": "body",
-            "label": "t:options.body"
-          }
-        ],
-        "default": "subheading"
-      },
-      {
-        "type": "select",
-        "id": "type_size_h4",
-        "label": "t:settings.size",
-        "options": [
-          {
-            "value": "10",
-            "label": "10px"
-          },
-          {
-            "value": "12",
-            "label": "12px"
-          },
-          {
-            "value": "14",
-            "label": "14px"
-          },
-          {
-            "value": "16",
-            "label": "16px"
-          },
-          {
-            "value": "18",
-            "label": "18px"
-          },
-          {
-            "value": "20",
-            "label": "20px"
-          },
-          {
-            "value": "24",
-            "label": "24px"
-          },
-          {
-            "value": "32",
-            "label": "32px"
-          },
-          {
-            "value": "40",
-            "label": "40px"
-          },
-          {
-            "value": "48",
-            "label": "48px"
-          },
-          {
-            "value": "56",
-            "label": "56px"
-          },
-          {
-            "value": "72",
-            "label": "72px"
-          },
-          {
-            "value": "88",
-            "label": "88px"
-          },
-          {
-            "value": "120",
-            "label": "120px"
-          },
-          {
-            "value": "152",
-            "label": "152px"
-          },
-          {
-            "value": "184",
-            "label": "184px"
-          }
-        ],
-        "default": "24"
-      },
-      {
-        "type": "select",
-        "id": "type_line_height_h4",
-        "label": "t:settings.line_height",
-        "options": [
-          {
-            "value": "display-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "display-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "display-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "display-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_letter_spacing_h4",
-        "label": "t:settings.letter_spacing",
-        "options": [
-          {
-            "value": "heading-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "heading-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "heading-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "heading-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_case_h4",
-        "label": "t:settings.text_case",
-        "options": [
-          {
-            "value": "none",
-            "label": "t:options.default"
-          },
-          {
-            "value": "uppercase",
-            "label": "t:options.uppercase"
-          }
-        ],
-        "default": "none"
-      },
-      {
-        "type": "header",
-        "content": "t:options.h5"
-      },
-      {
-        "type": "select",
-        "id": "type_font_h5",
-        "label": "t:settings.font",
-        "options": [
-          {
-            "value": "heading",
-            "label": "t:options.heading"
-          },
-          {
-            "value": "accent",
-            "label": "t:options.accent"
-          },
-          {
-            "value": "subheading",
-            "label": "t:options.subheading"
-          },
-          {
-            "value": "body",
-            "label": "t:options.body"
-          }
-        ],
-        "default": "subheading"
-      },
-      {
-        "type": "select",
-        "id": "type_size_h5",
-        "label": "t:settings.size",
-        "options": [
-          {
-            "value": "10",
-            "label": "10px"
-          },
-          {
-            "value": "12",
-            "label": "12px"
-          },
-          {
-            "value": "14",
-            "label": "14px"
-          },
-          {
-            "value": "16",
-            "label": "16px"
-          },
-          {
-            "value": "18",
-            "label": "18px"
-          },
-          {
-            "value": "20",
-            "label": "20px"
-          },
-          {
-            "value": "24",
-            "label": "24px"
-          },
-          {
-            "value": "32",
-            "label": "32px"
-          },
-          {
-            "value": "40",
-            "label": "40px"
-          },
-          {
-            "value": "48",
-            "label": "48px"
-          },
-          {
-            "value": "56",
-            "label": "56px"
-          },
-          {
-            "value": "72",
-            "label": "72px"
-          },
-          {
-            "value": "88",
-            "label": "88px"
-          },
-          {
-            "value": "120",
-            "label": "120px"
-          },
-          {
-            "value": "152",
-            "label": "152px"
-          },
-          {
-            "value": "184",
-            "label": "184px"
-          }
-        ],
-        "default": "18"
-      },
-      {
-        "type": "select",
-        "id": "type_line_height_h5",
-        "label": "t:settings.line_height",
-        "options": [
-          {
-            "value": "display-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "display-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "display-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "display-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_letter_spacing_h5",
-        "label": "t:settings.letter_spacing",
-        "options": [
-          {
-            "value": "heading-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "heading-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "heading-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "heading-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_case_h5",
-        "label": "t:settings.text_case",
-        "options": [
-          {
-            "value": "none",
-            "label": "t:options.default"
-          },
-          {
-            "value": "uppercase",
-            "label": "t:options.uppercase"
-          }
-        ],
-        "default": "none"
-      },
-      {
-        "type": "header",
-        "content": "t:options.h6"
-      },
-      {
-        "type": "select",
-        "id": "type_font_h6",
-        "label": "t:settings.font",
-        "options": [
-          {
-            "value": "heading",
-            "label": "t:options.heading"
-          },
-          {
-            "value": "accent",
-            "label": "t:options.accent"
-          },
-          {
-            "value": "subheading",
-            "label": "t:options.subheading"
-          },
-          {
-            "value": "body",
-            "label": "t:options.body"
-          }
-        ],
-        "default": "subheading"
-      },
-      {
-        "type": "select",
-        "id": "type_size_h6",
-        "label": "t:settings.size",
-        "options": [
-          {
-            "value": "10",
-            "label": "10px"
-          },
-          {
-            "value": "12",
-            "label": "12px"
-          },
-          {
-            "value": "14",
-            "label": "14px"
-          },
-          {
-            "value": "16",
-            "label": "16px"
-          },
-          {
-            "value": "18",
-            "label": "18px"
-          },
-          {
-            "value": "20",
-            "label": "20px"
-          },
-          {
-            "value": "24",
-            "label": "24px"
-          },
-          {
-            "value": "32",
-            "label": "32px"
-          },
-          {
-            "value": "40",
-            "label": "40px"
-          },
-          {
-            "value": "48",
-            "label": "48px"
-          },
-          {
-            "value": "56",
-            "label": "56px"
-          },
-          {
-            "value": "72",
-            "label": "72px"
-          },
-          {
-            "value": "88",
-            "label": "88px"
-          },
-          {
-            "value": "120",
-            "label": "120px"
-          },
-          {
-            "value": "152",
-            "label": "152px"
-          },
-          {
-            "value": "184",
-            "label": "184px"
-          }
-        ],
-        "default": "16"
-      },
-      {
-        "type": "select",
-        "id": "type_line_height_h6",
-        "label": "t:settings.line_height",
-        "options": [
-          {
-            "value": "display-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "display-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "display-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "display-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_letter_spacing_h6",
-        "label": "t:settings.letter_spacing",
-        "options": [
-          {
-            "value": "heading-tight",
-            "label": "t:options.tight"
-          },
-          {
-            "value": "heading-normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "heading-loose",
-            "label": "t:options.loose"
-          }
-        ],
-        "default": "heading-normal"
-      },
-      {
-        "type": "select",
-        "id": "type_case_h6",
-        "label": "t:settings.text_case",
-        "options": [
-          {
-            "value": "none",
-            "label": "t:options.default"
-          },
-          {
-            "value": "uppercase",
-            "label": "t:options.uppercase"
-          }
-        ],
-        "default": "none"
-      }
-    ]
-  },
-  {
-    "name": "t:names.page_layout",
-    "settings": [
-      {
-        "type": "select",
-        "id": "page_width",
-        "label": "t:settings.page_width",
-        "options": [
-          {
-            "value": "narrow",
-            "label": "t:options.narrow"
-          },
-          {
-            "value": "normal",
-            "label": "t:options.normal"
-          },
-          {
-            "value": "wide",
-            "label": "t:options.wide"
-          }
-        ],
-        "default": "narrow"
       }
     ]
   },
@@ -1570,6 +508,46 @@
       },
       {
         "type": "select",
+        "id": "button_font_weight_primary",
+        "label": "t:settings.button_text_weight",
+        "options": [
+          {
+            "value": "default",
+            "label": "t:options.default"
+          },
+          {
+            "value": "100",
+            "label": "t:options.thin"
+          },
+          {
+            "value": "300",
+            "label": "t:options.light"
+          },
+          {
+            "value": "400",
+            "label": "t:options.regular"
+          },
+          {
+            "value": "500",
+            "label": "t:options.medium"
+          },
+          {
+            "value": "600",
+            "label": "t:options.semibold"
+          },
+          {
+            "value": "700",
+            "label": "t:options.bold"
+          },
+          {
+            "value": "900",
+            "label": "t:options.black"
+          }
+        ],
+        "default": "default"
+      },
+      {
+        "type": "select",
         "id": "button_text_case_primary",
         "label": "t:settings.button_text_case",
         "options": [
@@ -1623,6 +601,46 @@
           }
         ],
         "default": "body"
+      },
+      {
+        "type": "select",
+        "id": "button_font_weight_secondary",
+        "label": "t:settings.button_text_weight",
+        "options": [
+          {
+            "value": "default",
+            "label": "t:options.default"
+          },
+          {
+            "value": "100",
+            "label": "t:options.thin"
+          },
+          {
+            "value": "300",
+            "label": "t:options.light"
+          },
+          {
+            "value": "400",
+            "label": "t:options.regular"
+          },
+          {
+            "value": "500",
+            "label": "t:options.medium"
+          },
+          {
+            "value": "600",
+            "label": "t:options.semibold"
+          },
+          {
+            "value": "700",
+            "label": "t:options.bold"
+          },
+          {
+            "value": "900",
+            "label": "t:options.black"
+          }
+        ],
+        "default": "default"
       },
       {
         "type": "select",
@@ -1701,34 +719,26 @@
         "label": "t:settings.font_price",
         "options": [
           {
-            "value": "body",
+            "value": "primary",
             "label": "t:options.body"
           },
           {
-            "value": "subheading",
+            "value": "secondary",
             "label": "t:options.subheading"
           },
           {
-            "value": "heading",
-            "label": "t:options.heading"
-          },
-          {
-            "value": "accent",
-            "label": "t:options.accent"
+            "value": "tertiary",
+            "label": "t:options.tertiary"
           }
         ],
-        "default": "subheading"
+        "default": "secondary"
       },
       {
         "type": "checkbox",
         "id": "auto_open_cart_drawer",
         "label": "t:settings.auto_open_cart_drawer",
-        "default": false,
+        "default": true,
         "visible_if": "{{ settings.cart_type == 'drawer' }}"
-      },
-      {
-        "type": "header",
-        "content": "t:content.cart_features"
       },
       {
         "type": "checkbox",
@@ -1763,10 +773,186 @@
         "default": true
       },
       {
-        "type": "url",
-        "id": "empty_cart_button_link",
-        "label": "t:settings.empty_cart_button_link",
-        "default": "/collections/all"
+        "type": "header",
+        "content": "Cart Progress Bar"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_gwp",
+        "label": "Enable Gift With Purchase (GWP) - US",
+        "info": "You can have a maximum of four thresholds and a minimum of one; if you only want one threshold, set the remaining amounts to 0 and leave the corresponding labels empty. The starting value is automatically set to zero; you just need to fill in the label information."
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_cart_bar_int",
+        "label": "Enable Cart Progress Bar - INT",
+        "default": false,
+        "info": "By checking this, Cart Progress bar will be visible for INT"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_global_bar",
+        "label": "Enable Global Promo - US",
+        "default": false,
+        "info": "By checking this, Progress bar will be visible in Header instead of Announcement bar when cart isn't empty."
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_promo_bar_int",
+        "label": "Enable Global Promo Bar - INT",
+        "default": false,
+        "info": "By checking this, Progress bar will be visible for INT on Header but in order to work this our cart bar should have been active"
+      },
+      {
+        "type": "range",
+        "id": "add_gwp_tier",
+        "label": "Select the Tier where GWP will add in cart",
+        "min": 1,
+        "max": 4,
+        "step": 1,
+        "default": 1,
+        "info": "Select a value between 1 and 4. The Gift With Purchase (GWP) will be added at the corresponding tier based on your selection."
+      },
+      {
+        "type": "radio",
+        "id": "gwp_cart_price_type",
+        "label": "Which Cart Total Should Count Toward Rewards?",
+        "options": [
+          {
+            "value": "total_price",
+            "label": "Final Price (After Discounts & Promo Codes)"
+          },
+          {
+            "value": "original_total_price",
+            "label": "Original Price (Before Any Discounts)"
+          }
+        ],
+        "default": "total_price",
+        "info": "Choose whether customers need to reach the threshold using their final discounted price or their original price before discounts. For example: If a customer has $100 in their cart but uses a 20% discount code, their final price is $80. Selecting 'Final Price' means they need $80 to reach a $50 threshold. Selecting 'Original Price' means they need $100 to reach a $50 threshold."
+      },
+      {
+        "type": "header",
+        "content": "Gift With Purchase Product"
+      },
+      {
+        "type": "product",
+        "id": "gwp_product",
+        "label": "Select Gift Product",
+        "info": "Choose the product that will be automatically added to the cart as a free gift when customers reach the selected threshold tier. This product will be added automatically when the cart total meets or exceeds the threshold amount you've configured above. Make sure the selected product is set up as a free item or has a price of $0."
+      },
+      {
+        "type": "header",
+        "content": "GWP Threshold Configuration"
+      },
+      {
+        "type": "paragraph",
+        "content": "Configure up to four spending thresholds for your Gift With Purchase progress bar. Each threshold represents a milestone where customers can unlock rewards. Thresholds must be set in ascending order (each threshold must be higher than the previous one)."
+      },
+      {
+        "type": "text",
+        "id": "gwp_threshold_label_zero",
+        "label": "Starting Point Label",
+        "info": "The label displayed at the beginning of the progress bar (when cart total is $0). This is typically used to indicate the starting point or initial state.",
+        "placeholder": "e.g., Start Shopping, $0"
+      },
+      {
+        "type": "number",
+        "id": "gwp_threshold",
+        "default": 0,
+        "label": "First Threshold Amount",
+        "info": "Enter the minimum cart value (in dollars) required to reach the first milestone. This must be greater than $0 to activate the first threshold.",
+        "placeholder": "e.g., 50"
+      },
+      {
+        "type": "text",
+        "id": "gwp_threshold_label",
+        "label": "First Threshold Label",
+        "info": "The reward message or milestone description displayed when customers reach the first threshold amount.",
+        "placeholder": "e.g., Free Shipping, Unlock First Reward",
+        "visible_if": "{{ settings.gwp_threshold > 0 }}"
+      },
+      {
+        "type": "number",
+        "id": "gwp_threshold_two",
+        "default": 0,
+        "label": "Second Threshold Amount",
+        "info": "Enter the minimum cart value (in dollars) required to reach the second milestone. This must be greater than the first threshold amount.",
+        "placeholder": "e.g., 100",
+        "visible_if": "{{ settings.gwp_threshold > 0 }}"
+      },
+      {
+        "type": "text",
+        "id": "gwp_threshold_label_two",
+        "label": "Second Threshold Label",
+        "info": "The reward message or milestone description displayed when customers reach the second threshold amount.",
+        "placeholder": "e.g., Bonus Gift, Unlock Second Reward",
+        "visible_if": "{{ settings.gwp_threshold_two > 0 }}"
+      },
+      {
+        "type": "number",
+        "id": "gwp_threshold_three",
+        "default": 0,
+        "label": "Third Threshold Amount",
+        "info": "Enter the minimum cart value (in dollars) required to reach the third milestone. This must be greater than the second threshold amount.",
+        "placeholder": "e.g., 150",
+        "visible_if": "{{ settings.gwp_threshold_two > 0 }}"
+      },
+      {
+        "type": "text",
+        "id": "gwp_threshold_label_third",
+        "label": "Third Threshold Label",
+        "info": "The reward message or milestone description displayed when customers reach the third threshold amount.",
+        "placeholder": "e.g., Premium Gift, Unlock Third Reward",
+        "visible_if": "{{ settings.gwp_threshold_three > 0 }}"
+      },
+      {
+        "type": "number",
+        "id": "gwp_threshold_four",
+        "default": 0,
+        "label": "Fourth Threshold Amount",
+        "info": "Enter the minimum cart value (in dollars) required to reach the fourth and final milestone. This must be greater than the third threshold amount.",
+        "placeholder": "e.g., 200",
+        "visible_if": "{{ settings.gwp_threshold_three > 0 }}"
+      },
+      {
+        "type": "text",
+        "id": "gwp_threshold_label_four",
+        "label": "Fourth Threshold Label",
+        "info": "The reward message or milestone description displayed when customers reach the fourth and final threshold amount.",
+        "placeholder": "e.g., Ultimate Reward, Unlock Final Reward",
+        "visible_if": "{{ settings.gwp_threshold_four > 0 }}"
+      },
+      {
+        "type": "header",
+        "content": "Cart Upsell Collections"
+      },
+      {
+        "type": "paragraph",
+        "content": "Select collections to display products in the cart upsell section. The collection shown will be determined by the product tags in the cart: 'boots' tag shows Boots YMAL, 'apparel' tag shows Apparel YMAL, and mixed/both/neither shows Mixed YMAL."
+      },
+      {
+        "type": "text",
+        "id": "cart_upsell_title",
+        "label": "Cart Upsell Title",
+        "default": "YOU MAY ALSO LIKE"
+      },
+      {
+        "type": "collection",
+        "id": "cart_upsell_boots_ymal",
+        "label": "Boots YMAL",
+        "info": "Collection to display when cart contains products with 'boots' tag."
+      },
+      {
+        "type": "collection",
+        "id": "cart_upsell_mixed_ymal",
+        "label": "Mixed YMAL",
+        "info": "Collection to display when cart contains products with both 'boots' and 'apparel' tags, or neither tag."
+      },
+      {
+        "type": "collection",
+        "id": "cart_upsell_apparel_ymal",
+        "label": "Apparel YMAL",
+        "info": "Collection to display when cart contains products with 'apparel' tag."
       },
       {
         "type": "header",
@@ -1775,7 +961,7 @@
       {
         "type": "select",
         "id": "cart_thumbnail_border",
-        "label": "t:settings.border_style",
+        "label": "t:settings.style",
         "options": [
           {
             "value": "none",
@@ -1819,6 +1005,162 @@
         "step": 1,
         "unit": "px",
         "default": 0
+      },
+      {
+        "type": "header",
+        "content": "Empty Cart"
+      },
+      {
+        "type": "text",
+        "id": "empty_cart_title",
+        "label": "Empty Cart Title",
+        "default": "Your cart is empty"
+      },
+      {
+        "type": "text",
+        "id": "empty_cart_subtitle",
+        "label": "Empty Cart Subtitle",
+        "default": "Explore our popular categories."
+      },
+      {
+        "type": "collection",
+        "id": "empty_cart_collection_1",
+        "label": "Collection 1"
+      },
+      {
+        "type": "image_picker",
+        "id": "empty_cart_collection_1_image",
+        "label": "Collection 1 Image"
+      },
+      {
+        "type": "collection",
+        "id": "empty_cart_collection_2",
+        "label": "Collection 2"
+      },
+      {
+        "type": "image_picker",
+        "id": "empty_cart_collection_2_image",
+        "label": "Collection 2 Image"
+      },
+      {
+        "type": "collection",
+        "id": "empty_cart_collection_3",
+        "label": "Collection 3"
+      },
+      {
+        "type": "image_picker",
+        "id": "empty_cart_collection_3_image",
+        "label": "Collection 3 Image"
+      },
+      {
+        "type": "collection",
+        "id": "empty_cart_collection_4",
+        "label": "Collection 4"
+      },
+      {
+        "type": "image_picker",
+        "id": "empty_cart_collection_4_image",
+        "label": "Collection 4 Image"
+      },
+      {
+        "type": "collection",
+        "id": "empty_cart_collection_5",
+        "label": "Collection 5"
+      },
+      {
+        "type": "image_picker",
+        "id": "empty_cart_collection_5_image",
+        "label": "Collection 5 Image"
+      },
+      {
+        "type": "collection",
+        "id": "empty_cart_collection_6",
+        "label": "Collection 6"
+      },
+      {
+        "type": "image_picker",
+        "id": "empty_cart_collection_6_image",
+        "label": "Collection 6 Image"
+      },
+      {
+        "type": "text",
+        "id": "empty_cart_button_text",
+        "label": "Button Text",
+        "default": "SHOP ALL PRODUCTS"
+      },
+      {
+        "type": "url",
+        "id": "empty_cart_button_link",
+        "label": "Button Link"
+      },
+      {
+        "type": "header",
+        "content": "Cart Labels"
+      },
+      {
+        "type": "text",
+        "id": "cart_label_subtotal",
+        "label": "Subtotal Label",
+        "default": "Subtotal"
+      },
+      {
+        "type": "text",
+        "id": "cart_label_discount",
+        "label": "Discount Label",
+        "default": "Discount"
+      },
+      {
+        "type": "text",
+        "id": "cart_label_shipping",
+        "label": "Shipping Label",
+        "default": "Shipping"
+      },
+      {
+        "type": "text",
+        "id": "cart_value_shipping",
+        "label": "Shipping Value (e.g., Free or Paid)",
+        "default": "Free"
+      },
+      {
+        "type": "text",
+        "id": "cart_label_tax",
+        "label": "Tax Label",
+        "default": "Tax"
+      },
+      {
+        "type": "text",
+        "id": "cart_value_tax",
+        "label": "Tax Value (if any)",
+        "default": "Calculated at checkout"
+      },
+      {
+        "type": "text",
+        "id": "cart_total_label",
+        "label": "Total Label",
+        "default": "Estimated Total"
+      },
+      {
+        "type": "text",
+        "id": "cart_saving_discount",
+        "label": "Saving Label Below BTN",
+        "default": "You're saving "
+      },
+      {
+        "type": "text",
+        "id": "shipping_protection",
+        "label": "Protection Label - 1",
+        "default": "Shipping Protection"
+      },
+      {
+        "type": "text",
+        "id": "shipping_protection_fixed",
+        "label": "Protection Label Fixed - 2",
+        "default": "Shipping Protection (included in secure checkout)"
+      },
+      {
+        "type": "richtext",
+        "id": "sweepstake_copy",
+        "label": "Sweepstake Copy"
       }
     ]
   },
@@ -2061,7 +1403,26 @@
         "type": "checkbox",
         "id": "currency_code_enabled_cart_total",
         "label": "t:settings.cart_total",
-        "default": true
+        "default": false
+      }
+    ]
+  },
+  {
+    "name": "Product",
+    "settings": [
+      {
+        "type": "textarea",
+        "id": "boot_width_copy",
+        "label": "Boot Width Copy",
+        "default": "BRUNT boots ship with Regular (D) fit. For a wider (EE) fit, simply remove the grey insert below the insole.",
+        "info": "Copy when Wide boot width is selected"
+      },
+      {
+        "type": "textarea",
+        "id": "email_waitlist",
+        "label": "Email Waitlist",
+        "default": "Get on the waitlist and we'll email you as soon as this style becomes available.",
+        "info": "Copy for notify me via email modal and inline-form"
       }
     ]
   },
@@ -2282,6 +1643,50 @@
           }
         ],
         "default": "equal-width-buttons"
+      }
+    ]
+  },
+  {
+    "name": "Swiper Settings",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "autoplay_enabled",
+        "label": "Enable Autoplay",
+        "default": true,
+        "info": "Automatically advances slides"
+      },
+      {
+        "type": "range",
+        "id": "autoplay_interval",
+        "label": "Autoplay Interval (seconds)",
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "default": 5,
+        "info": "Time between slide transitions"
+      },
+      {
+        "type": "range",
+        "id": "animation_speed",
+        "label": "Animation Speed (ms)",
+        "min": 200,
+        "max": 1000,
+        "step": 100,
+        "default": 500,
+        "info": "Speed of slide transitions"
+      }
+    ]
+  },
+  {
+    "name": "Chat With Us",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "enable_chat_with_us",
+        "label": "Enable Chat With Us",
+        "default": true,
+        "info": "When enabled, the chat with us option will show up in navigation, and footer and the chat option will be available."
       }
     ]
   }

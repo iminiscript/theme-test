@@ -1,38 +1,137 @@
 {%- doc -%}
-  Renders the <img> element using provided image object
+  Responsive Image Component with Lazy Loading
 
-  @param {object} image - image object
-  @param {number} [height] - custom image height
-  @param {string} [class] - additional classes
-  @param {string} [text_fallback] - text to display if image is blank
-  @param {boolean} [unset_image_tag] - if true, ignores the image focal point
-  @param {string} [style] - additional styles
-  @param {string} [alt_text_fallback] - Optional text to display if image alt text is blank
+  Generates responsive, lazy-loaded images with automatic srcset generation and SVG handling.
+
+  @param {object} imageData - Required. Shopify image object (product.image, product.featured_media, etc.)
+  @param {number} width - Optional. Override image width
+  @param {string} alt_text - Optional. Alt text override
+  @param {boolean} load - Optional. Load immediately (default: false, lazy loads)
+  @param {boolean} priority - Optional. Add fetchpriority='high' (default: false)
+  @param {string} class - Optional. Additional CSS classes
+  @param {string} fit - Optional. CSS object-fit value
+  @param {string} objectPosition - Optional. CSS object-position value
+  @param {string} aspectRatio - Optional. Aspect ratio (default: auto)
 
   @example
-  {% render 'image', image: product.featured_image, height: 300, class: 'product-image' %}
+  {% render 'image',
+    imageData: product.featured_media,
+    width: 800,
+    class: 'product-image',
+    load: true
+  %}
 {%- enddoc -%}
-{% if image != blank %}
-  {% assign image_height = height | default: image.height %}
-  {% assign image_height_2x = height | default: image_height | times: 2 %}
-  {% assign image_height_3x = height | default: image_height | times: 3 %}
-  {% assign image_alt_text = image.alt | default: alt_text_fallback | default: '' %}
 
-  {% capture image_srcset -%}
-    {{ image | image_url: height: image_height }} 1x, {{ image | image_url: height: image_height_2x }} 2x, {{ image | image_url: height: image_height_3x }} 3x
-  {%- endcapture %}
+{%- assign image_widths_array = '100,116,134,156,182,210,244,282,328,380,442,512,594,688,798,926,1074,1246,1446,1678,1946'
+  | split: ','
+%}
 
-  {% assign style_value = style | default: '' %}
+{%- if width -%}
+  {%- assign image_width = width -%}
+{%- endif -%}
 
-  {% if unset_image_tag %}
-    {% assign style_value = style_value | append: 'object-position: inherit;' %}
-  {% endif %}
+{%- assign image_id = imageData.id -%}
 
-  {{
-    image
-    | image_url: height: image_height
-    | image_tag: class: class, srcset: image_srcset, style: style_value, alt: image_alt_text
-  }}
-{% elsif text_fallback %}
-  {{ text_fallback }}
-{% endif %}
+{%- assign src = imageData | image_url: width: 1920 %}
+{%- unless image_width -%}
+  {%- assign image_width = imageData.width %}
+{%- endunless -%}
+{%- if imageData.height -%}
+  {%- assign image_height = imageData.height %}
+{%- else -%}
+  {%- assign image_height = image_width %}
+{%- endif -%}
+{%- assign width_param = '&width=' %}
+{%- assign initial_src = imageData | image_url: width: 10, height: 10 %}
+{%- assign alt_text_rendered = imageData.alt %}
+
+{%- if alt_text -%}
+  {%- assign alt_text_rendered = alt_text -%}
+{%- endif -%}
+
+{%- if src contains '.svg' -%}
+  {%- assign is_svg = true -%}
+{%- else -%}
+  {%- assign is_svg = false -%}
+{%- endif -%}
+
+{%- if is_svg -%}
+  {%- assign initial_src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' %}
+{%- endif -%}
+
+{%- capture image_widths_array -%}
+  {%- for width in image_widths_array -%}
+    {%- comment -%} Check if image width is less or equal to width {%- endcomment -%}
+    {%- assign width_num = width | plus: 0 | round -%}
+    {%- if image_width >= width_num -%}{{ imageData | image_url: width: width_num | append: ' ' | append: width_num | append: 'w' }},{%- endif -%}
+  {%- endfor -%}
+  {{ imageData | image_url: width: image_width | append: ' ' | append: image_width | append: 'w' }}
+{%- endcapture -%}
+{%- assign image_widths_array = image_widths_array | strip -%}
+{%- assign iwidth = image_width | times: 1.0 %}
+
+{%- if aspectRatio -%}
+  {%- assign aspect_ratio = aspectRatio -%}
+{%- else -%}
+  {%- assign aspect_ratio = image_height | divided_by: iwidth -%}
+{%- endif -%}
+
+{%- if image_width > image_height -%}
+  {%- assign mode = 'image--landscape' -%}
+{%- elsif image_height > image_width -%}
+  {%- assign mode = 'image--portrait' -%}
+{%- else -%}
+  {%- assign mode = 'image--square' -%}
+{%- endif -%}
+
+<picture
+  id="image{{image_id}}"
+  class="lazyPicture {{class}} {{mode}} {{hideClass}}"
+  style="--maxw: {{image_width}}px;--maxh: {{image_height}}px;--aspect-ratio:var(--ov-aspect-ratio, {{ aspect_ratio }});{%- if fit -%}--image-fit:{{fit}};{%- endif -%}{%- if objectPosition -%}--image-position:{{objectPosition}};{%- endif -%} "
+  data-loaded="{%- if load -%}true{%- else -%}false{%- endif -%}"
+  {%- if is_svg -%}
+    data-svg="true"
+  {%- endif -%}
+>
+  {%- unless is_svg -%}
+    <source
+      {% if load %}
+        srcset="{{ image_widths_array }}"
+      {% else %}
+        data-srcset="{{ image_widths_array }}"
+      {%- endif -%}
+    >
+  {%- endunless -%}
+  {%- if is_svg and load -%}
+    <img
+      class="lazyPicture__elem"
+      src="{{ src }}"
+      alt="{{ alt_text_rendered }}"
+      width="{{ image_width }}"
+      height="{{ image_height }}"
+    >
+  {%- elsif is_svg -%}
+    <img
+      class="lazyPicture__elem"
+      src="{{ initial_src }}"
+      alt="{{ alt_text_rendered }}"
+      width="{{ image_width }}"
+      height="{{ image_height }}"
+      data-src="{{ src }}"
+    >
+  {%- else -%}
+    <img
+      class="lazyPicture__elem"
+      src="{{ initial_src }}"
+      alt="{{ alt_text_rendered }}"
+      width="{{ image_width }}"
+      height="{{ image_height }}"
+      {%- if priority -%}
+        fetchpriority="high"
+        loading="eager"
+      {%- else -%}
+        loading="lazy"
+      {%- endif -%}
+    >
+  {%- endif -%}
+</picture>

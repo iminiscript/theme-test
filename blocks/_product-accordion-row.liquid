@@ -1,0 +1,68 @@
+{% liquid
+  assign title = block.settings.title
+  assign content = block.settings.content
+%}
+{%- if title != blank and content != blank -%}
+  <accordion-custom class="product__accordionRow" {{ block.shopify_attributes }}>
+    <details
+      class="border-medium-smoke border-b-1 py-6"
+      data-testid="accordion-details"
+    >
+      <summary
+        id="product-accordion-trigger-{{ block.id }}"
+        class="flex p-0 font-bold cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-12 focus-visible:outline-brunt-orange"
+        aria-expanded="false"
+        aria-controls="product-accordion-content-{{ block.id }}"
+        role="button"
+        tabindex="0"
+        aria-describedby="product-accordion-description-{{ block.id }}"
+      >
+        <h5 class="text-14-bold m-0 p-0 uppercase">
+          {{ title }}
+        </h5>
+        <span
+          id="product-accordion-description-{{ block.id }}"
+          class="svg-wrapper icon-caret icon-animated w-4 h-4"
+          aria-hidden="true"
+        >
+          {% render 'icons', icon: 'chevron-down' %}
+        </span>
+      </summary>
+
+      <div
+        id="product-accordion-content-{{ block.id }}"
+        class="details-content pt-5"
+        role="region"
+        aria-labelledby="product-accordion-trigger-{{ block.id }}"
+      >
+        {{ content }}
+      </div>
+    </details>
+  </accordion-custom>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Product Accordion Row",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "title",
+      "default": "Title"
+    },
+    {
+      "type": "richtext",
+      "id": "content",
+      "label": "Content",
+      "default": "<p>Content</p>"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product Accordion Row"
+    }
+  ]
+}
+{% endschema %}

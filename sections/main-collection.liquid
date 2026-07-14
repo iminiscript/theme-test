@@ -1,5 +1,10 @@
-
-
+{% liquid
+  assign _settings = section.settings
+  assign enable_filters = _settings.enable_filters
+  assign enable_sorting = _settings.enable_sorting
+  assign no_product_text = _settings.no_product_text
+  assign no_product_button_text = _settings.no_product_button_text
+%}
 <script
   src="{{ 'results-list.js' | asset_url }}"
   type="module"
@@ -22,59 +27,339 @@
   }
 {% endjavascript %}
 
-{% comment %} We always render this full-width, as the child blocks have width: page/full settings {% endcomment %}
-<div class="section-background color-{{ section.settings.color_scheme }}"></div>
+<script src="{{ 'facets.js' | asset_url }}" type="module"></script>
+<script src="{{ 'filter-drawer.js' | asset_url }}" type="module"></script>
+
 <results-list
-  class="section product-grid-container color-{{ section.settings.color_scheme }}"
-  style="--padding-block-start: {{ section.settings.padding-block-start }}px; --padding-block-end: {{ section.settings.padding-block-end }}px;"
   section-id="{{ section.id }}"
-  infinite-scroll="{{ section.settings.enable_infinite_scroll }}"
 >
-  {% render 'skip-to-content-link', href: '#ResultsList', text: 'accessibility.skip_to_results_list' %}
-
-  <div
-    class="collection-wrapper grid gap-style{% if section.settings.product_grid_width == 'full-width' %} collection-wrapper--grid-full-width{% endif %}"
-  >
-    {% content_for 'block',
-      type: 'filters',
-      id: 'filters',
-      results: collection,
-      results_size: collection.products_count
-    %}
-
-    {% assign products_per_page = 24 %}
-
-    {% if section.settings.enable_infinite_scroll == false %}
-      {% assign products_per_page = section.settings.products_per_page %}
+  <div class="collection flex flex-col lg:flex-row gap-6 px-3 md:px-8 lg:px-10 lg:pt-5 pb-12">
+    <!-- Filters Form -->
+    {% if enable_filters == true %}
+      <facets-form-component section-id="{{ section.id }}" class="hidden lg:block">
+        <form id="FacetFiltersForm-{{ section.id }}" ref="facetsForm">
+          <div class="w-[318px] py-5">
+            <h4 class="text-18-regular-caps mb-7 uppercase hidden lg:block">FILTER BY</h4>
+            {% render 'filters', filters: collection.filters, section_id: section.id %}
+          </div>
+        </form>
+      </facets-form-component>
     {% endif %}
+    <div class="flex flex-col w-full">
+      <!-- Sorting Form -->
+      <div class="flex justify-between items-center py-3">
+        <div>
+          <span class="text-14-regular" title="Showing {{ collection.products_count }} Items">
+            Showing {{ collection.products_count }} Items
+          </span>
+        </div>
+        {% if enable_sorting == true %}
+          <div class="hidden lg:block">
+            <facets-form-component section-id="{{ section.id }}">
+              <form id="FacetSortingForm-{{ section.id }}" ref="facetsForm">
+                {% render 'sorting', sort_by: collection.sort_by, section_id: section.id, class: 'w-[300px]' %}
+              </form>
+            </facets-form-component>
+          </div>
+        {% endif %}
 
-    {% paginate collection.products by products_per_page %}
-      {% capture children %}
-        {% for product in collection.products %}
-          <li
-            id="{{ section.id }}-{{ product.id }}"
-            class="product-grid__item product-grid__item--{{ forloop.index0 }}"
-            data-page="{{ paginate.current_page }}"
-            data-product-id="{{ product.id }}"
-            ref="cards[]"
-          >
-            {% # theme-check-disable %}
-            {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: product %}
-            {% # theme-check-enable %}
-          </li>
-        {% endfor %}
-      {% endcapture %}
+        <!-- Filter and Sort Drawer -->
+        {% if enable_filters == true or enable_sorting == true %}
+          <filter-drawer-component class="block lg:hidden">
+            <button
+              class="flex lg:hidden uppercase text-12-regular font-bold gap-1 h-[44px] w-[138px] items-center justify-center border-asphalt border-[1.5px] cursor-pointer"
+              on:click="/showDialog"
+              aria-label="Open filter and sort drawer"
+            >
+              {% render 'icon', icon: 'filter-sort' %}
+              FILTER & SORT
+            </button>
 
-      {% render 'product-grid',
-        section: section,
-        children: children,
-        products: collection.products,
-        paginate: paginate,
-        enable_infinite_scroll: section.settings.enable_infinite_scroll
-      %}
-    {% endpaginate %}
+            <dialog
+              ref="dialog"
+              class="dialog-modal filter-sort-drawer"
+              scroll-lock
+              aria-label="Filter and sort products"
+            >
+              <div class="flex flex-col h-full">
+                <!-- Header -->
+                <div class="flex py-5 px-3 shadow-[0_0_10px_0_rgba(0,0,0,0.1)]">
+                  <button
+                    ref="closeButton"
+                    on:click="/closeDialog"
+                    class="button-unstyled ml-auto"
+                    aria-label="{{ 'actions.close_dialog' | t }}"
+                  >
+                    {% render 'icon', icon: 'close', class: 'w-5 h-5' %}
+                  </button>
+                </div>
+
+                <!-- Content -->
+                <div class="drawer__content overflow-y-scroll">
+                  {% if enable_sorting == true %}
+                    <facets-form-component section-id="{{ section.id }}">
+                      <form id="FacetSortingForm-Drawer-{{ section.id }}" ref="facetsForm">
+                        {% render 'sorting', sort_by: collection.sort_by, section_id: section.id, class: 'w-full' %}
+                      </form>
+                    </facets-form-component>
+                  {% endif %}
+
+                  {% if enable_filters == true %}
+                    <facets-form-component section-id="{{ section.id }}" ref="drawerFacetsForm">
+                      <form id="FacetFiltersForm-Drawer-{{ section.id }}" ref="facetsForm">
+                        <div class="py-5">
+                          <h4 class="text-18-regular-caps mb-7 uppercase px-3">FILTER BY</h4>
+                          <div class="px-3">
+                            {% render 'filters',
+                              filters: collection.filters,
+                              section_id: section.id,
+                              batch_mode: true
+                            %}
+                          </div>
+                        </div>
+                      </form>
+                    </facets-form-component>
+                  {% endif %}
+                </div>
+
+                <!-- Footer -->
+                <div class="drawer__footer mt-auto flex items-center justify-between pt-4 pb-5 px-3 shadow-[0_0_10px_0_rgba(0,0,0,0.1)]">
+                  <button
+                    class="underline text-14-regular font-bold uppercase text-asphalt flex-1 h-[50px]"
+                    on:click="/clearAllFiltersInDrawer"
+                    type="button"
+                  >
+                    CLEAR ALL
+                  </button>
+                  <button
+                    class="flex-1 bg-brunt-orange text-white h-[50px] text-14-regular font-bold uppercase"
+                    on:click="/applyFiltersAndClose"
+                    type="button"
+                  >
+                    APPLY
+                  </button>
+                </div>
+              </div>
+            </dialog>
+          </filter-drawer-component>
+        {% endif %}
+      </div>
+
+      {%- liquid
+        assign has_active_filters = false
+        assign active_filters_count = 0
+        for filter in collection.filters
+          if filter.active_values.size > 0
+            assign has_active_filters = true
+            assign active_filters_count = active_filters_count | plus: filter.active_values.size
+          endif
+        endfor
+      -%}
+
+      {% if has_active_filters %}
+        <facets-form-component section-id="{{ section.id }}" class="mt-2 block lg:hidden">
+          <form id="ActiveFiltersForm-{{ section.id }}" ref="facetsForm" style="display: none;">
+            {% for filter in collection.filters %}
+              {% for value in filter.values %}
+                {% if value.active %}
+                  <input
+                    type="checkbox"
+                    name="{{ value.param_name }}"
+                    value="{{ value.value }}"
+                    checked
+                  >
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+          </form>
+
+          {% render 'active-filters',
+            filters: collection.filters,
+            active_filters_count: active_filters_count,
+            has_active_filters: has_active_filters
+          %}
+        </facets-form-component>
+      {% endif %}
+
+      <!-- Product Grid -->
+      {% paginate collection.products by 24 %}
+        <!-- Loader (hidden by default, shown during fetch) -->
+        <div id="products-loader-{{ section.id }}" class="hidden mt-6" data-loader>
+          {% render 'collection-loader' %}
+        </div>
+
+        <!-- Products Container -->
+        <div id="products-container-{{ section.id }}" data-products-container class="mt-6">
+          {% capture children %}
+          {% for product in collection.products %}
+            
+            {%- comment -%}
+              Calculate global product index across all pages
+              Formula: (current_page - 1) * page_size + current_index
+              Example: Page 2, item 5 = (2-1) * 24 + 5 = 29
+            {%- endcomment -%}
+            {%- assign page_offset = paginate.current_page | minus: 1 | times: paginate.page_size -%}
+            {%- assign current_product_index = page_offset | plus: forloop.index -%}
+            
+            {%- comment -%} Check if any block should be inserted at this position {%- endcomment -%}
+            {% for block in section.blocks %}
+              {% if block.type == 'in-grid-card-callout' %}
+                {%- assign callout_list = block.settings.feature_callout_list_setting -%}
+                {% if callout_list != blank %}
+                  {% for callout_metaobject in callout_list %}
+                    {%- assign callout_position = callout_metaobject.position.value -%}
+                    {% if callout_position == current_product_index %}
+                      <li
+                        id="{{ section.id }}-block-{{ block.id }}-{{ forloop.index }}"
+                        class="product-grid__item product-grid__item--callout"
+                        data-page="{{ paginate.current_page }}"
+                        ref="cards[]"
+                      >
+                        {% render 'in-grid-card-callout', metaobject: callout_metaobject, block_id: block.id %}
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+              {% endif %}
+
+              {% if block.type == 'multi-product-callout' %}
+                {%- assign multi_callout_list = block.settings.multi_product_callout -%}
+                {% if multi_callout_list != blank %}
+                  {% for multi_callout_metaobject in multi_callout_list %}
+                    {%- assign multi_callout_position = multi_callout_metaobject.position.value -%}
+                    {% if multi_callout_position == current_product_index %}
+                      <li
+                        id="{{ section.id }}-block-{{ block.id }}-{{ forloop.index }}"
+                        class="product-grid__item product-grid__item--callout product-grid__item--multi-callout"
+                        data-page="{{ paginate.current_page }}"
+                        ref="cards[]"
+                      >
+                        {% render 'multi-product-callout', metaobject: multi_callout_metaobject, block_id: block.id, section: section %}
+                      </li>
+                      
+                      {%- comment -%} Always add divider after multi-product callout, CSS will handle hiding {%- endcomment -%}
+                      <li class="product-grid__divider max-w-[180px] md:max-w-[320px] lg:max-w-[600px] w-full mx-auto h-1 bg-brunt-orange mb-4" style="grid-column: 1 / -1;"></li>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            
+            <li
+              id="{{ section.id }}-{{ product.id }}"
+              class="product-grid__item product-grid__item--{{ forloop.index0 }}"
+              data-page="{{ paginate.current_page }}"
+              data-product-id="{{ product.id }}"
+              ref="cards[]"
+            >
+              {% render 'product-card', 
+                product: product, 
+                section_name: 'plp'
+              %}
+            </li>
+          {% endfor %}
+        {% endcapture %}
+          {% render 'product-grid',
+            section: section,
+            children: children,
+            products: collection.products,
+            paginate: paginate,
+            no_product_text: no_product_text,
+            no_product_button_text: no_product_button_text
+          %}
+        </div>
+        {%- comment -%} End products container {%- endcomment -%}
+
+        <!-- Load More Button (Fallback) -->
+        {% if paginate.next %}
+          <div class="flex justify-center mt-10" ref="loadMoreContainer">
+            <button
+              class="block md:inline-block py-[11px] md:py-[13px] px-[11px] md:px-[13px] md:min-w-[304px] border-[1.5px] border-brunt-orange rounded-[4px] text-brunt-orange cursor-pointer hover:bg-brunt-orange hover:text-white transition-colors"
+              ref="loadMoreButton"
+              on:click="/handleLoadMore"
+              aria-label="Load more products"
+            >
+              Load More
+            </button>
+          </div>
+        {% endif %}
+      {% endpaginate %}
+    </div>
   </div>
 </results-list>
+
+{% stylesheet %}
+  .product-grid__item--multi-callout {
+    grid-column: 1 / span 2;
+  }
+
+  @media (min-width: 768px) {
+    .product-grid__item--multi-callout {
+      grid-column: 1 / span 3;
+    }
+  }
+
+  /* Hide divider when immediately followed by another multi-product callout */
+  .product-grid__divider:has(+ .product-grid__item--multi-callout) {
+    display: none;
+  }
+
+  /* Hide divider if it's the last child */
+  .product-grid__divider:last-child {
+    display: none;
+  }
+
+  .filter-sort-drawer {
+    /* Mobile: bottom drawer */
+    --dialog-drawer-opening-animation: slideInTop;
+    --dialog-drawer-closing-animation: slideOutBottom;
+    width: 100%;
+    height: 80dvh;
+    max-height: 80dvh;
+    overflow-y: hidden;
+    position: fixed;
+    border-radius: 16px 16px 0 0;
+    margin: auto 0 0 0;
+    padding: 0;
+    background-color: white;
+    bottom: 0;
+  }
+
+  .filter-sort-drawer[open] {
+    animation: var(--dialog-drawer-opening-animation) var(--animation-speed) var(--animation-easing) forwards;
+  }
+
+  .filter-sort-drawer.dialog-closing {
+    animation: var(--dialog-drawer-closing-animation) var(--animation-speed) var(--animation-easing);
+  }
+
+  .filter-sort-drawer:modal {
+    overflow-y: hidden;
+  }
+
+  /* md and above: drawer from right */
+  @media (min-width: 768px) {
+    .filter-sort-drawer {
+      --dialog-drawer-opening-animation: slideInLeft;
+      --dialog-drawer-closing-animation: slideOutLeft;
+      width: 100%;
+      height: 100%;
+      max-width: 400px;
+      max-height: 100dvh;
+      border-radius: 0;
+      margin: 0 0 0 auto;
+      bottom: auto;
+    }
+
+    .filter-sort-drawer:modal {
+      max-height: 100dvh;
+    }
+  }
+
+  .filter-sort-drawer .drawer__content {
+    padding: 12px;
+  }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -82,176 +367,56 @@
   "enabled_on": {
     "templates": ["collection"]
   },
+  "blocks": [
+    {
+      "type": "in-grid-card-callout",
+      "name": "In Grid - Card Callout",
+      "settings": [
+        {
+          "type": "metaobject_list",
+          "id": "feature_callout_list_setting",
+          "label": "In-Grid Callout Card",
+          "metaobject_type": "feature_callout"
+        }
+      ]
+    },
+    {
+      "type": "multi-product-callout",
+      "name": "Multi Product Callout",
+      "settings": [
+        {
+          "type": "metaobject_list",
+          "id": "multi_product_callout",
+          "label": "Multi Product Callout",
+          "metaobject_type": "multi_product_callout"
+        }
+      ]
+    }
+  ],
   "settings": [
     {
-      "type": "select",
-      "id": "layout_type",
-      "label": "t:settings.type",
-      "options": [
-        {
-          "value": "grid",
-          "label": "t:options.grid"
-        },
-        {
-          "value": "organic",
-          "label": "t:options.editorial"
-        }
-      ],
-      "default": "grid"
-    },
-    {
-      "type": "select",
-      "id": "product_card_size",
-      "label": "t:settings.card_size",
-      "options": [
-        {
-          "value": "small",
-          "label": "t:options.small"
-        },
-        {
-          "value": "medium",
-          "label": "t:options.medium"
-        },
-        {
-          "value": "large",
-          "label": "t:options.large"
-        },
-        {
-          "value": "extra-large",
-          "label": "t:options.extra_large"
-        }
-      ],
-      "default": "medium",
-      "visible_if": "{{ section.settings.layout_type == 'grid' }}"
-    },
-    {
-      "type": "select",
-      "id": "mobile_product_card_size",
-      "label": "t:settings.mobile_card_size",
-      "options": [
-        {
-          "value": "small",
-          "label": "t:options.small"
-        },
-        {
-          "value": "large",
-          "label": "t:options.large"
-        }
-      ],
-      "default": "small"
-    },
-    {
       "type": "checkbox",
-      "id": "enable_infinite_scroll",
-      "label": "t:settings.auto_load_products",
+      "id": "enable_filters",
+      "label": "Enable Filters",
       "default": true
     },
     {
-      "type": "range",
-      "id": "products_per_page",
-      "label": "t:settings.products_per_page",
-      "min": 8,
-      "max": 36,
-      "step": 4,
-      "default": 24,
-      "visible_if": "{{ section.settings.enable_infinite_scroll == false }}"
-    },
-    {
-      "type": "header",
-      "content": "t:content.layout"
-    },
-    {
-      "type": "select",
-      "id": "product_grid_width",
-      "label": "t:settings.width",
-      "options": [
-        {
-          "value": "centered",
-          "label": "t:options.page"
-        },
-        {
-          "value": "full-width",
-          "label": "t:options.full"
-        }
-      ],
-      "default": "centered"
-    },
-    {
       "type": "checkbox",
-      "id": "full_width_on_mobile",
-      "label": "t:settings.full_width_on_mobile",
-      "default": true,
-      "visible_if": "{{ section.settings.product_grid_width != 'full-width' }}"
+      "id": "enable_sorting",
+      "label": "Enable Sorting",
+      "default": true
     },
     {
-      "type": "range",
-      "id": "columns_gap_horizontal",
-      "label": "t:settings.horizontal_gap",
-      "min": 0,
-      "max": 50,
-      "step": 1,
-      "unit": "px",
-      "default": 16
+      "type": "text",
+      "id": "no_product_text",
+      "label": "No Product Placeholder",
+      "default": "We couldn't find any results for your current filters. "
     },
     {
-      "type": "range",
-      "id": "columns_gap_vertical",
-      "label": "t:settings.vertical_gap",
-      "min": 0,
-      "max": 50,
-      "step": 1,
-      "unit": "px",
-      "default": 16
-    },
-    {
-      "type": "range",
-      "id": "padding-inline-start",
-      "label": "t:settings.left_padding",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "padding-inline-end",
-      "label": "t:settings.right_padding",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 0
-    },
-    {
-      "type": "header",
-      "content": "t:content.section_layout"
-    },
-    {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "label": "t:settings.color_scheme",
-      "default": "scheme-1"
-    },
-    {
-      "type": "range",
-      "id": "padding-block-start",
-      "label": "t:settings.top_padding",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 8
-    },
-    {
-      "type": "range",
-      "id": "padding-block-end",
-      "label": "t:settings.bottom_padding",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 8
+      "type": "text",
+      "id": "no_product_button_text",
+      "label": "No product Button Text",
+      "default": "Clear All Filters"
     }
   ],
   "presets": []

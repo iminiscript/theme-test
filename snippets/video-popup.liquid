@@ -1,0 +1,63 @@
+{% comment %}
+  Video Popup Component - Uses existing dialog system
+
+  Usage:
+  {% render 'video-popup', id: 'unique-id' %}
+{% endcomment %}
+
+{% liquid
+  assign popup_id = id | default: 'video-popup'
+%}
+
+<video-popup-component id="{{ popup_id }}">
+  <dialog
+    ref="dialog"
+    class="dialog-modal dialog-modal-center video-popup-dialog bg-transparent w-[1200px] p-0 shadow-none relative"
+    scroll-lock
+  >
+    <button
+      ref="closeButton"
+      on:click="/closeDialog"
+      type="button"
+      class="cursor-pointer text-white outline-none h-6 w-6 absolute top-0 right-0"
+      aria-label="Close video"
+    >
+      {% render 'icon', icon: 'close' %}
+    </button>
+    <div class="relative w-full aspect-video overflow-hidden">
+      <iframe
+        ref="videoIframe"
+        class="absolute top-0 left-0 w-full h-full"
+        width="560"
+        height="315"
+        src=""
+        title="Video player"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+      ></iframe>
+    </div>
+  </dialog>
+</video-popup-component>
+
+<script
+  src="{{ 'video-popup.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+
+{% stylesheet %}
+  .video-popup-dialog {
+    padding: 1.5rem;
+  }
+
+  video-popup-component button svg {
+    pointer-events: none;
+    width: 24px;
+    height: 24px;
+  }
+
+  video-popup-component button:hover {
+    opacity: 0.7;
+  }
+{% endstylesheet %}

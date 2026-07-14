@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Muat video: {{ description }}",
@@ -16,8 +25,7 @@
       "comment": "Komentar",
       "post_success": "Terima kasih sudah menghubungi kami. Kami akan segera menghubungi Anda.",
       "error_heading": "Mohon sesuaikan:"
-    },
-    "slider_label": "Slider"
+    }
   },
   "accessibility": {
     "play_model": "Putar model 3D",
@@ -38,7 +46,7 @@
     "slideshow_next": "Slide berikutnya",
     "slideshow_previous": "Slide sebelumnya",
     "filters": "Filter",
-    "account": "Akun",
+    "account": "Buka menu akun",
     "cart": "Keranjang",
     "cart_count": "Total item di keranjang",
     "filter_count": {
@@ -52,28 +60,18 @@
     "loading_product_recommendations": "Memuat rekomendasi produk",
     "discount": "Pakai kode diskon",
     "discount_applied": "Kode diskon yang dipakai: {{ code }}",
+    "open_cart_drawer": "Buka troli",
     "inventory_status": "Status Inventaris",
     "pause_video": "Jeda video",
     "find_country": "Temukan negara",
-    "localization_region_and_language": "Pemilih wilayah dan bahasa",
+    "localization_region_and_language": "Buka selektor wilayah dan bahasa",
+    "open_search_modal": "Buka pencarian",
     "decrease_quantity": "Kurangi jumlah",
     "increase_quantity": "Tambah jumlah",
     "quantity": "Jumlah",
     "rating": "Peringkat produk ini adalah {{ rating }} dari 5",
     "nested_product": "{{ product_title }} untuk {{ parent_title }}",
-    "discount_menu": "Kode Diskon",
-    "remove": "Hapus",
-    "view_pricing_info": "Lihat informasi harga",
-    "slideshow": "Tayangan slide",
-    "header_navigation_label": "Utama",
-    "home_logo_alt": "{{ store_name }} – Beranda",
-    "active_filters": "Filter aktif:",
-    "featured_product": "Produk unggulan",
-    "product_details": "Detail produk",
-    "show_product_details": "Tampilkan detail produk untuk {{ product_name }}",
-    "search_suggestions_available": "Cari rekomendasi yang tersedia untuk \"{{ query }}\"",
-    "price_filter_low": "Harga rendah",
-    "price_filter_high": "Harga tinggi"
+    "discount_menu": "Kode Diskon"
   },
   "actions": {
     "add_to_cart": "Tambahkan ke keranjang",
@@ -113,9 +111,7 @@
     "sign_up": "Daftar",
     "sort": "Urutkan",
     "show_all_options": "Tampilkan semua opsi",
-    "open": "Buka",
-    "back_to": "Kembali ke {{ title }}",
-    "zoom_media": "Perbesar media {{ index }}"
+    "open": "Buka"
   },
   "content": {
     "reviews": "ulasan",
@@ -242,37 +238,7 @@
     "recipient_form_fields_hidden": "Kolom formulir penerima sekarang disembunyikan",
     "recipient_form_error": "Terjadi kesalahan saat pengiriman formulir",
     "product_custom_property_character_count": "{{ used_chars }}/{{ max_chars }} karakter digunakan",
-    "terms_and_policies": "Ketentuan dan Kebijakan",
-    "pagination": {
-      "nav_label": "Paginasi",
-      "previous": "Sebelumnya",
-      "next": "Berikutnya",
-      "page": "Halaman {{ page }}"
-    },
-    "volume_pricing_available": "Harga volume tersedia",
-    "volume_pricing": "Harga volume",
-    "at_price_each": "harga {{ price }}/satuan",
-    "each": "{{ price }}/satuan",
-    "each_abbreviation": "satuan",
-    "price_at": "dalam",
-    "price_range": "Kisaran harga",
-    "item_count_cutoff": "Lebih dari {{ count }} item",
-    "cancel": "Batal",
-    "product_subtotal": "Subtotal produk",
-    "quantity_per_item": "/satuan",
-    "remove_all": "Hapus semua",
-    "remove_all_items_confirmation": "Hapus {{ count }} item ini dari keranjang Anda?",
-    "remove_one_item_confirmation": "Hapus 1 item dari keranjang Anda?",
-    "total_items": "Total item",
-    "variant": "Varian",
-    "variant_total": "Total varian",
-    "view_cart": "Lihat keranjang",
-    "your_cart": "Keranjang Anda",
-    "items_added_to_cart": {
-      "one": "1 item ditambahkan ke keranjang",
-      "other": "{{ count }} item ditambahkan ke keranjang"
-    },
-    "quick_order_list": "Daftar pesanan cepat"
+    "terms_and_policies": "Syarat dan Kebijakan"
   },
   "gift_cards": {
     "issued": {
@@ -293,7 +259,7 @@
     "search": "Cari",
     "product_title": "Judul produk",
     "collection_title": "Judul koleksi",
-    "blog_posts": "Postingan blog",
+    "blog_posts": "Postingan Blog",
     "blog_post_title": "Judul",
     "blog_post_author": "Penulis",
     "blog_post_date": "Tanggal",
@@ -306,15 +272,7 @@
       "adding_to_cart": "Menambahkan...",
       "add_to_cart_error": "Kesalahan saat menambahkan ke keranjang",
       "sold_out": "Habis",
-      "unavailable": "Tidak Tersedia",
-      "quantity_error_max": "Item ini memiliki batas maksimum {{ maximum }}",
-      "quantity": "Jumlah",
-      "quantity_increments": "Nilai peningkatan {{ increment }}",
-      "quantity_minimum": "Minimum {{ minimum }}",
-      "quantity_maximum": "Maksimum {{ maximum }}",
-      "in_cart": "di keranjang",
-      "default_title": "Judul Bawaan",
-      "sticky_add_to_cart": "Bilah penambahan cepat ke keranjang"
+      "unavailable": "Tidak Tersedia"
     }
   },
   "fields": {

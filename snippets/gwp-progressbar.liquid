@@ -1,0 +1,444 @@
+{% comment %}
+  GWP Progress Bar Snippet (Liquid-first render, fixed comparisons)
+{% endcomment %}
+
+{%- liquid
+  assign section_id = section_id | default: ''
+  assign currency = cart.currency.symbol | default: '$'
+  assign currency_iso = cart.currency.iso_code | default: 'USD'
+  assign is_usd = false
+  if currency_iso == 'USD'
+    assign is_usd = true
+  endif
+
+  # Get exchange rate from metafield
+  assign base_amount = shop.metafields.custom.exchange_rate.value | plus: 0
+  assign local_currency_exchange_rate = base_amount | divided_by: 1000000.00
+
+  # thresholds (stored in USD, converted to cents)
+  # Settings are in dollars, convert to cents first
+  assign threshold_0 = 0
+  assign threshold_1_usd = settings.gwp_threshold | times: 100 | default: 0
+  assign threshold_2_usd = settings.gwp_threshold_two | times: 100 | default: 0
+  assign threshold_3_usd = settings.gwp_threshold_three | times: 100 | default: 0
+  assign threshold_4_usd = settings.gwp_threshold_four | times: 100 | default: 0
+
+  # Convert thresholds if not USD using exchange rate
+  # Multiply USD amount (in cents) by exchange rate, then round to nearest whole dollar (100 cents)
+  if is_usd
+    assign threshold_1 = threshold_1_usd
+    assign threshold_2 = threshold_2_usd
+    assign threshold_3 = threshold_3_usd
+    assign threshold_4 = threshold_4_usd
+  else
+    # Convert to dollars, round to nearest integer, then convert back to cents
+    # This ensures whole dollar amounts (no cents)
+    assign threshold_1 = threshold_1_usd | divided_by: 100.0 | times: local_currency_exchange_rate | round | times: 100
+    assign threshold_2 = threshold_2_usd | divided_by: 100.0 | times: local_currency_exchange_rate | round | times: 100
+    assign threshold_3 = threshold_3_usd | divided_by: 100.0 | times: local_currency_exchange_rate | round | times: 100
+    assign threshold_4 = threshold_4_usd | divided_by: 100.0 | times: local_currency_exchange_rate | round | times: 100
+  endif
+
+  # labels
+  assign label_0 = settings.gwp_threshold_label_zero | default: ''
+  assign label_1 = settings.gwp_threshold_label | default: ''
+  assign label_2 = settings.gwp_threshold_label_two | default: ''
+  assign label_3 = settings.gwp_threshold_label_third | default: ''
+  assign label_4 = settings.gwp_threshold_label_four | default: ''
+
+  # thresholds array for JS
+  assign thresholds_array = threshold_0 | append: ''
+  if threshold_1 > 0
+    assign thresholds_array = thresholds_array | append: ',' | append: threshold_1
+  endif
+  if threshold_2 > 0
+    assign thresholds_array = thresholds_array | append: ',' | append: threshold_2
+  endif
+  if threshold_3 > 0
+    assign thresholds_array = thresholds_array | append: ',' | append: threshold_3
+  endif
+  if threshold_4 > 0
+    assign thresholds_array = thresholds_array | append: ',' | append: threshold_4
+  endif
+
+  # gwp product/tier (data attrs)
+  assign gwp_product = settings.gwp_product
+  assign gwp_variant_id = ''
+  if gwp_product != blank
+    assign gwp_variant_id = gwp_product.selected_or_first_available_variant.id
+  endif
+  assign add_gwp_tier = settings.add_gwp_tier | default: 1
+
+  assign target_threshold = 0
+  if add_gwp_tier == 1
+    assign target_threshold = threshold_1
+  elsif add_gwp_tier == 2
+    assign target_threshold = threshold_2
+  elsif add_gwp_tier == 3
+    assign target_threshold = threshold_3
+  elsif add_gwp_tier == 4
+    assign target_threshold = threshold_4
+  endif
+
+  # cart total for initial paint (cents)
+  # Use setting to determine which cart price to use
+  assign cart_price_type = settings.gwp_cart_price_type | default: 'total_price'
+  if cart_price_type == 'original_total_price'
+    assign cart_total = cart.original_total_price | default: 0
+  else
+    assign cart_total = cart.total_price | default: 0
+  endif
+
+  # segment widths (0–100)
+  assign seg1_w = 0
+  assign seg2_w = 0
+  assign seg3_w = 0
+  assign seg4_w = 0
+
+  if threshold_1 > 0
+    if cart_total <= threshold_0
+      assign seg1_w = 0
+    elsif cart_total >= threshold_1
+      assign seg1_w = 100
+    else
+      assign seg1_num = cart_total | minus: threshold_0
+      assign seg1_den = threshold_1  | minus: threshold_0
+      assign seg1_w   = seg1_num | times: 100 | divided_by: seg1_den
+    endif
+    # Add 20% boost for first segment when progress > 50%
+    # if seg1_w > 50
+    #   assign seg1_w = seg1_w | plus: 20
+    # endif
+  endif
+
+  if threshold_2 > 0
+    if cart_total <= threshold_1
+      assign seg2_w = 0
+    elsif cart_total >= threshold_2
+      assign seg2_w = 100
+    else
+      assign seg2_num = cart_total | minus: threshold_1
+      assign seg2_den = threshold_2  | minus: threshold_1
+      assign seg2_w   = seg2_num | times: 100 | divided_by: seg2_den
+    endif
+  endif
+
+  if threshold_3 > 0
+    if cart_total <= threshold_2
+      assign seg3_w = 0
+    elsif cart_total >= threshold_3
+      assign seg3_w = 100
+    else
+      assign seg3_num = cart_total | minus: threshold_2
+      assign seg3_den = threshold_3  | minus: threshold_2
+      assign seg3_w   = seg3_num | times: 100 | divided_by: seg3_den
+    endif
+  endif
+
+  if threshold_4 > 0
+    if cart_total <= threshold_3
+      assign seg4_w = 0
+    elsif cart_total >= threshold_4
+      assign seg4_w = 100
+    else
+      assign seg4_num = cart_total | minus: threshold_3
+      assign seg4_den = threshold_4  | minus: threshold_3
+      assign seg4_w   = seg4_num | times: 100 | divided_by: seg4_den
+    endif
+    # Add 20% boost for last segment when progress > 50%
+    # if seg4_w > 50
+    #   assign seg4_w = seg4_w | plus: 20
+    # endif
+  endif
+
+  # marker checked flags (must be done with if/assign)
+  assign marker_0_checked = false
+  if cart_total >= threshold_0
+    assign marker_0_checked = true
+  endif
+
+  assign marker_1_checked = false
+  if threshold_1 > 0 and cart_total >= threshold_1
+    assign marker_1_checked = true
+  endif
+
+  assign marker_2_checked = false
+  if threshold_2 > 0 and cart_total >= threshold_2
+    assign marker_2_checked = true
+  endif
+
+  assign marker_3_checked = false
+  if threshold_3 > 0 and cart_total >= threshold_3
+    assign marker_3_checked = true
+  endif
+
+  assign marker_4_checked = false
+  if threshold_4 > 0 and cart_total >= threshold_4
+    assign marker_4_checked = true
+  endif
+
+  # Calculate achieved milestone (highest threshold reached)
+  assign achieved_label = ''
+  if threshold_4 > 0 and cart_total >= threshold_4
+    assign achieved_label = label_4
+  elsif threshold_3 > 0 and cart_total >= threshold_3
+    assign achieved_label = label_3
+  elsif threshold_2 > 0 and cart_total >= threshold_2
+    assign achieved_label = label_2
+  elsif threshold_1 > 0 and cart_total >= threshold_1
+    assign achieved_label = label_1
+  elsif cart_total >= threshold_0
+    assign achieved_label = label_0
+  endif
+
+  # Calculate next milestone (lowest threshold not yet reached)
+  assign next_threshold = 0
+  assign next_label = ''
+  if threshold_1 > 0 and cart_total < threshold_1
+    assign next_threshold = threshold_1
+    assign next_label = label_1
+  elsif threshold_2 > 0 and cart_total < threshold_2
+    assign next_threshold = threshold_2
+    assign next_label = label_2
+  elsif threshold_3 > 0 and cart_total < threshold_3
+    assign next_threshold = threshold_3
+    assign next_label = label_3
+  elsif threshold_4 > 0 and cart_total < threshold_4
+    assign next_threshold = threshold_4
+    assign next_label = label_4
+  endif
+
+  # Calculate remaining amount for next milestone (in cents)
+  assign remaining_cents = 0
+  if next_threshold > 0
+    assign remaining_cents = next_threshold | minus: cart_total
+  endif
+
+  # Determine the last threshold that exists (for marker positioning)
+  assign last_threshold_index = 0
+  if threshold_4 > 0
+    assign last_threshold_index = 4
+  elsif threshold_3 > 0
+    assign last_threshold_index = 3
+  elsif threshold_2 > 0
+    assign last_threshold_index = 2
+  elsif threshold_1 > 0
+    assign last_threshold_index = 1
+  endif
+-%}
+
+<div
+  data-component="gwp-progressbar"
+  data-thresholds="{{ thresholds_array }}"
+  data-currency="{{ currency }}"
+  data-section-id="{{ section_id }}"
+  data-cart-total="{{ cart_total }}"
+  data-cart-price-type="{{ cart_price_type }}"
+  {% if achieved_label != blank %}data-achieved-label="{{ achieved_label }}"{% endif %}
+  {% if next_threshold > 0 %}data-next-threshold="{{ next_threshold }}"{% endif %}
+  {% if next_label != blank %}data-next-label="{{ next_label }}"{% endif %}
+  {% if gwp_variant_id != blank %}data-gwp-variant-id="{{ gwp_variant_id }}"{% endif %}
+  {% if add_gwp_tier > 0 %}data-gwp-tier="{{ add_gwp_tier }}"{% endif %}
+  {% if target_threshold > 0 %}data-gwp-target-threshold="{{ target_threshold }}"{% endif %}
+  class="w-full mb-4 {{ class }}"
+>
+    <div class="gwp-progressbar-wrapper">
+      <div class="flex flex-col gap-1 text-center text-12-bold cart-gwp-header border-b pb-2">
+        {%- if achieved_label != blank -%}
+        <p class="flex items-center justify-center gap-2" data-gwp="achievedMessage">
+          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="mileStoneAchievedTitle mileStoneAchievedDesc">
+            <title id="mileStoneAchievedTitle">Milestone Achieved Icon for GWP</title>
+            <desc id="mileStoneAchievedDesc">Icon indicating that a GWP milestone has been achieved.</desc>
+            <path d="M5.64991 3.39269C5.52809 3.27122 5.37764 3.18239 5.21243 3.13438C5.04723 3.08638 4.87258 3.08075 4.70463 3.11801C4.53667 3.15528 4.3808 3.23424 4.25142 3.3476C4.12203 3.46097 4.02329 3.60509 3.9643 3.76667L0.561334 13.1246C0.505432 13.2789 0.487374 13.4444 0.508678 13.6072C0.529982 13.7699 0.590025 13.9252 0.683768 14.0599C0.77751 14.1946 0.902216 14.3049 1.04742 14.3815C1.19262 14.4581 1.35408 14.4987 1.51824 14.5C1.63911 14.4992 1.7589 14.4772 1.87221 14.4352L11.2318 11.0324C11.3935 10.9735 11.5377 10.8748 11.6512 10.7455C11.7647 10.6162 11.8437 10.4604 11.881 10.2925C11.9184 10.1245 11.9128 9.94991 11.8648 9.78471C11.8169 9.61951 11.728 9.46905 11.6066 9.34722L5.64991 3.39269ZM2.645 10.4251L3.88975 7.00352L7.99484 11.1076L4.57177 12.352L2.645 10.4251ZM8.79485 4.64815C8.80459 4.29761 8.88949 3.95325 9.0438 3.63833C9.3874 2.95194 10.0357 2.57407 10.8694 2.57407C11.3038 2.57407 11.5826 2.42565 11.7544 2.10676C11.8448 1.92835 11.8967 1.73292 11.9067 1.53315C11.9072 1.39563 11.9624 1.26395 12.06 1.16707C12.1576 1.07019 12.2898 1.01606 12.4273 1.01657C12.5649 1.01709 12.6966 1.07221 12.7935 1.16982C12.8904 1.26743 12.9445 1.39952 12.944 1.53704C12.944 2.37056 12.3917 3.61111 10.8694 3.61111C10.4351 3.61111 10.1563 3.75954 9.9845 4.07843C9.89403 4.25683 9.84212 4.45227 9.83214 4.65204C9.83189 4.72013 9.81822 4.78751 9.79192 4.85032C9.76562 4.91313 9.7272 4.97015 9.67886 5.01812C9.63052 5.06608 9.5732 5.10406 9.51018 5.12989C9.44715 5.15571 9.37966 5.16887 9.31155 5.16861C9.24344 5.16836 9.17605 5.15469 9.11322 5.1284C9.0504 5.1021 8.99336 5.06369 8.94538 5.01537C8.8974 4.96704 8.85941 4.90973 8.83359 4.84672C8.80776 4.78372 8.79459 4.71624 8.79485 4.64815ZM7.23891 2.57407V1.01852C7.23891 0.880999 7.29355 0.749112 7.39082 0.651871C7.48808 0.554629 7.62 0.5 7.75756 0.5C7.89511 0.5 8.02703 0.554629 8.1243 0.651871C8.22156 0.749112 8.2762 0.880999 8.2762 1.01852V2.57407C8.2762 2.71159 8.22156 2.84348 8.1243 2.94072C8.02703 3.03796 7.89511 3.09259 7.75756 3.09259C7.62 3.09259 7.48808 3.03796 7.39082 2.94072C7.29355 2.84348 7.23891 2.71159 7.23891 2.57407ZM13.8296 7.91093C13.8778 7.9591 13.9159 8.01629 13.942 8.07921C13.968 8.14214 13.9814 8.20958 13.9814 8.27768C13.9813 8.34578 13.9679 8.41321 13.9418 8.47612C13.9157 8.53902 13.8775 8.59617 13.8293 8.64431C13.7811 8.69244 13.7239 8.73061 13.661 8.75664C13.598 8.78268 13.5306 8.79606 13.4624 8.79603C13.3943 8.796 13.3269 8.78256 13.264 8.75647C13.201 8.73038 13.1439 8.69216 13.0957 8.64398L12.0584 7.60694C11.9611 7.50965 11.9064 7.37769 11.9064 7.24009C11.9064 7.1025 11.9611 6.97054 12.0584 6.87324C12.1558 6.77595 12.2877 6.72129 12.4254 6.72129C12.563 6.72129 12.695 6.77595 12.7923 6.87324L13.8296 7.91093ZM14.1453 5.14009L12.5894 5.65861C12.4589 5.7021 12.3165 5.69198 12.1934 5.63048C12.0704 5.56897 11.9768 5.46112 11.9333 5.33065C11.8898 5.20018 11.8999 5.05777 11.9615 4.93476C12.023 4.81175 12.1309 4.71821 12.2614 4.67472L13.8173 4.1562C13.9478 4.11271 14.0902 4.12283 14.2133 4.18434C14.3363 4.24584 14.4299 4.35369 14.4734 4.48417C14.5169 4.61464 14.5068 4.75704 14.4452 4.88005C14.3837 5.00306 14.2758 5.0966 14.1453 5.14009Z" fill="#C74F1F"/>
+          </svg>
+          <span class="GWP__achievedText text-12-bold text-brunt-orange" data-gwp="achievedText">You've earned {{ achieved_label }}</span>
+        </p>
+        {%- endif -%}
+        {%- if next_label != blank -%}
+        <p class="m-0 text-center text-12-bold" data-gwp="nextAchievement">
+          <span class="GWP__nextText" data-gwp="nextText">You're <span data-gwp="remainingAmount">{{ currency }}{{ remaining_cents | divided_by: 100.0 | round: 2 }}</span> away from {{ next_label }}</span>
+        </p>
+        {%- endif -%}
+      </div>
+
+    <div class="relative m-3 mb-2 text-12-bold gwp-progressbar-container">
+      <div class="flex">
+        {%- comment -%} First marker (threshold_0) - always at start {%- endcomment -%}
+        <div class="flex flex-col flex-1 relative items-start text-12-bold" data-threshold="{{ threshold_0 }}" data-label="{{ label_0 }}" data-gwp="indicator">
+          <div class="text-center">
+            <p class="m-0 line-clamp-2 leading-tight min-h-[36px] text-left text-12-bold">
+              {{ label_0 }}
+            </p>
+          </div>
+          <div class="flex flex-col items-start">
+            <div class="GWP__marker GWP__marker--start {% if marker_0_checked %} GWP__marker--checked{% endif %}" data-gwp="marker"></div>
+            <p class="m-0 whitespace-nowrap text-12-bold">{{ threshold_0 | money_without_trailing_zeros }}</p>
+          </div>
+        </div>
+
+        {%- comment -%} Loop through thresholds 1-4 {%- endcomment -%}
+        {%- for i in (1..4) -%}
+          {%- liquid
+            if i == 1
+              assign current_threshold = threshold_1
+              assign current_label = label_1
+              assign current_marker_checked = marker_1_checked
+            elsif i == 2
+              assign current_threshold = threshold_2
+              assign current_label = label_2
+              assign current_marker_checked = marker_2_checked
+            elsif i == 3
+              assign current_threshold = threshold_3
+              assign current_label = label_3
+              assign current_marker_checked = marker_3_checked
+            elsif i == 4
+              assign current_threshold = threshold_4
+              assign current_label = label_4
+              assign current_marker_checked = marker_4_checked
+            endif
+            
+            assign is_last = false
+            if last_threshold_index == i
+              assign is_last = true
+            endif
+          -%}
+          {%- if current_threshold > 0 -%}
+          <div class="flex flex-col flex-1 relative {% if is_last %}items-end{% else %}items-center{% endif %} text-12-bold" data-threshold="{{ current_threshold }}" data-label="{{ current_label }}" data-gwp="indicator">
+            <div class="text-center">
+              <p class="m-0 line-clamp-2 leading-tight min-h-[36px] text-12-bold">
+                {{ current_label }}
+              </p>
+            </div>
+            <div class="{% if is_last %}flex flex-col items-end{% endif %}">
+              <div class="GWP__marker{% if is_last %} GWP__marker--end{% endif %}{% if current_marker_checked %} GWP__marker--checked{% endif %}" data-gwp="marker"></div>
+              <p class="m-0 whitespace-nowrap text-12-bold">{{ current_threshold | money_without_trailing_zeros }}</p>
+            </div>
+          </div>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+
+      <div class="gwp-progressbar-empty absolute top-[55%] left-0 right-0 h-1 bg-[var(--color-border,#e6e6e6)] rounded-sm -translate-y-1/2 z-[1]"></div>
+
+      <div class="absolute top-[55%] left-0 right-0 h-1 -translate-y-1/2 z-[1] flex overflow-hidden">
+        {%- for i in (1..4) -%}
+          {%- liquid
+            if i == 1
+              assign current_threshold = threshold_1
+              assign prev_threshold = threshold_0
+              assign current_seg_w = seg1_w
+            elsif i == 2
+              assign current_threshold = threshold_2
+              assign prev_threshold = threshold_1
+              assign current_seg_w = seg2_w
+            elsif i == 3
+              assign current_threshold = threshold_3
+              assign prev_threshold = threshold_2
+              assign current_seg_w = seg3_w
+            elsif i == 4
+              assign current_threshold = threshold_4
+              assign prev_threshold = threshold_3
+              assign current_seg_w = seg4_w
+            endif
+          -%}
+          {%- if current_threshold > 0 -%}
+          <div class="GWP__segment relative h-full bg-transparent" data-gwp="segment" data-threshold-start="{{ prev_threshold }}" data-threshold-end="{{ current_threshold }}">
+            <div class="absolute top-0 left-0 h-full bg-[#C74F1F] transition-[width] duration-500 ease-in-out min-w-0 will-change-[width]" data-gwp="fill" style="width: {{ current_seg_w }}%"></div>
+          </div>
+
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    </div>
+    </div>
+</div>
+
+{% stylesheet %}
+/* Marker styles - specific pixel values and pseudo-elements that can't be done with Tailwind */
+.GWP__marker {
+  top: -6px;
+  position: relative;
+  left: 50%;
+  height: 17.5px;
+  width: 17.5px;
+  z-index: 3;
+  border: 0.125rem solid #c74f1f;
+  border-radius: 3.125rem;
+  background-color: #fff;
+  transform: translate(-50%);
+}
+
+.GWP__marker--start {
+  left: 0;
+  transform: none;
+}
+
+.GWP__marker--end {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.GWP__marker--checked {
+  background-color: var(--color-brunt-orange);
+  border-color: var(--color-brunt-orange);
+  top: -6px;
+}
+
+.GWP__marker--checked::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 9px;
+  border-right: 1.5px solid white;
+  border-bottom: 1.5px solid white;
+  transform: translate(-50%, -60%) rotate(45deg);
+}
+
+.GWP__segment {
+  flex: 1;
+}
+
+.GWP__segment:first-of-type {
+  flex: 1.5;
+}
+
+.GWP__segment:last-of-type {
+  flex: 1.5;
+}
+
+.header-gwp-progressbar {
+  background-color: #000;
+  color: #fff;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.header-gwp-progressbar .GWP__achievedText {
+  color: var(--color-white);
+}
+
+.header-gwp-progressbar .gwp-progressbar-container {
+  max-width: 920px;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+.header-gwp-progressbar svg path {
+  fill: var(--color-white);
+}
+
+.cart-drawer-gwp-progressbar .cart-gwp-header {
+  border-color:var(--color-medium-smoke);
+}
+
+.header-gwp-progressbar .gwp-progressbar-empty {
+  background-color: var(--color-white);
+}
+/* .cart-drawer__dialog {
+  display: block !important;
+  z-index: 99;
+} */
+{% endstylesheet %}

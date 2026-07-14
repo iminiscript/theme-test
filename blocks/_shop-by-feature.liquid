@@ -1,0 +1,40 @@
+{%- if block.settings.enable_shop_by_feature -%}
+  <div class="shopByFeature mb-10">
+    <p class="shopByFeature__title font-bold text-sm leading-5 mb-3 uppercase">{{ block.settings.block_title }}</p>
+    <div class="shopByFeature__list flex flex-wrap gap-3">
+      {% content_for 'blocks' %}
+    </div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+  {
+    "name": "Shop by Feature",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "enable_shop_by_feature",
+        "label": "Enable Shop by Feature",
+        "default": false
+      },
+      {
+        "type": "text",
+        "id": "block_title",
+        "label": "Title",
+        "default": "Shop by Feature",
+        "visible_if": "{{ block.settings.enable_shop_by_feature }}"
+      }
+    ],
+    "blocks": [
+      {
+        "type": "_feature-link"
+      }
+    ],
+    "presets": [
+      {
+        "name": "Shop by Feature",
+        "category": "Navigation"
+      }
+    ]
+  }
+{% endschema %}

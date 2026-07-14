@@ -1,0 +1,41 @@
+{%- comment -%}
+  Renders the list of individual items/options within a bundle cart item
+  
+  @param {string} bundle_ids - Comma-separated variant IDs that make up the bundle
+  @param {string} [class] - Additional CSS classes for the container
+{%- endcomment -%}
+
+{%- assign bundle_ids = bundle_ids | split: ',' -%}
+
+<div class="cart-items__bundle-list{% if class %} {{ class }}{% endif %}" role="list" aria-label="Bundle items">
+  {%- for variant_id in bundle_ids -%}
+    {%- assign variant_id_trimmed = variant_id | strip -%}
+    {%- for cart_item in cart.items -%}
+      {%- assign cart_variant_id = cart_item.variant_id | append: '' -%}
+      {%- if cart_variant_id == variant_id_trimmed -%}
+        <div class="cart-items__bundle-item flex items-start gap-2" role="listitem">
+          <div class="flex flex-col">
+            {%- assign product_type_lower = cart_item.product.type | downcase -%}
+            <span class="text-14-light">
+              <span class="capitalize">{{ product_type_lower }}:</span>
+              {%- if cart_item.product.has_only_default_variant == false -%}
+                {%- for option in cart_item.options_with_values -%}
+                  {%- if forloop.first -%}
+                    {%- comment -%} First option (usually Color) - show value only {%- endcomment -%}
+                    <span class="visually-hidden">{{ option.name }}:</span>
+                    {{- option.value -}}
+                  {%- else -%}
+                    {%- comment -%} Other options - show name and value {%- endcomment -%}
+                    {{- option.name }} {{ option.value -}}
+                  {%- endif -%}
+                  {%- unless forloop.last %}/{% endunless -%}
+                {%- endfor -%}
+              {%- endif -%}
+            </span>
+          </div>
+        </div>
+        {%- break -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endfor -%}
+</div>

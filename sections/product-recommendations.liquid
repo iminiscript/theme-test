@@ -1,4 +1,3 @@
-
 <script
   src="{{ 'product-recommendations.js' | asset_url }}"
   type="module"
@@ -25,9 +24,6 @@
   endcapture
 %}
 
-{% render 'quick-add-styles' %}
-{% render 'quick-add-modal-styles' %}
-{% render 'product-badges-styles' %}
 <product-recommendations
   id="product-recommendations-{{ section.id }}"
   class="product-recommendations"
@@ -37,7 +33,6 @@
   data-intent="{{ section.settings.recommendation_type }}"
   data-testid="product-recommendations-section"
   data-recommendations-performed="{{ recommendations.performed }}"
-  data-hydration-key="product-recommendations-{{ section.id }}"
   {{ section.shopify_attributes }}
 >
   <div class="section-background color-{{ section.settings.color_scheme }}"></div>
@@ -85,7 +80,7 @@
       {% capture list_items %}
         {% for product in products limit: section.settings.max_products %}
           <div class="resource-list__item">
-            {% content_for 'block', type: '_product-card', id: 'static-product-card', closest.product: product %}
+            {% content_for 'block', type: '_product-card', id: 'static-product-card', closest.product: product, section_name: 'product-recommendations' %}
           </div>
           {% unless forloop.last %}
             <!--@list/split-->
@@ -171,6 +166,25 @@
     {%- endif -%}
   </div>
 </product-recommendations>
+
+{% stylesheet %}
+  .product-recommendations__skeleton-item {
+    aspect-ratio: 3 / 4;
+    background-color: var(--color-foreground);
+    opacity: var(--skeleton-opacity);
+    border-radius: 4px;
+  }
+
+  @media screen and (max-width: 749px) {
+    .product-recommendations__skeleton-item:nth-child(2n + 1) {
+      display: none;
+    }
+  }
+
+  product-recommendations:has([data-has-recommendations='false']) {
+    display: none;
+  }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -463,81 +477,13 @@
           "type": "text",
           "name": "t:names.header",
           "settings": {
-            "text": "t:html_defaults.related_product",
-            "type_preset": "h3"
+            "text": "<h3>Related products</h3>"
           }
         },
         "static-product-card": {
           "type": "_product-card",
           "name": "t:names.product_card",
-          "static": true,
-          "settings": {
-            "product_card_gap": 4
-          },
-          "blocks": {
-            "product-card-gallery": {
-              "type": "_product-card-gallery",
-              "name": "t:names.product_card_media",
-              "settings": {
-                "image_ratio": "adapt",
-                "border": "none",
-                "border_width": 1,
-                "border_opacity": 100,
-                "border_radius": 0,
-                "padding-block-start": 0,
-                "padding-block-end": 0,
-                "padding-inline-start": 0,
-                "padding-inline-end": 0
-              }
-            },
-            "product_title": {
-              "type": "product-title",
-              "name": "t:names.product_title",
-              "settings": {
-                "width": "fit-content",
-                "max_width": "normal",
-                "alignment": "left",
-                "type_preset": "paragraph",
-                "font": "var(--font-body--family)",
-                "font_size": "1rem",
-                "line_height": "normal",
-                "letter_spacing": "normal",
-                "case": "none",
-                "wrap": "pretty",
-                "color": "var(--color-foreground)",
-                "background": false,
-                "background_color": "#00000026",
-                "corner_radius": 0,
-                "padding-block-start": 4,
-                "padding-block-end": 0,
-                "padding-inline-start": 0,
-                "padding-inline-end": 0
-              }
-            },
-            "price": {
-              "type": "price",
-              "name": "t:names.product_price",
-              "settings": {
-                "show_sale_price_first": true,
-                "show_installments": false,
-                "show_tax_info": false,
-                "type_preset": "h6",
-                "width": "100%",
-                "alignment": "left",
-                "font": "var(--font-body--family)",
-                "font_size": "1rem",
-                "line_height": "normal",
-                "letter_spacing": "normal",
-                "case": "none",
-                "color": "var(--color-foreground)",
-                "padding-block-start": 0,
-                "padding-block-end": 0,
-                "padding-inline-start": 0,
-                "padding-inline-end": 0
-              }
-            }
-          },
-          "block_order": ["product-card-gallery", "product_title", "price"]
+          "static": true
         }
       },
       "block_order": ["header"]

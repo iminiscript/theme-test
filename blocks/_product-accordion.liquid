@@ -1,0 +1,24 @@
+<div class="product__accordion" data-section-id="{{ section.id }}" {{ block.shopify_attributes }}>
+  {% content_for 'blocks' %}
+</div>
+
+{% schema %}
+{
+  "name": "Product Accordion",
+  "tag": null,
+  "blocks": [
+    {
+      "type": "_product-accordion-row"
+    },
+    {
+      "type": "_product-accordion-row-metaobject"
+    }
+  ],
+  "settings": [],
+  "presets": [
+    {
+      "name": "Product Accordion"
+    }
+  ]
+}
+{% endschema %}

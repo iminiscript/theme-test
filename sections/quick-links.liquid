@@ -1,0 +1,89 @@
+<nav
+  class="flex items-center justify-between px-3 gap-4 py-[2px] md:hidden text-asphalt"
+  style="background-color: {{ section.settings.background_color }};"
+  role="navigation"
+  aria-label="Quick navigation links"
+>
+  {%- for block in section.blocks -%}
+    {%- assign _block = block.settings -%}
+    {%- if _block.link contains handle -%}
+      <div
+        class="flex flex-col items-center justify-center text-12-regular text-center text-asphalt p-1"
+        aria-current="page"
+      >
+        <img
+          src="{{ _block.link_img | image_url: width: 100 }}"
+          alt=""
+          class="rounded-full object-cover h-12 w-12"
+          width="48"
+          height="48"
+          role="presentation"
+        >
+        <span class="text-12-regular mt-[2px]">{{ _block.link_text }}</span>
+      </div>
+    {%- else -%}
+      <a
+        href="{{ _block.link }}"
+        class="flex flex-col items-center justify-center text-12-regular text-center text-asphalt no-underline p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brunt-orange focus-visible:ring-offset-2 rounded-lg"
+        aria-label="{{ _block.link_text }}"
+      >
+        <img
+          src="{{ _block.link_img | image_url: width: 100 }}"
+          alt=""
+          class="rounded-full object-cover h-12 w-12"
+          width="48"
+          height="48"
+          role="presentation"
+        >
+        <span class="text-12-regular mt-[2px]">{{ _block.link_text }}</span>
+      </a>
+    {%- endif -%}
+  {%- endfor -%}
+</nav>
+
+{% schema %}
+{
+  "name": "Quick Links",
+  "class": "quickLinks",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Quick Links"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#E4E4DE"
+    }
+  ],
+  "blocks": [
+    {
+      "name": "Quick Link",
+      "type": "quick_link",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "link_img",
+          "label": "Quick Link Image"
+        },
+        {
+          "type": "text",
+          "id": "link_text",
+          "label": "Quick Link label"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Quick Link Link"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Quick Links"
+    }
+  ]
+}
+{% endschema %}

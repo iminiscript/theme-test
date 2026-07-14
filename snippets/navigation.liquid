@@ -1,0 +1,31 @@
+{%- assign main_menu_handle = _section.navigation_menu -%}
+{%- assign secondary_menu_handle = _section.navigation_menu_sec -%}
+{%- assign main_menu = linklists[main_menu_handle] -%}
+{%- assign secondary_menu = linklists[_section.navigation_menu_sec] -%}
+
+<nav class='header__mainNav nav nav--desktop gaHeaderDesktop flex justify-between w-full'>
+  <div class="header__mainNavTrigger">
+    <button class="header__navTrigger js-header__navTrigger" data-nav="{{ main_menu.title | replace: " ", "-" | downcase }}" data-bww-id='main-nav-top-{{ main_menu.title | replace: ' ', '-' | downcase }}-desktop'>{{ main_menu.title | upcase }}</button>
+    <button class="header__navTrigger js-header__navTrigger" data-nav="{{ secondary_menu.title | replace: " ", "-" | downcase }}" data-bww-id='main-nav-top-{{ secondary_menu.title | replace: ' ', '-' | downcase }}-desktop'>{{ secondary_menu.title | upcase }}</button>
+    {%- if _section.enable_store_locator -%}
+      <a href="/pages/store-locator" class="header__navTrigger" data-bww-id="nav-store-locator-link">STORE LOCATOR</a>
+    {%- endif -%}
+  </div>
+  <div class="nav__wrapper invisible [&.is--visible]:visible">
+    <div class="header__mainNavTrigger py-6 px-4 absolute left-0 top-0 z-[99] w-[25rem] bg-white shadow-[-1px_2px_3px_rgba(0,0,0,0.1)]">
+      <button class="header__navTrigger js-header__navTrigger" data-nav="{{ main_menu.title | replace: " ", "-" | downcase }}" data-bww-id='main-nav-top-{{ main_menu.title | replace: ' ', '-' | downcase }}-desktop'>{{ main_menu.title | upcase }}</button>
+      <button class="header__navTrigger js-header__navTrigger" data-nav="{{ secondary_menu.title | replace: " ", "-" | downcase }}" data-bww-id='main-nav-top-{{ secondary_menu.title | replace: ' ', '-' | downcase }}-desktop'>{{ secondary_menu.title | upcase }}</button>
+      {%- if _section.enable_store_locator -%}
+        <a href="/pages/store-locator" class="header__navTrigger" data-bww-id="nav-store-locator-link">STORE LOCATOR</a>
+      {%- endif -%}
+      <button class="header__navClose js-nav__close">{% render 'icons', icon: 'close' %}</button>
+    </div>
+    <ul class="nav__drawer">
+      {% render 'desktop-navigation-levels', menu: main_menu, menu_handle: main_menu_handle, blocks: blocks, show_image: true, show_women_link: _section.enable_women_link, _section: _section, enable_quiz: _section.enable_quiz %}
+      {% render 'desktop-navigation-levels', menu: secondary_menu, menu_handle: secondary_menu_handle, blocks: blocks, , show_image: false, show_women_link: false, _section: _section, enable_quiz: false %}
+    </ul>
+  </div>
+  <ul class='nav__bar no-list'>
+  </ul>
+</nav>
+

@@ -1,0 +1,51 @@
+{%- if block.settings.enable_callouts -%}
+  <div class="sidebarMenu__featureCallouts bg-white py-6 lg:py-10">
+    <p class="featureCallout__title pl-3 mb-3 font-bold text-sm leading-5 lg:pl-4">{{ block.settings.carousel_title }}</p>
+    <div class="swiper js-navFeature featureCallout__swiper" >
+      <div class="swiper-button-prev featureCallout__navigation featureCallout__navigation--prev hidden h-[2.375rem] w-[2.375rem] border border-[#121212] bg-white rounded-full translate-x-1/2 -translate-y-1/2 [&.swiper-button-disabled]:!opacity-0 [&_svg]:!w-[14px] [&_svg]:!h-[14px]">
+        {% render 'icons'
+          , icon: 'icon-left' %}
+      </div>
+      <div class="swiper-wrapper featureCallout__swiperWrapper">
+        {% content_for 'blocks' %}
+      </div>
+      <div class="swiper-button-next featureCallout__navigation featureCallout__navigation--next hidden h-[2.375rem] w-[2.375rem] border border-[#121212] bg-white rounded-full -translate-x-1/2 -translate-y-1/2 [&.swiper-button-disabled]:!opacity-0 [&_svg]:!w-[14px] [&_svg]:!h-[14px]">
+        {% render 'icons'
+          , icon: 'icon-right' %}
+      </div>
+      <div class="swiper-scrollbar featureCallout__scrollbar js-featureCallout__scrollbar [position:unset] !ml-3 mt-4 bg-[#e4e4df] lg:ml-4 lg:mr-4 lg:block lg:!w-[calc(100%-32px)] [&_.swiper-scrollbar-drag]:bg-[#afafaf]"></div>
+    </div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+  {
+    "name": "Feature Carousel",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "enable_callouts",
+        "label": "Enable Feature Callouts",
+        "default": false
+      },
+      {
+        "type": "text",
+        "id": "carousel_title",
+        "label": "Carousel Title",
+        "default": "FEATURED",
+        "visible_if": "{{ block.settings.enable_callouts }}"
+      }
+    ],
+    "blocks": [
+      {
+        "type": "_feature"
+      }
+    ],
+    "presets": [
+      {
+        "name": "Feature Carousel",
+        "category": "Navigation"
+      }
+    ]
+  }
+{% endschema %}

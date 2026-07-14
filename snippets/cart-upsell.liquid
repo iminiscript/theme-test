@@ -1,0 +1,152 @@
+{%- doc -%}
+  Renders a "YOU MAY ALSO LIKE" upsell section in the cart drawer.
+  Based on UPSELLmd documentation - uses Liquid templates and vanilla JavaScript.
+  
+  @param {string} [collection_handle] - The handle of the collection to display (default: 'boots')
+  @param {number} [limit] - Maximum number of products to display (default: 10)
+  @param {string} [section_id] - The section ID for product forms
+  @param {string} [products] - Optional array of products to display (overrides collection_handle)
+  @param {string} [title] - Optional custom title (default: 'YOU MAY ALSO LIKE')
+  @param {string} [context] - Context where this is rendered (default: 'cart')
+  @param {string} [class] - Additional CSS classes for the container
+  @param {string} [item_class] - Additional CSS classes to pass to cart-upsell-item for the cartUpsell__item element
+  @param {string} [btn-class] - Additional CSS classes for the add-to-cart button
+{%- enddoc -%}
+
+{%- liquid
+  assign collection_handle = collection_handle | default: 'boots'
+  assign limit = limit | default: 10
+  assign title = title | default: 'YOU MAY ALSO LIKE'
+  assign context = context | default: 'cart'
+  
+  # Context condition variables for easy reuse
+  assign is_drawer_context = false
+  if context == 'drawer'
+    assign is_drawer_context = true
+  endif
+  
+  if section_id == blank
+    if section.id
+      assign section_id = section.id
+    else
+      assign section_id = 'cart-drawer'
+    endif
+  endif
+  
+  # If products array is provided, use it; otherwise use collection
+  if products != blank
+    assign products_to_show = products
+  else
+    assign collection_to_show = collections[collection_handle]
+    if collection_to_show != blank
+      assign products_to_show = collection_to_show.products
+    else
+      assign products_to_show = blank
+    endif
+  endif
+  
+  # Get cart item handles for filtering
+  assign cart_product_handles = blank
+  for item in cart.items
+    if cart_product_handles == blank
+      assign cart_product_handles = item.product.handle
+    else
+      assign cart_product_handles = cart_product_handles | append: ',' | append: item.product.handle
+    endif
+  endfor
+-%}
+
+<div 
+  class="cartUpsell {% if is_drawer_context %}pt-4 mt-4{% endif %} {{ class }}"
+  data-cart-upsell-container
+  data-context="{{ context }}"
+  {% if collection_handle %}data-collection-handle="{{ collection_handle }}"{% endif %}
+  data-section-id="{{ section_id }}"
+  data-cart-handles="{{ cart_product_handles }}"
+>
+  <h3 class="text-16-bold-caps mb-4 {% if is_drawer_context %} px-4{% endif %}" id="cart-upsell-title-{{ section_id }}">
+    {{ title }}
+  </h3>
+  {%- if products_to_show != blank and products_to_show.size > 0 -%}
+    <div 
+      class="cartUpsell__products 
+      {%- if is_drawer_context -%} px-4 space-y-4 {% endif %}" 
+      data-products-container
+      role="region"
+      aria-labelledby="cart-upsell-title-{{ section_id }}"
+    >
+      
+      {%- assign visible_count = 0 -%}
+      {%- assign total_products = 0 -%}
+      
+      {%- comment -%} Single wrapper for ALL products {%- endcomment -%}
+      <ul class="cartUpsell__items list-none p-0 m-0" data-cart-upsell-items role="list">
+        {%- for product in products_to_show limit: limit -%}
+          {%- assign total_products = total_products | plus: 1 -%}
+          {%- liquid
+            # Only filter out cart items in cart/drawer context, not in PDP context
+            assign product_in_cart = false
+            if context == 'drawer'
+              for item in cart.items
+                if item.product.handle == product.handle
+                  assign product_in_cart = true
+                  break
+                endif
+              endfor
+            endif
+          -%}
+          
+          {%- unless product_in_cart -%}
+            {%- assign visible_count = visible_count | plus: 1 -%}
+            <li class="list-none">
+              {% render 'cart-upsell-item', class: class, item_class: item_class, btn-class: btn-class, product: product, section_id: section_id, context: context %}
+            </li>
+          {%- endunless -%}
+        {%- endfor -%}
+      </ul>
+      
+      {%- if visible_count == 0 -%}
+        <div 
+          class="cartUpsell__empty text-14-regular text-center py-4"
+          role="status"
+          aria-live="polite"
+        >
+          No additional products available
+        </div>
+      {%- endif -%}
+    </div>
+  {%- else -%}
+    <div 
+      class="cartUpsell__empty text-14-regular text-center py-4 px-4"
+      role="status"
+      aria-live="polite"
+    >
+      No products available
+    </div>
+  {%- endif -%}
+  
+  <script src="{{ 'cart-upsell.js' | asset_url }}" type="module"></script>
+ 
+</div>
+
+
+{% stylesheet %}
+.cartUpsell__review span {
+  font-size: 12px;
+}
+
+.cartUpsell__review .oke-sr-count-number {
+  margin-left: -4px;
+}
+
+/* .cartUpsell__add-to-cart .btn{
+  width: 100%;
+  height: 44px;
+} */
+
+/* @media(min-width: 768px) {
+  .complete-uniform .cartUpsell__add-to-cart .btn{
+    width: 248px;
+  }
+} */
+{% endstylesheet %}

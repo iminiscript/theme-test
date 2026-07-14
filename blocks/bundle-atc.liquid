@@ -1,0 +1,43 @@
+<bundle-atc-component
+  data-block-id="{{ block.id }}"
+  data-discount-percentage="{{ block.settings.discount_percentage | default: 10 }}"
+  data-bundle-image="{% if block.settings.bundle_cart_image %}{{ block.settings.bundle_cart_image | image_url: width: 200 }}{% endif %}"
+>
+  <div class="text-asphalt">
+    <div class="w-full flex-1">
+      {% content_for 'blocks' %}
+    </div>
+  </div>
+</bundle-atc-component>
+
+<script src="{{ 'bundle-atc.js' | asset_url }}" defer="defer" type="module"></script>
+
+{% schema %}
+{
+  "name": "Bundle ATC",
+  "settings": [
+    {
+      "type": "number",
+      "id": "discount_percentage",
+      "label": "Discount Percentage",
+      "default": 10,
+      "info": "The discount percentage to apply to the products in the bundle"
+    },
+    {
+      "type": "image_picker",
+      "id": "bundle_cart_image",
+      "label": "Bundle Cart Image"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "_product-add-to-cart"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bundle ATC"
+    }
+  ]
+}
+{% endschema %}

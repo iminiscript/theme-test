@@ -1,0 +1,238 @@
+<script src="{{ 'product-ugc-gallery.js' | asset_url }}" defer="defer" type="module"></script>
+
+{% liquid
+  assign product = closest.product
+  assign ugc_gallery_title = block.settings.title
+  assign social_handle = block.settings.social_handle
+  assign ugc_gallery = product.metafields.custom.ugc_gallery.value
+  assign modal_id = 'ugc-gallery-modal-' | append: block.id
+%}
+
+<product-ugc-gallery
+  class="product__ugcGallery"
+  data-section-id="{{ section.id }}"
+  data-block-id="{{ block.id }}"
+  {{ block.shopify_attributes }}
+>
+  {%- if ugc_gallery != blank and ugc_gallery.size > 0 -%}
+    {%- if ugc_gallery_title != blank -%}
+      <h3 class="product__ugcGalleryTitle text-14-bold m-0 uppercase mb-3">
+        {{ ugc_gallery_title }}
+      </h3>
+    {%- endif -%}
+
+    <div class="product__ugcGalleryCarousel swiper swiper__carousel" data-config="productUgcGallery">
+      <div class="swiper-wrapper pb-4">
+        {%- for item in ugc_gallery -%}
+          <div class="swiper-slide">
+            {%- if item.image != blank -%}
+              {%- assign item_image = item.image.value -%}
+              <button
+                type="button"
+                class="product__ugcGalleryItemButton w-full h-full cursor-pointer relative"
+                data-slide-index="{{ forloop.index0 }}"
+                on:click="#{{ modal_id }}/showDialog"
+                aria-label="View image {{ forloop.index }}"
+              >
+                {% render 'image',
+                  imageData: item_image,
+                  width: 300,
+                  class: 'product__ugcGalleryItem',
+                  fit: 'cover',
+                  aspectRatio: 1
+                %}
+              </button>
+            {%- endif -%}
+          </div>
+        {%- endfor -%}
+      </div>
+      <div
+        class="swiper-scrollbar productUgcGallery__scrollbar mt-0 swiper-scrollbar-rounded"
+        style="--swiper-scrollbar-bottom: 0px; --swiper-scrollbar-sides-offset: 0px;"
+      ></div>
+    </div>
+  </div>
+
+  {%- comment -%} UGC Gallery Modal {%- endcomment -%}
+  <dialog-component id="{{ modal_id }}">
+    <dialog
+      ref="dialog"
+      class="dialog-modal dialog-modal-center dialog-modal-bottom-mobile p-4 pr-0 md:pl-8 product__ugcGalleryModal"
+      scroll-lock
+    >
+      <div class="product__ugcGalleryModalInner">
+        <div class="product__ugcGalleryModalHeader flex items-center justify-between pb-3 pr-1">
+          <div class="product__ugcGalleryModalTitleSubtitle">
+            {%- if ugc_gallery_title != blank -%}
+              <h2 class="product__ugcGalleryModalTitle text-heading-4 m-0 uppercase">
+                {{ ugc_gallery_title }}
+              </h2>
+            {%- endif -%}
+            {%- if social_handle != blank -%}
+              <p class="product__ugcGalleryModalSubtitle text-12-regular m-0 uppercase">
+                {{ social_handle | prepend: 'tag us @' }}
+              </p>
+            {%- endif -%}
+          </div>
+          <button
+            ref="closeButton"
+            type="button"
+            on:click="/closeDialog"
+            class="product__ugcGalleryModalClose w-8 h-8 flex items-center justify-center cursor-pointer"
+            aria-label="Close gallery"
+          >
+            {% render 'icons', icon: 'close' %}
+          </button>
+        </div>
+
+        <div class="product__ugcGalleryModalContent">
+          <div class="product__ugcGalleryModalMain swiper" id="ugc-gallery-main-{{ block.id }}">
+            <div class="swiper-wrapper pb-4">
+              {%- for item in ugc_gallery -%}
+                <div class="swiper-slide">
+                  {%- if item.image != blank -%}
+                    {%- assign item_image = item.image.value -%}
+                    <div class="product__ugcGalleryModalItem flex flex-col gap-0.5">
+                      {% render 'image',
+                        imageData: item_image,
+                        width: 1200,
+                        class: 'w-full h-full object-cover',
+                        fit: 'cover',
+                        aspectRatio: 1
+                      %}
+                      {%- assign item_credit = item.credit.value | default: '@bruntworkwear' -%}
+                      <p class="product__ugcGalleryModalCredit text-12-regular m-0">
+                        {{ item_credit }}
+                      </p>
+                    </div>
+                  {%- endif -%}
+                </div>
+              {%- endfor -%}
+            </div>
+            <div class="product__ugcGalleryModalScrollbar swiper-scrollbar swiper-scrollbar-rounded"></div>
+          </div>
+        </div>
+      </div>
+    </dialog>
+  </dialog-component>
+
+  <script type="application/json" data-carousel-config>
+    {
+      "slidesPerView": 3.5,
+      "spaceBetween": 8,
+      "freeMode": true,
+      "scrollbar": {
+        "el": ".productUgcGallery__scrollbar",
+        "draggable": true,
+        "hide": false
+      },
+      "breakpoints": {
+        "764": {
+          "slidesPerView": 4
+        }
+      }
+    }
+  </script>
+  {%- endif -%}
+</product-ugc-gallery>
+{% stylesheet %}
+  .product__ugcGalleryItemButton {
+    background: none;
+    border: none;
+    padding: 0;
+    text-align: left;
+  }
+
+  .product__ugcGalleryModal {
+    max-width: 1008px;
+    min-height: 431px;
+    width: 100%;
+    border-radius: 0;
+  }
+
+  @media (max-width: 767px) {
+    .product__ugcGalleryModal {
+      max-width: 100vw;
+      max-height: fit-content;
+      height: auto;
+      border-radius: 16px 16px 0 0;
+      --dialog-modal-bottom-opening-animation: slideInTop;
+    }
+  }
+
+  .product__ugcGalleryModalInner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 90vh;
+  }
+
+  @media (max-width: 767px) {
+    .product__ugcGalleryModalInner {
+      max-height: 80vh;
+    }
+  }
+
+  .product__ugcGalleryModalContent {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  .product__ugcGalleryModalMain {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+  }
+
+  .product__ugcGalleryModalMain .swiper-wrapper {
+    align-items: center;
+  }
+
+  .product__ugcGalleryModalItem {
+    width: 100%;
+    aspect-ratio: 1;
+  }
+
+  .product__ugcGalleryModalMain .swiper-slide {
+    height: auto;
+  }
+
+  .product__ugcGalleryModalScrollbar {
+    --swiper-scrollbar-bg-color: #e1e1d9;
+    --swiper-scrollbar-border-radius: 2px;
+    --swiper-scrollbar-drag-bg-color: #a2a1a4;
+    --swiper-scrollbar-height: 4px;
+    --swiper-scrollbar-bottom: 0px;
+    --swiper-scrollbar-sides-offset: 0px;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Product UGC Gallery",
+  "class": "product__ugcGallery",
+  "tag": "div",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "On the Job"
+    },
+    {
+      "type": "text",
+      "id": "social_handle",
+      "label": "Social Handle",
+      "info": "The social handle to display in the modal",
+      "default": "bruntworkwear"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product UGC Gallery"
+    }
+  ]
+}
+{% endschema %}

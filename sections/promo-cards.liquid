@@ -1,0 +1,427 @@
+{%- liquid
+  assign section_id = section.id
+  assign heading = section.settings.heading
+  assign card_color = section.settings.card_color
+  assign bg_color = section.settings.background_color
+  assign text_color = section.settings.text_color
+  assign config_id = section.id | replace: '-', '_' | replace: '--', '_'
+
+  if section.settings.override_theme_swiper_settings
+    assign autoplay_enabled = section.settings.autoplay_enabled
+    assign autoplay_interval = section.settings.autoplay_interval | times: 1000
+    assign animation_speed = section.settings.animation_speed
+  else
+    assign autoplay_enabled = settings.autoplay_enabled
+    assign autoplay_interval = settings.autoplay_interval | times: 1000
+    assign animation_speed = settings.animation_speed
+  endif
+-%}
+
+<div class="py-12 md:py-16 {{ bg_color }} overflow-x-hidden" data-section-id="{{ section.id }}">
+  <div class="lg:container-layout flex flex-col gap-5 md:gap-8">
+    {%- if heading != blank -%}
+      <h2 class="px-3 md:px-0 text-heading-4 text-center {{ text_color }}">
+        {{ heading }}
+      </h2>
+    {%- endif -%}
+
+    <div class="relative lg:px-12 overflow-hidden" data-section-id="{{ section.id }}">
+      <div
+        class="swiper__carousel promo-cards"
+        data-section-id="{{ section.id }}"
+        data-config="promoConfig_{{ config_id }}"
+      >
+        <div class="swiper-wrapper">
+          {% capture slides %}
+            {% content_for 'blocks' %}
+          {%endcapture%}
+          {% if section.blocks.size < 6 %}
+            {{ slides }}
+            {{ slides }}
+          {% else %}
+            {{ slides }}
+          {% endif %}
+        </div>
+      </div>
+
+      {%- comment -%} Navigation buttons - visible on small/medium screens {%- endcomment -%}
+      {%- if section.blocks.size > 1 -%}
+        <button
+          class="promo-nav-prev absolute left-3 md:left-8 lg:left-0 top-[46.7%] z-20 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-[#1e1b1c] flex items-center justify-center hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brunt-orange lg:hidden disabled:hidden"
+          aria-label="{{ 'sections.promo_cards.previous_slide' | t | default: 'Previous slide' }}"
+        >
+          {% render 'icon', icon: 'pointer-arrow-left' %}
+        </button>
+
+        <button
+          class="promo-nav-next absolute right-3 md:right-8 lg:right-0 top-[46.7%] z-20 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-[#1e1b1c] flex items-center justify-center hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brunt-orange lg:hidden disabled:hidden"
+          aria-label="{{ 'sections.promo_cards.next_slide' | t | default: 'Next slide' }}"
+        >
+          {% render 'icon', icon: 'pointer-arrow-right' %}
+        </button>
+
+        <div class="promo-pagination flex justify-center gap-2 mt-5 lg:hidden"></div>
+      {%- endif -%}
+    </div>
+  </div>
+</div>
+
+<script>
+  // Promo Cards Carousel Configuration for section {{ section.id }}
+  window.promoConfig_{{ config_id }} = {
+    slidesPerView: 1,
+    spaceBetween: 24,
+    speed: {{ animation_speed }},
+    loop: true,
+    centeredSlides: true,
+    resizeObserver: false, // Disable resize observer for better performance
+    observer: true, // Enable observer for dynamic content
+    observeParents: true,
+    breakpoints: {
+      // Mobile & Tablet: Auto-width slides with peek, respects CSS width
+      320: {
+        slidesPerView: "auto",
+        spaceBetween: 24,
+        centeredSlides: true,
+      },
+      // Desktop: 3 slides, centered as a group
+      1280: {
+        slidesPerView: 3,
+        spaceBetween: 0,
+        centeredSlides: false,
+      },
+    },
+    autoplay: {{ autoplay_enabled }} && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? {
+      delay: {{ autoplay_interval }},
+      disableOnInteraction: false,
+      pauseOnMouseEnter: true,
+    } : false,
+    navigation: {
+      nextEl: "[data-section-id='{{ section.id }}'] .promo-nav-next",
+      prevEl: "[data-section-id='{{ section.id }}'] .promo-nav-prev",
+    },
+    pagination: {
+      el: "[data-section-id='{{ section.id }}'] .promo-pagination",
+      clickable: true,
+      dynamicBullets: false,
+      renderBullet: (index, className) => {
+        return `<button
+          type="button"
+          class="${className}"
+          aria-label="Go to slide ${index + 1}"
+        ></button>`;
+      },
+    },
+    a11y: {
+      enabled: true,
+      prevSlideMessage: "Previous slide",
+      nextSlideMessage: "Next slide",
+      firstSlideMessage: "This is the first slide",
+      lastSlideMessage: "This is the last slide",
+      paginationBulletMessage: "Go to slide {{index}}",
+    },
+    keyboard: {
+      enabled: true,
+      onlyInViewport: true,
+    },
+    on: {
+      init: function(swiper) {
+        updateAriaAttributes(swiper);
+        dispatchPromoEvent('cards:init', swiper, {
+          sectionId: '{{ section.id }}',
+          totalSlides: swiper.slides.length,
+        });
+      },
+      slideChange: function(swiper) {
+        updateAriaAttributes(swiper);
+        dispatchPromoEvent('cards:slideChange', swiper, {
+          sectionId: '{{ section.id }}',
+          slideIndex: swiper.realIndex,
+          totalSlides: swiper.slides.length,
+        });
+      },
+      autoplayStart: () => dispatchPromoEvent('cards:autoplayStart', null, { sectionId: '{{ section.id }}' }),
+      autoplayStop: () => dispatchPromoEvent('cards:autoplayStop', null, { sectionId: '{{ section.id }}' }),
+      autoplayPause: () => dispatchPromoEvent('cards:autoplayPause', null, { sectionId: '{{ section.id }}' }),
+      autoplayResume: () => dispatchPromoEvent('cards:autoplayResume', null, { sectionId: '{{ section.id }}' }),
+    },
+  };
+
+  // Helper functions for promo cards
+  function updateAriaAttributes(swiper) {
+    if (!swiper?.slides) return;
+
+    const activeIndex = swiper.realIndex;
+
+    swiper.slides.forEach((slide, index) => {
+      const isActive = index === activeIndex;
+      slide.setAttribute("aria-hidden", !isActive);
+
+      slide.querySelectorAll("a, button").forEach(element => {
+        element.setAttribute("tabindex", isActive ? "0" : "-1");
+      });
+    });
+  }
+
+  function dispatchPromoEvent(eventName, swiper, detail) {
+    const event = new CustomEvent(eventName, { detail, bubbles: true });
+    if (swiper) {
+      swiper.el.dispatchEvent(event);
+    }
+    window.dispatchEvent(event);
+  }
+
+  // Setup CTA tracking
+  document.addEventListener('DOMContentLoaded', () => {
+    const sectionEl = document.querySelector('[data-section-id="{{ section.id }}"]');
+    if (sectionEl) {
+      sectionEl.querySelectorAll('[data-track="promoCards_cta"]').forEach(button => {
+        button.addEventListener("click", () => {
+          dispatchPromoEvent('cards:ctaClick', null, {
+            sectionId: '{{ section.id }}',
+            slideIndex: button.dataset.slideIndex,
+            slideTitle: button.dataset.slideTitle,
+            trackingId: button.dataset.trackId,
+            url: button.href,
+          });
+        });
+      });
+    }
+  });
+
+  // Initialize this carousel after config is defined
+  if (typeof window.initCarousel === 'function') {
+    const element = document.querySelector('[data-config="promoConfig_{{ config_id }}"]');
+    if (element && !element.classList.contains('swiper-initialized')) {
+      window.initCarousel(element);
+    }
+  } else {
+    // If carousel.js hasn't loaded yet, wait for it
+    document.addEventListener('DOMContentLoaded', () => {
+      const element = document.querySelector('[data-config="promoConfig_{{ config_id }}"]');
+      if (element && !element.classList.contains('swiper-initialized')) {
+        import('{{ 'carousel.js' | asset_url }}').then(module => {
+          module.initCarousel(element);
+        });
+      }
+    });
+  }
+</script>
+
+<script src="{{ 'carousel.js' | asset_url }}" type="module"></script>
+
+<style>
+  /* Swiper pagination bullets - elongated pill shape - scoped to promo cards */
+  .promo-cards ~ .promo-pagination .swiper-pagination-bullet,
+  [data-section-id] .promo-pagination .swiper-pagination-bullet {
+    width: 16px;
+    height: 8px;
+    margin: 0;
+    background-color: #a2a1a4;
+    border-radius: 6px;
+    opacity: 1;
+    transition: all 0.3s ease;
+  }
+  
+  /* Active bullet - wider elongated style - scoped to promo cards */
+  .promo-cards ~ .promo-pagination .swiper-pagination-bullet-active,
+  [data-section-id] .promo-pagination .swiper-pagination-bullet-active {
+    width: 36px !important;
+    background-color: #c74f1f !important;
+  }
+
+  /* Promo cards swiper slide sizing - CRITICAL for swiper to work */
+  .swiper__carousel.promo-cards {
+    overflow: visible; /* Allow slides to peek */
+  }
+
+  .swiper__carousel.promo-cards .swiper-slide {
+    min-width: 225px;
+    width: 60%;
+    height: auto;
+    display: flex;
+  }
+
+  /* Medium screens: Fixed 480px width, centered slide - scoped to promo cards */
+  @media (min-width: 768px) and (max-width: 1279px) {
+    .swiper__carousel.promo-cards .swiper-slide {
+      width: 480px !important;
+      flex-shrink: 0;
+    }
+  }
+
+  /* Desktop: Flexible width for 3 slides, centered with gap - scoped to promo cards */
+  @media (min-width: 1280px) {
+    .swiper__carousel.promo-cards .swiper-slide:nth-child(n + 4){
+      display:none
+    }
+    .swiper__carousel.promo-cards .swiper-slide {
+      max-width: 432px;
+    }
+    
+    .swiper__carousel.promo-cards .swiper-wrapper {
+      justify-content: center;
+      gap: 24px;  /* Use CSS gap instead of Swiper spaceBetween */
+    }
+    
+    /* Disable swiper on desktop - show as static grid */
+    .swiper__carousel.promo-cards {
+      overflow: visible;
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Promo Cards",
+  "tag": "section",
+  "class": "section-promo-cards",
+  "max_blocks": 6,
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "What We're Working With"
+    },
+    {
+      "type": "header",
+      "content": "Swiper Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "override_theme_swiper_settings",
+      "label": "Swiper Override",
+      "default": false,
+      "info": "Override the default swiper theme settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "autoplay_enabled",
+      "label": "Enable Autoplay",
+      "default": true,
+      "info": "Automatically advances slides",
+      "visible_if" : "{{ section.settings.override_theme_swiper_settings }}"
+    },
+    {
+      "type": "range",
+      "id": "autoplay_interval",
+      "label": "Autoplay Interval (seconds)",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "default": 5,
+      "info": "Time between slide transitions",
+      "visible_if" : "{{ section.settings.override_theme_swiper_settings }}"
+    },
+    {
+      "type": "range",
+      "id": "animation_speed",
+      "label": "Animation Speed (ms)",
+      "min": 200,
+      "max": 1000,
+      "step": 100,
+      "default": 500,
+      "info": "Speed of slide transitions",
+      "visible_if" : "{{ section.settings.override_theme_swiper_settings }}"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "select",
+      "id": "background_color",
+      "label": "Background Color",
+      "options": [
+        { "value": "bg-white","label": "White" },
+        { "value": "bg-light-smoke", "label": "Light Smoke" },
+        { "value": "bg-medium-smoke", "label": "Medium Smoke" },
+        { "value": "bg-asphalt", "label": "Asphalt" }
+      ],
+      "default": "bg-light-smoke"
+    },
+    {
+      "type": "select",
+      "id": "card_color",
+      "label": "Card Color",
+      "options": [
+        { "value": "bg-white","label": "White" },
+        { "value": "bg-light-smoke", "label": "Light Smoke" },
+        { "value": "bg-medium-smoke", "label": "Medium Smoke" },
+        { "value": "bg-asphalt", "label": "Asphalt" }
+      ],
+      "default": "bg-white"
+    },
+    {
+      "type": "select",
+      "id": "text_color",
+      "label": "Text Color",
+      "options": [
+        { "value": "text-black", "label": "Black" },
+        { "value": "text-asphalt", "label": "Asphalt" },
+        { "value": "text-medium-smoke", "label": "Medium Smoke" },
+        { "value": "text-light-smoke", "label": "Light Smoke" },
+        { "value": "text-white","label": "White" }
+      ],
+      "default": "text-asphalt"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "_promo-card"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Promo Cards",
+      "category": "Promotional",
+      "blocks": [
+        {
+          "type": "_promo-card",
+          "blocks": [
+            {
+              "type": "button",
+              "settings": {
+                "tracking_id": "promo-card-cta",
+                "width_small":"fill",
+                "width_medium":"fill",
+                "width_large":"fill"
+              }
+            }
+          ]
+        },
+        {
+          "type": "_promo-card",
+          "blocks": [
+            {
+              "type": "button",
+              "settings": {
+                "tracking_id": "promo-card-cta",
+                "width_small":"fill",
+                "width_medium":"fill",
+                "width_large":"fill"
+              }
+            }
+          ]
+        },
+        {
+          "type": "_promo-card",
+          "blocks": [
+            {
+              "type": "button",
+              "settings": {
+                "tracking_id": "promo-card-cta",
+                "width_small":"fill",
+                "width_medium":"fill",
+                "width_large":"fill"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
+

@@ -1,24 +1,18 @@
 import { morph } from '@theme/morph';
 import { Component } from '@theme/component';
-import { CartUpdateEvent, ThemeEvents, VariantSelectedEvent } from '@theme/events';
+import { CartUpdateEvent, ThemeEvents } from '@theme/events';
 import { DialogComponent, DialogCloseEvent } from '@theme/dialog';
 import { mediaQueryLarge, isMobileBreakpoint, getIOSVersion } from '@theme/utilities';
-import VariantPicker from '@theme/variant-picker';
 
 export class QuickAddComponent extends Component {
   /** @type {AbortController | null} */
   #abortController = null;
   /** @type {Map<string, Element>} */
   #cachedContent = new Map();
-  /** @type {AbortController} */
-  #cartUpdateAbortController = new AbortController();
 
   get productPageUrl() {
     const productCard = /** @type {import('./product-card').ProductCard | null} */ (this.closest('product-card'));
-    const hotspotProduct = /** @type {import('./product-hotspot').ProductHotspotComponent | null} */ (
-      this.closest('product-hotspot-component')
-    );
-    const productLink = productCard?.getProductCardLink() || hotspotProduct?.getHotspotProductLink();
+    const productLink = productCard?.getProductCardLink();
 
     if (!productLink?.href) return '';
 
@@ -49,10 +43,6 @@ export class QuickAddComponent extends Component {
     super.connectedCallback();
 
     mediaQueryLarge.addEventListener('change', this.#closeQuickAddModal);
-    document.addEventListener(ThemeEvents.cartUpdate, this.#handleCartUpdate, {
-      signal: this.#cartUpdateAbortController.signal,
-    });
-    document.addEventListener(ThemeEvents.variantSelected, this.#updateQuickAddButtonState.bind(this));
   }
 
   disconnectedCallback() {
@@ -60,27 +50,6 @@ export class QuickAddComponent extends Component {
 
     mediaQueryLarge.removeEventListener('change', this.#closeQuickAddModal);
     this.#abortController?.abort();
-    this.#cartUpdateAbortController.abort();
-    document.removeEventListener(ThemeEvents.variantSelected, this.#updateQuickAddButtonState.bind(this));
-  }
-
-  /**
-   * Clears the cached content when cart is updated
-   */
-  #handleCartUpdate = () => {
-    this.#cachedContent.clear();
-  };
-
-  /**
-   * Re-renders the variant picker in the quick-add modal.
-   * @param {Element} newHtml - The element to re-render.
-   */
-  #updateVariantPicker(newHtml) {
-    const modalContent = document.getElementById('quick-add-modal-content');
-    if (!modalContent) return;
-    const variantPicker = /** @type {VariantPicker | null} */ (modalContent.querySelector('variant-picker'));
-    if (!variantPicker) return;
-    variantPicker.updateVariantPicker(newHtml);
   }
 
   /**
@@ -112,21 +81,10 @@ export class QuickAddComponent extends Component {
       // Use a fresh clone from the cache
       const freshContent = /** @type {Element} */ (productGrid.cloneNode(true));
       await this.updateQuickAddModal(freshContent);
-      this.#updateVariantPicker(productGrid);
     }
 
     this.#openQuickAddModal();
   };
-
-  #resetScroll() {
-    const dialogComponent = document.getElementById('quick-add-dialog');
-    if (!(dialogComponent instanceof QuickAddDialog)) return;
-
-    const productDetails = dialogComponent.querySelector('.product-details');
-    const productMedia = dialogComponent.querySelector('.product-information__media');
-    productDetails?.scrollTo({ top: 0, behavior: 'instant' });
-    productMedia?.scrollTo({ top: 0, behavior: 'instant' });
-  }
 
   /** @param {QuickAddDialog} dialogComponent */
   #stayVisibleUntilDialogCloses(dialogComponent) {
@@ -144,12 +102,6 @@ export class QuickAddComponent extends Component {
     this.#stayVisibleUntilDialogCloses(dialogComponent);
 
     dialogComponent.showDialog();
-
-    // is nondeterministic when the open attribute is set on the dialog element after .showDialog() is called.
-    // Waiting until the open animation starts seemed to be the most reliable metric here.
-    const dialog = dialogComponent.refs?.dialog;
-    if (!dialog) return;
-    dialog.addEventListener('animationstart', this.#resetScroll.bind(this), { once: true });
   };
 
   #closeQuickAddModal = () => {
@@ -206,6 +158,7 @@ export class QuickAddComponent extends Component {
 
     if (isMobileBreakpoint()) {
       const productDetails = productGrid.querySelector('.product-details');
+      if (!productDetails) return;
       const productFormComponent = productGrid.querySelector('product-form-component');
       const variantPicker = productGrid.querySelector('variant-picker');
       const productPrice = productGrid.querySelector('product-price');
@@ -215,40 +168,22 @@ export class QuickAddComponent extends Component {
       // Make product title as a link to the product page
       productTitle.href = this.productPageUrl;
 
+      if (!productFormComponent || !variantPicker || !productPrice || !productTitle) return;
+
       const productHeader = document.createElement('div');
       productHeader.classList.add('product-header');
 
       productHeader.appendChild(productTitle);
-      if (productPrice) {
-        productHeader.appendChild(productPrice);
-      }
+      productHeader.appendChild(productPrice);
       productGrid.appendChild(productHeader);
-
-      if (variantPicker) {
-        productGrid.appendChild(variantPicker);
-      }
-      if (productFormComponent) {
-        productGrid.appendChild(productFormComponent);
-      }
-
-      productDetails?.remove();
+      productGrid.appendChild(variantPicker);
+      productGrid.appendChild(productFormComponent);
+      productDetails.remove();
     }
 
     morph(modalContent, productGrid);
 
     this.#syncVariantSelection(modalContent);
-  }
-
-  /**
-   * Updates the quick-add button state based on whether a swatch is selected
-   * @param {VariantSelectedEvent} event - The variant selected event
-   */
-  #updateQuickAddButtonState(event) {
-    if (!(event.target instanceof HTMLElement)) return;
-    if (event.target.closest('product-card') !== this.closest('product-card')) return;
-    const productOptionsCount = this.dataset.productOptionsCount;
-    const quickAddButton = productOptionsCount === '1' ? 'add' : 'choose';
-    this.setAttribute('data-quick-add-button', quickAddButton);
   }
 
   /**

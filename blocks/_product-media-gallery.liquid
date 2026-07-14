@@ -1,330 +1,226 @@
+<script src="{{ 'product-media-gallery.js' | asset_url }}" defer="defer" type="module"></script>
 
-{% render 'product-media-gallery-content',
-  media_presentation: block.settings.media_presentation,
-  block_settings: block.settings,
-  block_id: block.id,
-  block_shopify_attributes: block.shopify_attributes,
-  block: block,
-  section: section
+{% liquid
+  assign product = closest.product
+  assign selected_variant = product.selected_or_first_available_variant
+
+  # Priority: variant metafield media > alt text filtered product.media > all product.media
+  if selected_variant.metafields.data.media != blank
+    assign media = selected_variant.metafields.data.media.value
+    assign should_filter_by_color = false
+  else
+    # When variant metafield is blank, check if we should filter by color option index
+    assign media = product.media
+    assign should_filter_by_color = false
+    assign color_value_index = null
+
+    # Check if there is an option which has 'color' in it
+    assign color_option = null
+    assign color_option_position = null
+    for product_option in product.options_with_values
+      assign option_name_lower = product_option.name | downcase
+      if option_name_lower contains 'color'
+        assign color_option = product_option
+        assign color_option_position = product_option.position
+        break
+      endif
+    endfor
+
+    # If color option exists, calculate the color value index
+    if color_option != null and color_option_position != null
+      # Get the 0-indexed position for the color option in the variant
+      assign color_option_index = color_option_position | minus: 1
+
+      # Get the variant's option value at the color option position
+      assign variant_color_value = selected_variant.options[color_option_index]
+
+      # Find the index of this value in the color option's values array
+      for option_value in color_option.values
+        if option_value == variant_color_value
+          assign color_value_index = forloop.index0
+          break
+        endif
+      endfor
+
+      # Count how many media items match the alt text filter
+      # If none match, we'll show all media (Fallback 2)
+      if color_value_index != null
+        assign filtered_media_count = 0
+        for media_item in product.media
+          assign media_alt = media_item.alt | default: ''
+          assign alt_parts = media_alt | split: '*'
+          if alt_parts.size > 1
+            assign alt_index_str = alt_parts.last | strip
+            assign alt_index = alt_index_str | plus: 0
+            if alt_index == color_value_index
+              assign filtered_media_count = filtered_media_count | plus: 1
+            endif
+          endif
+        endfor
+
+        # Only filter by color if we found matching media
+        if filtered_media_count > 0
+          assign should_filter_by_color = true
+        endif
+      endif
+    endif
+  endif
 %}
 
-{% # theme-check-disable ValidVisibleIf %}
+<product-media-gallery
+  class="swiper__carousel swiper relative"
+  data-config="productMediaGallery"
+  data-block-id="{{ block.id }}"
+  data-product-id="{{ product.id }}"
+  data-section-id="{{ section.id }}"
+  data-enable-desktop-carousel="{{ block.settings.enable_desktop_carousel }}"
+  {{ block.shopify_attributes }}
+>
+  <script type="application/json" data-product-options>
+    {{ product.options_with_values | json }}
+  </script>
+  <div class="swiper-navigation-prev productMedia__navigation-prev swiper-rounded-prev -translate-y-1/2 {% if block.settings.enable_desktop_carousel != true %} lg:hidden!{% endif %}">
+    {% render 'icons', icon: 'arrow-left', class: 'w-6 h-6' %}
+  </div>
+  <div class="swiper-wrapper productMedia__carousel {% if block.settings.enable_desktop_carousel != true %} lg:grid! lg:grid-cols-2 lg:gap-6{% endif %}">
+    {% for media_item in media %}
+      {% liquid
+        assign should_show_media = true
+        if should_filter_by_color and color_value_index != null
+          assign media_alt = media_item.alt | default: ''
+          assign alt_parts = media_alt | split: '*'
+          if alt_parts.size > 1
+            assign alt_index_str = alt_parts.last | strip
+            assign alt_index = alt_index_str | plus: 0
+            if alt_index != color_value_index
+              assign should_show_media = false
+            endif
+          else
+            # If media doesn't have *index in alt, don't show it when filtering
+            assign should_show_media = false
+          endif
+        endif
+      %}
+      {% if should_show_media %}
+        <div class="swiper-slide productMedia__item--image relative">
+          {%- if media_item.media_type == 'image' -%}
+            <div class="productMedia__image relative">
+              {% render 'image', imageData: media_item, width: media_item.width, height: media_item.height %}
+            </div>
+          {%- else -%}
+            <div class="productMedia__item--video relative">
+              {% render 'video',
+                video: media_item,
+                video_autoplay: true,
+                video_loop: true,
+                video_class: 'productMedia__video',
+                section_id: 'product-media-gallery',
+                disable_controls: true
+              %}
+            </div>
+          {%- endif -%}
+          {%- if forloop.first -%}
+            {% render 'media-badge',
+              product: product,
+              selected_variant: selected_variant,
+              enable_alt_text_badge: false,
+              alt_text: media_item.alt,
+              metafield_badge: selected_variant.metafields.custom.badge,
+              enable_sold_out: false,
+              enable_usa_flag: true,
+              selected_option: selected_variant.options.first,
+              enable_limited_edition: true
+            %}
+          {%- else -%}
+            {% render 'media-badge',
+              product: product,
+              selected_variant: selected_variant,
+              enable_alt_text_badge: true,
+              alt_text: media_item.alt,
+              enable_sold_out: false,
+              metafield_badge: '',
+              is_available: selected_variant.available,
+              enable_usa_flag: false,
+              selected_option: selected_variant.options.first,
+              enable_limited_edition: false
+            %}
+          {%- endif -%}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class="swiper-navigation-next productMedia__navigation-next swiper-rounded-next -translate-y-1/2 {% if block.settings.enable_desktop_carousel != true %} lg:hidden!{% endif %}">
+    {% render 'icons', icon: 'arrow-right' %}
+  </div>
+  <div
+    class="swiper-scrollbar productMedia__scrollbar swiper-scrollbar-rounded"
+    style="--swiper-scrollbar-bottom: 8px; --swiper-scrollbar-sides-offset: 8px;"
+  ></div>
+</product-media-gallery>
+
+<script>
+  // Set carousel config on window for component to access
+  (function() {
+    window.productMediaGallery = {
+      slidesPerView: 1,
+      spaceBetween: 0,
+      navigation: {
+        nextEl: '.productMedia__navigation-next',
+        prevEl: '.productMedia__navigation-prev',
+      },
+      scrollbar: {
+        el: '.productMedia__scrollbar',
+        draggable: true,
+      },
+      breakpoints: {
+        375: {
+          enabled: true,
+          slidesPerView: 1,
+          spaceBetween: 0,
+          navigation: {
+            enabled: true,
+          },
+          scrollbar: {
+            enabled: true,
+          },
+        },
+        {% if block.settings.enable_desktop_carousel != true %}
+        1280: {
+          enabled: false,
+          slidesPerView: 'auto',
+          navigation: {
+            enabled: false,
+          },
+          scrollbar: {
+            enabled: false,
+          },
+        },
+        {% endif %}
+      },
+      on: {
+        init: function () {
+        },
+      },
+    };
+  })();
+</script>
+
 {% schema %}
 {
-  "name": "t:names.product_media",
-  "tag": null,
+  "name": "Product Media",
+  "class": "product__mediaGallery",
   "settings": [
     {
-      "type": "select",
-      "id": "media_presentation",
-      "label": "t:settings.type",
-      "options": [
-        {
-          "value": "grid",
-          "label": "t:options.grid"
-        },
-        {
-          "value": "carousel",
-          "label": "t:options.carousel"
-        }
-      ],
-      "default": "grid",
-      "info": "t:info.carousel_layout_on_mobile"
-    },
-    {
-      "type": "header",
-      "content": "t:content.grid",
-      "visible_if": "{{ block.settings.media_presentation == 'grid' }}"
-    },
-    {
-      "type": "select",
-      "id": "media_columns",
-      "label": "t:settings.columns",
-      "options": [
-        {
-          "value": "one",
-          "label": "t:options.one_number"
-        },
-        {
-          "value": "two",
-          "label": "t:options.two_number"
-        }
-      ],
-      "default": "one",
-      "visible_if": "{{ block.settings.media_presentation == 'grid' }}"
-    },
-    {
-      "type": "range",
-      "id": "image_gap",
-      "label": "t:settings.gap",
-      "min": 0,
-      "max": 100,
-      "unit": "px",
-      "step": 1,
-      "default": 0,
-      "visible_if": "{{ block.settings.media_presentation == 'grid' }}"
-    },
-    {
       "type": "checkbox",
-      "id": "large_first_image",
-      "label": "t:settings.full_width_first_image",
+      "id": "enable_desktop_carousel",
+      "label": "Enable Desktop Carousel",
       "default": false,
-      "visible_if": "{{ block.settings.media_presentation == 'grid' and block.settings.media_columns == 'two' }}"
-    },
-    {
-      "type": "header",
-      "content": "t:content.carousel"
-    },
-    {
-      "type": "select",
-      "id": "icons_style",
-      "label": "t:settings.icons",
-      "options": [
-        {
-          "value": "arrow",
-          "label": "t:options.arrows"
-        },
-        {
-          "value": "chevron",
-          "label": "t:options.chevrons"
-        },
-        {
-          "value": "arrows_large",
-          "label": "t:options.large_arrows"
-        },
-        {
-          "value": "chevron_large",
-          "label": "t:options.large_chevrons"
-        }
-      ],
-      "default": "arrow",
-      "visible_if": "{{ block.settings.media_presentation == 'carousel' }}"
-    },
-    {
-      "type": "select",
-      "id": "slideshow_controls_style",
-      "label": "t:settings.desktop_pagination",
-      "options": [
-        {
-          "value": "dots",
-          "label": "t:options.dots"
-        },
-        {
-          "value": "counter",
-          "label": "t:options.counter"
-        },
-        {
-          "value": "thumbnails",
-          "label": "t:options.thumbnails"
-        }
-      ],
-      "visible_if": "{{ block.settings.media_presentation == 'carousel' }}"
-    },
-    {
-      "type": "select",
-      "id": "slideshow_mobile_controls_style",
-      "label": "t:settings.mobile_pagination",
-      "options": [
-        {
-          "value": "dots",
-          "label": "t:options.dots"
-        },
-        {
-          "value": "counter",
-          "label": "t:options.counter"
-        },
-        {
-          "value": "hint",
-          "label": "t:options.hint"
-        },
-        {
-          "value": "thumbnails",
-          "label": "t:options.thumbnails"
-        }
-      ]
-    },
-    {
-      "type": "header",
-      "content": "t:content.thumbnails",
-      "visible_if": "{{ block.settings.slideshow_controls_style == 'thumbnails' or block.settings.slideshow_mobile_controls_style == 'thumbnails' }}"
-    },
-    {
-      "type": "select",
-      "id": "thumbnail_position",
-      "label": "t:settings.desktop_position",
-      "options": [
-        {
-          "value": "left",
-          "label": "t:options.left"
-        },
-        {
-          "value": "bottom",
-          "label": "t:options.bottom"
-        },
-        {
-          "value": "right",
-          "label": "t:options.right"
-        }
-      ],
-      "default": "bottom",
-      "visible_if": "{{ block.settings.slideshow_controls_style == 'thumbnails' }}"
-    },
-    {
-      "type": "range",
-      "id": "thumbnail_width",
-      "label": "t:settings.width_desktop",
-      "min": 44,
-      "max": 72,
-      "step": 1,
-      "unit": "px",
-      "default": 64,
-      "visible_if": "{{ block.settings.slideshow_controls_style == 'thumbnails' }}"
-    },
-    {
-      "type": "range",
-      "id": "thumbnail_radius",
-      "label": "t:settings.corner_radius",
-      "min": 0,
-      "max": 50,
-      "step": 1,
-      "unit": "px",
-      "default": 0,
-      "visible_if": "{{ block.settings.slideshow_controls_style == 'thumbnails' or block.settings.slideshow_mobile_controls_style == 'thumbnails' }}"
-    },
-    {
-      "type": "header",
-      "content": "t:content.media"
-    },
-    {
-      "type": "select",
-      "id": "aspect_ratio",
-      "label": "t:settings.aspect_ratio",
-      "options": [
-        {
-          "value": "adapt",
-          "label": "t:options.auto"
-        },
-        {
-          "value": "1/1.25",
-          "label": "t:options.portrait"
-        },
-        {
-          "value": "1",
-          "label": "t:options.square"
-        },
-        {
-          "value": "2/1",
-          "label": "t:options.landscape"
-        }
-      ],
-      "default": "adapt"
-    },
-    {
-      "type": "checkbox",
-      "id": "constrain_to_viewport",
-      "label": "t:settings.limit_media_to_screen_height",
-      "default": false
-    },
-    {
-      "type": "select",
-      "id": "media_fit",
-      "label": "t:settings.media_fit",
-      "options": [
-        {
-          "value": "cover",
-          "label": "t:options.cover"
-        },
-        {
-          "value": "contain",
-          "label": "t:options.contain"
-        }
-      ],
-      "default": "cover",
-      "visible_if": "{{ block.settings.aspect_ratio == 'adapt' and block.settings.constrain_to_viewport == true }}"
-    },
-    {
-      "type": "range",
-      "id": "media_radius",
-      "label": "t:settings.border_radius",
-      "min": 0,
-      "max": 32,
-      "step": 1,
-      "unit": "px",
-      "default": 4
-    },
-    {
-      "type": "checkbox",
-      "id": "extend_media",
-      "label": "t:settings.extend_media_to_screen_edge",
-      "default": true,
-      "visible_if": "{{ section.settings.content_width == 'content-center-aligned' }}"
-    },
-    {
-      "type": "checkbox",
-      "id": "zoom",
-      "label": "t:settings.enable_zoom",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "video_loop",
-      "label": "t:settings.enable_video_looping",
-      "default": false
-    },
-    {
-      "type": "checkbox",
-      "id": "hide_variants",
-      "default": false,
-      "label": "t:settings.hide_unselected_variant_media"
-    },
-    {
-      "type": "header",
-      "content": "t:content.padding"
-    },
-    {
-      "type": "range",
-      "id": "padding-block-start",
-      "label": "t:settings.top",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "padding-block-end",
-      "label": "t:settings.bottom",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "padding-inline-start",
-      "label": "t:settings.left",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "padding-inline-end",
-      "label": "t:settings.right",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 0
+      "info": "If enabled, the media gallery will be displayed as a carousel on desktop."
     }
   ],
   "presets": [
     {
-      "name": "t:names.product_media"
+      "name": "Product Media Gallery"
     }
   ]
 }

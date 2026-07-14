@@ -1,0 +1,489 @@
+{%- doc -%}
+  Product Variant Selectors Block
+  
+  Handles rendering of product variant options with custom business logic:
+  - Boot Width selector (non-variant dependent)
+  - Women's size conversion for Boot products
+  - Color swatches from metaobjects
+  - Size chart triggers
+{%- enddoc -%}
+
+<script src="{{ 'product-option-selectors.js' | asset_url }}" defer="defer" type="module"></script>
+
+{% liquid
+  assign product = closest.product
+
+  # Check if product has variants
+  if product.has_only_default_variant
+    assign has_variants = false
+  else
+    assign has_variants = true
+  endif
+
+  # Product category for label prefixing
+  assign product_category = product.type | default: 'Product'
+
+  # Check if this is a Boot product
+  assign is_boot_product = false
+  if product.type == 'Boot'
+    assign is_boot_product = true
+  endif
+
+  # Check if women's size conversion should be shown
+  assign show_women_size = false
+  if product.metafields.custom.show_womens_sizing.value == true
+    assign show_women_size = true
+  endif
+
+  # Get color metaobject entries
+  assign color_metaobjects = product.metafields.custom.color.value
+
+  # Get size chart metaobject (global)
+  assign size_charts = shop.metafields.global.size_chart.value | default: blank
+
+  # Check if product has "sold_out" tag (case-insensitive)
+  assign has_sold_out_tag = false
+  for tag in product.tags
+    assign tag_lower = tag | downcase
+    if tag_lower == 'sold_out'
+      assign has_sold_out_tag = true
+      break
+    endif
+  endfor
+-%}
+
+<product-option-selectors
+  class="w-full"
+  data-product-id="{{ product.id }}"
+  data-block-id="{{ block.id }}"
+  data-section-id="{{ section.id }}"
+  {% if has_sold_out_tag %}
+    data-sold-out="true"
+  {% endif %}
+  {{ block.shopify_attributes }}
+>
+  {% if has_variants %}
+    <script type="application/json" data-product-options>
+      {{ product.options_with_values | json }}
+    </script>
+    <form
+      class="flex flex-col gap-[12px] w-full"
+      data-variant-picker-form
+      data-block-id="{{ block.id }}"
+      data-section-id="{{ section.id }}"
+    >
+      {%- comment -%} Hidden input to track selected variant ID {%- endcomment -%}
+      <input
+        type="hidden"
+        name="id"
+        id="product-variant-id-{{ block.id }}"
+        value="{{ product.selected_or_first_available_variant.id }}"
+        data-variant-id-input
+      >
+
+      {%- comment -%} Loop through product options {%- endcomment -%}
+      {%- for product_option in product.options_with_values -%}
+        {%- liquid
+          assign option_name = product_option.name
+          assign option_name_lower = option_name | downcase
+          assign is_color_option = false
+          assign is_size_option = false
+          assign is_boot_width_option = false
+
+          if option_name_lower == 'color'
+            assign is_color_option = true
+          endif
+
+          if option_name_lower == 'size'
+            assign is_size_option = true
+          endif
+
+          if option_name_lower == 'boot width'
+            assign is_boot_width_option = true
+          endif
+
+          # Build prefixed label
+          assign option_label = product_category | append: ' ' | append: option_name
+        -%}
+
+        {%- comment -%} Render option fieldset {%- endcomment -%}
+        <fieldset class="m-0 p-0 border-0" data-option-position="{{ product_option.position }}">
+          <div class="flex items-center justify-between mb-3 gap-5">
+            <div class="flex flex-1 gap-2 items-start">
+              <p class="text-14-bold uppercase text-asphalt shrink-0">{{ option_label }}:</p>
+              <p
+                class="flex-1 text-14-regular text-asphalt"
+                data-option-selected-value
+                data-option-position="{{ product_option.position }}"
+              >
+                {% if product_option.selected_value %}{{ product_option.selected_value }}{% else %}Selection{% endif %}
+              </p>
+            </div>
+
+            {%- comment -%} Size Chart / More Info Trigger Button {%- endcomment -%}
+            {%- if size_charts != blank -%}
+              {%- liquid
+                assign size_chart_match = blank
+                for chart in size_charts
+                  if chart.category.value == product_category and chart.type.value == option_name
+                    assign size_chart_match = chart
+                    break
+                  endif
+                endfor
+              -%}
+              {%- if size_chart_match != blank -%}
+                <button
+                  type="button"
+                  class="text-12-light text-asphalt underline bg-transparent border-0 cursor-pointer transition-opacity duration-200 hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2"
+                  data-size-chart-trigger
+                  aria-label="Open size chart for {{ option_name }}"
+                >
+                  {% if is_size_option %}Half Size Missing? Size Chart{% else %}More Info{% endif %}
+                </button>
+              {%- endif -%}
+            {%- endif -%}
+          </div>
+
+          {%- comment -%} Men/Women Toggle - Show for options other than Color and Boot width when metafield is true {%- endcomment -%}
+          {%- if show_women_size and is_color_option == false and is_boot_width_option == false -%}
+            <div class="flex items-end mb-0" data-gender-selector data-option-position="{{ product_option.position }}">
+              <button
+                type="button"
+                class="product-options__gender-tab product-options__gender-tab--active uppercase flex-1 shrink-0"
+                data-gender="men"
+                data-option-position="{{ product_option.position }}"
+                aria-label="Show men's sizes"
+                aria-pressed="true"
+              >
+                <p class="product-options__gender-tab-text text-14-bold p-4 pt-2.5 flex-1 text-center">Men</p>
+              </button>
+              <button
+                type="button"
+                class="product-options__gender-tab uppercase flex-1 shrink-0"
+                data-gender="women"
+                data-option-position="{{ product_option.position }}"
+                aria-label="Show women's sizes"
+                aria-pressed="false"
+              >
+                <p class="product-options__gender-tab-text text-14-bold p-4 pt-2.5 flex-1 text-center">Women</p>
+              </button>
+            </div>
+          {%- endif -%}
+
+          {%- if is_color_option -%}
+            {%- comment -%} Color Option - Render Swatches (following product-card.liquid approach) {%- endcomment -%}
+            <div class="flex flex-wrap items-center gap-3" role="group" aria-label="{{ option_label }}">
+              {%- for product_option_value in product_option.values -%}
+                {%- liquid
+                  # Find matching color metaobject entry (matching logic from product-card.liquid)
+                  assign swatch_image = blank
+                  assign swatch_color = blank
+                  assign swatch_name = product_option_value.name
+
+                  if color_metaobjects != blank
+                    for swatch in color_metaobjects
+                      # Match by admin_name (comparing to option_value directly like product-card)
+                      if swatch.admin_name.value == product_option_value or swatch.admin_name.value == product_option_value.name or swatch.name.value == product_option_value.name
+                        assign swatch_image = swatch.image.value
+                        assign swatch_color = swatch.value.value
+                        assign swatch_name = swatch.name.value | default: product_option_value.name
+                        break
+                      endif
+                    endfor
+                  endif
+
+                  # Get variant ID for this option value
+                  assign option_variant_id = product_option_value.variant.id | default: ''
+
+                  # Build unique IDs for accessibility
+                  assign input_id = 'option-' | append: product_option.position | append: '-' | append: forloop.index0 | append: '-' | append: block.id
+                  assign label_id = 'label-' | append: input_id
+                -%}
+
+                <label
+                  id="{{ label_id }}"
+                  class="product-options__swatch relative w-12 h-12 shrink-0 cursor-pointer{% if product_option_value.selected %} swatch-selected{% endif %}"
+                  for="{{ input_id }}"
+                  title="{{ swatch_name }}{% unless product_option_value.available %} (Out of Stock){% endunless %}"
+                  aria-label="{{ swatch_name }}{% unless product_option_value.available %} (Out of Stock){% endunless %}"
+                >
+                  <input
+                    type="radio"
+                    id="{{ input_id }}"
+                    name="options[{{ option_name | escape }}]"
+                    value="{{ product_option_value | escape }}"
+                    class="sr-only"
+                    data-option-position="{{ product_option.position }}"
+                    data-option-value="{{ product_option_value | escape }}"
+                    data-variant-id="{{ option_variant_id }}"
+                    data-option-available="{{ product_option_value.available }}"
+                    {% if product_option_value.selected %}
+                      checked
+                    {% endif %}
+                  >
+
+                  {%- comment -%} Unavailable indicator (following product-card.liquid approach) {%- endcomment -%}
+                  {%- if product_option_value.available == false -%}
+                    <span class="swatch-unavailable"></span>
+                  {%- endif -%}
+
+                  {%- comment -%} Swatch Visual - Inner Color Circle (following product-card.liquid approach) {%- endcomment -%}
+                  {%- if swatch_image != blank or swatch_color != blank -%}
+                    <span
+                      class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full"
+                      style="background-color: {{ swatch_color }} !important; background-image: url({{ swatch_image | image_url: width: 80 }}); background-size: contain; background-position: center; background-repeat: no-repeat;"
+                    ></span>
+                  {%- else -%}
+                    <span
+                      class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full"
+                      style="background-color: {{ product_option_value.name | split: ' ' | last | downcase }} !important;"
+                    ></span>
+                  {%- endif -%}
+                </label>
+              {%- endfor -%}
+            </div>
+          {%- else -%}
+            {%- comment -%} Non-Color Option - Render Grid Buttons {%- endcomment -%}
+            <div
+              class="grid grid-cols-4 md:grid-cols-8 gap-2{% if show_women_size and is_color_option == false and is_boot_width_option == false %} product-options__size-grid{% endif %}"
+              role="group"
+              aria-label="{{ option_label }}"
+              data-size-options-container
+              data-option-position="{{ product_option.position }}"
+            >
+              {%- for product_option_value in product_option.values -%}
+                {%- liquid
+                  # Check if this value is used in ANY variant's options array
+                  assign is_value_used = false
+                  for variant in product.variants
+                    # Get the option value at this option's position (position is 1-indexed, array is 0-indexed)
+                    assign variant_option_index = product_option.position | minus: 1
+                    assign variant_option_value = variant.options[variant_option_index]
+                    # Check if the variant's option value matches this product_option_value name
+                    if variant_option_value == product_option_value.name
+                      assign is_value_used = true
+                      break
+                    endif
+                  endfor
+                -%}
+
+                {%- comment -%} Only render if this value exists in at least one variant {%- endcomment -%}
+                {%- if is_value_used -%}
+                  {%- liquid
+                    # Build unique IDs for accessibility
+                    assign input_id = 'option-' | append: product_option.position | append: '-' | append: forloop.index0 | append: '-' | append: block.id
+                    assign label_id = 'label-' | append: input_id
+
+                    # Get variant ID for this option value
+                    assign option_variant_id = product_option_value.variant.id | default: ''
+                  -%}
+
+                  <label
+                    id="{{ label_id }}"
+                    class="product-options__value relative flex items-center justify-center h-12 px-4 py-3 border border-medium-smoke rounded bg-white text-asphalt cursor-pointer transition-all duration-200 whitespace-nowrap overflow-clip{% if product_option_value.selected %} product-options__value--selected{% endif %}{% unless product_option_value.available %} product-options__value--unavailable{% endunless %}"
+                    for="{{ input_id }}"
+                  >
+                    <input
+                      type="radio"
+                      id="{{ input_id }}"
+                      name="options[{{ option_name | escape }}]"
+                      value="{{ product_option_value | escape }}"
+                      class="sr-only"
+                      data-option-position="{{ product_option.position }}"
+                      data-option-value="{{ product_option_value | escape }}"
+                      data-original-value="{{ product_option_value | escape }}"
+                      data-variant-id="{{ option_variant_id }}"
+                      data-option-available="{{ product_option_value.available }}"
+                      {% if product_option_value.selected %}
+                        checked
+                      {% endif %}
+                      aria-label="{{ product_option_value.name }}{% unless product_option_value.available %} (Out of Stock){% endunless %}"
+                    >
+                    <span
+                      class="product-options__value-text text-14-light text-center{% if product_option_value.selected %} product-options__value-text--selected{% endif %}"
+                      data-original-text="{{ product_option_value.name }}"
+                    >
+                      {{ product_option_value.name }}
+                    </span>
+                  </label>
+                {%- endif -%}
+              {%- endfor -%}
+            </div>
+          {%- endif -%}
+        </fieldset>
+
+        {%- comment -%} Boot Width Selector - Insert between first and second option {%- endcomment -%}
+        {%- if is_boot_product and forloop.index == 1 -%}
+          <fieldset class="m-0 p-0 border-0" data-option-position="boot-width">
+            <div class="flex items-center justify-between mb-3 gap-5">
+              <div class="flex flex-1 gap-2 items-start">
+                <p class="text-14-bold uppercase text-asphalt shrink-0">{{ product_category }} Width:</p>
+                <p
+                  class="flex-1 text-14-regular text-asphalt"
+                  data-option-selected-value
+                  data-option-position="boot-width"
+                >
+                  Regular (D)
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="grid grid-cols-2 gap-2"
+              role="group"
+              aria-label="{{ product_category }} Width"
+            >
+              {%- assign boot_width_options = 'Regular (D),Wide (EE)' | split: ',' -%}
+              {%- for width_option in boot_width_options -%}
+                {%- liquid
+                  assign input_id = 'boot-width-' | append: forloop.index0 | append: '-' | append: block.id
+                  assign label_id = 'label-' | append: input_id
+                -%}
+                <label
+                  id="{{ label_id }}"
+                  class="product-options__value relative flex items-center justify-center h-12 px-4 py-3 border border-medium-smoke rounded bg-white text-asphalt cursor-pointer transition-all duration-200 whitespace-nowrap overflow-clip{% if forloop.first %} product-options__value--selected{% endif %}"
+                  for="{{ input_id }}"
+                >
+                  <input
+                    type="radio"
+                    id="{{ input_id }}"
+                    name="properties[Boot Width]"
+                    value="{{ width_option }}"
+                    class="sr-only"
+                    data-option-position="boot-width"
+                    data-option-value="{{ width_option }}"
+                    {% if forloop.first %}
+                      checked
+                    {% endif %}
+                    aria-label="{{ width_option }}"
+                    data-non-variant-option
+                  >
+                  <span class="product-options__value-text text-14-light text-center{% if forloop.first %} product-options__value-text--selected{% endif %}">
+                    {{ width_option }}
+                  </span>
+                </label>
+              {%- endfor -%}
+            </div>
+          </fieldset>
+        {%- endif -%}
+      {%- endfor -%}
+
+      {%- comment -%} Store initial variant data for JavaScript {%- endcomment -%}
+      <script type="application/json" data-variant-data>
+        {{ product.selected_or_first_available_variant | json }}
+      </script>
+
+      {%- comment -%} Store all variants with metafields for JavaScript {%- endcomment -%}
+      <script type="application/json" data-all-variants-data>
+        [
+          {%- for variant in product.variants -%}
+            {
+              "id": {{ variant.id }},
+              "title": {{ variant.title | json }},
+              "price": {{ variant.price }},
+              "compare_at_price": {% if variant.compare_at_price != blank %}{{ variant.compare_at_price }}{% else %}null{% endif %},
+              "available": {{ variant.available | json }},
+              "inventory_quantity": {{ variant.inventory_quantity | json }},
+              "inventory_policy": {{ variant.inventory_policy | json }},
+              "inventory_management": {{ variant.inventory_management | json }},
+              "options": {{ variant.options | json }},
+              "product_id": {{ product.id }},
+              "metafields": {
+                "data": {
+                  "media": {% if variant.metafields.data.media != blank %}{{ variant.metafields.data.media.value | json }}{% else %}null{% endif %}
+                }
+              }
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        ]
+      </script>
+    </form>
+  {% endif %}
+</product-option-selectors>
+
+{% stylesheet %}
+  /* Product Options - BEM Classes for Selected States */
+  .product-options__value--selected {
+    background-color: var(--color-asphalt);
+    color: var(--color-white);
+    border: 1px solid var(--color-asphalt) !important;
+  }
+
+  .product-options__value-text--selected {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-white);
+  }
+
+  /* Unavailable state styling - matching Figma design */
+  .product-options__value--unavailable {
+    background-color: var(--color-light-smoke);
+    border-color: var(--color-medium-smoke);
+    background-image: linear-gradient(
+      to top left,
+      transparent 0% calc(50% - 0.8px),
+      var(--color-medium-asphalt) 50%,
+      transparent calc(50% + 0.8px) 100%
+    );
+  }
+
+  .product-options__value--unavailable .product-options__value-text {
+    color: var(--color-medium-asphalt);
+    position: relative;
+    z-index: 1;
+    background-color: var(--color-light-smoke);
+    padding: 0 4px;
+  }
+
+  /* Swatch unavailable indicator - scaled for larger swatches (w-12 h-12 with w-10 h-10 inner circle) */
+  .product-options__swatch .swatch-unavailable {
+    width: 8px;
+    height: 43px;
+    border-left: 3px solid white;
+    border-right: 3px solid white;
+    border-bottom: 2px solid white;
+    border-top: 2px solid white;
+  }
+
+  /* Gender Toggle Tabs - Matching Figma Design */
+  .product-options__gender-tab {
+    background-color: var(--color-light-smoke);
+    border: 1px solid var(--color-medium-smoke);
+    color: var(--color-asphalt);
+    transition: all 0.2s ease;
+  }
+
+  /* Active state - applies to both Men and Women tabs */
+  .product-options__gender-tab--active {
+    background-color: var(--color-white) !important;
+    border-top: 1px solid var(--color-medium-smoke) !important;
+    border-left: 1px solid var(--color-medium-smoke) !important;
+    border-right: 1px solid var(--color-medium-smoke) !important;
+    border-bottom: 0 !important;
+  }
+
+  .product-options__gender-tab--active .product-options__gender-tab-text {
+    padding-top: 16px !important;
+  }
+
+  /* Size Options Container - Connected to active tab */
+  .product-options__size-grid {
+    border: 1px solid var(--color-medium-smoke);
+    border-top: 0;
+    background-color: var(--color-white);
+    padding: 16px;
+    border-radius: 0;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Product Options",
+  "tag": null,
+  "settings": [],
+  "presets": [
+    {
+      "name": "Product Options"
+    }
+  ]
+}
+{% endschema %}

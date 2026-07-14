@@ -1,0 +1,109 @@
+{%- doc -%}
+  Renders selected cart summary blocks.
+  Pass booleans to control which blocks render.
+
+  Example:
+  {% render 'cart-labels',
+     show_subtotal: true,
+     show_discount: true,
+     show_shipping: false,
+     show_tax: true,
+     show_protection: false,
+     show_total: true,
+     corso_price: my_corso_price_variable
+  %}
+{%- enddoc -%}
+
+{%- liquid
+  assign show_subtotal  = show_subtotal  | default: false
+  assign show_discount  = show_discount  | default: false
+  assign show_shipping  = show_shipping  | default: false
+  assign show_tax       = show_tax       | default: false
+  assign show_protection = show_protection | default: false
+  assign show_total     = show_total     | default: false
+
+  assign corso_price = corso_price | default: 0
+
+  # Labels from theme settings
+  assign label_subtotal  = settings.cart_label_subtotal | default: 'Subtotal'
+  assign label_discount  = settings.cart_label_discount | default: 'Discount'
+  assign label_shipping  = settings.cart_label_shipping | default: 'Shipping'
+  assign label_shipping_value = settings.cart_value_shipping | default: 'Free'
+  assign label_tax       = settings.cart_label_tax | default: 'Tax'
+  assign label_tax_value = settings.cart_value_tax | default: 'Calculated at checkout'
+  assign label_protection = settings.cart_label_protection | default: 'Protection'
+  assign label_total     = settings.cart_total_label | default: 'Estimated Total'
+-%}
+
+<dl class="p-3 text-asphalt">
+  <span class="visually-hidden">Cart summary breakdown</span>
+
+  {%- if show_subtotal -%}
+  <!-- SUBTOTAL -->
+  <div class="flex justify-between items-center mb-5">
+    <dt class="text-16-bold">{{ label_subtotal }}</dt>
+    <dd class="text-16-bold">
+      {{ cart.original_total_price | money }}
+      <span class="visually-hidden">Subtotal amount</span>
+    </dd>
+  </div>
+  {%- endif -%}
+
+  {%- if show_discount and cart.total_discount > 0 -%}
+  <!-- DISCOUNT -->
+  <div class="flex justify-between items-center mb-2">
+    <dt class="text-16-regular">{{ label_discount }}</dt>
+    <dd class="text-16-regular  text-[#c74f1f]">
+      -{{ cart.total_discount | money }}
+      <span class="visually-hidden">Discount applied</span>
+    </dd>
+  </div>
+  {%- endif -%}
+
+  {%- if show_shipping -%}
+  <!-- SHIPPING -->
+  <div class="flex justify-between items-center mb-2">
+    <dt class="text-16-regular">{{ label_shipping }}</dt>
+    <dd class="text-16-regular">
+      {{ label_shipping_value }}
+      <span class="visually-hidden">Shipping cost</span>
+    </dd>
+  </div>
+  {%- endif -%}
+
+  {%- if show_tax -%}
+  <!-- TAX -->
+  <div class="flex justify-between items-center mb-2">
+    <dt class="text-16-regular ">{{ label_tax }}</dt>
+    <dd class="text-16-regular ">
+      {{ label_tax_value }}
+      <span class="visually-hidden">Tax amount</span>
+    </dd>
+  </div>
+  {%- endif -%}
+
+  {%- if show_protection and corso_price > 0 -%}
+  <!-- PROTECTION / CORSO -->
+  <div class="flex justify-between items-center mb-2">
+    <dt class="text-16-regular">{{ label_protection }}</dt>
+    <dd class="text-16-regular">
+      {{ corso_price | money }}
+      <span class="visually-hidden">Protection plan cost</span>
+    </dd>
+  </div>
+  {%- endif -%}
+
+  {%- if show_total -%}
+  <!-- TOTAL -->
+  <div class="flex justify-between items-center pt-3 border-t border-gray-300">
+    <dt class="text-lg font-semibold text-gray-900">{{ label_total }}</dt>
+    <dd>
+      <p class="text-lg font-semibold text-gray-900">
+        {{ cart.total_price | money }}
+        <span class="visually-hidden">Final cart total</span>
+      </p>
+    </dd>
+  </div>
+  {%- endif -%}
+
+</dl>

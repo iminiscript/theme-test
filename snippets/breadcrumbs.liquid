@@ -1,0 +1,30 @@
+<nav id="breadcrumbs" class="text-asphalt container-layout px-3 md:px-8 lg:px-12 py-3">
+  <a href="{{ routes.root_url }}" class="text-12-regular text-asphalt no-underline">Home</a>
+
+  {% if collection %}
+    /
+    <a href="{{ collection.url }}" class="text-12-regular text-asphalt no-underline">
+      {{ collection.title | strip_html }}
+    </a>
+  {% endif %}
+
+  {% if product %}
+    /
+    <span class="text-12-light text-medium-asphalt">{{ product.title | strip_html }}</span>
+  {% elsif article %}
+    /
+    <a href="{{ blog.url }}" class="text-12-regular text-asphalt no-underline">{{ blog.title | strip_html }}</a>
+    /
+    <span class="text-12-light text-medium-asphalt">{{ article.title | strip_html }}</span>
+  {% elsif blog %}
+    /
+    <span class="text-12-light text-medium-asphalt">{{ blog.title | strip_html }}</span>
+  {% elsif page %}
+    /
+    <span class="text-12-light text-medium-asphalt">{{ page.title | strip_html }}</span>
+  {% elsif template.name == 'search' %}
+    /
+    <span class="text-12-light text-medium-asphalt">Search: "{{ search.terms | strip_html }}"</span>
+  {% endif %}
+</nav>
+

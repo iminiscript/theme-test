@@ -1,0 +1,202 @@
+{% liquid
+  assign _section = section.settings
+  assign _heading = _section.heading
+  assign _subheading = _section.subheading
+  assign _starting_at_text = _section.starting_at_text
+%}
+
+{%- comment -%} Render breadcrumbs at the top {%- endcomment -%}
+{% for block in section.blocks %}
+  {% if block.type == 'breadcrumbs' %}
+    <div {{ block.shopify_attributes }}>
+      {% render 'breadcrumbs' %}
+    </div>
+  {% endif %}
+{% endfor %}
+
+<div class="text-center text-asphalt pb-6 lg:pb-12 pt-8 lg:pt-16 px-3 lg:px-0 mb-5">
+  <div>
+    {% if _heading != blank %}
+      <h2 class="text-heading-2 uppercase text-brunt-orange">{{ _heading }}</h2>
+    {% endif %}
+    {% if _subheading != blank %}
+      <p class="text-16-regular mt-1">{{ _subheading }}</p>
+    {% endif %}
+  </div>
+
+  <div class="flex items-start gap-2 md:gap-8 justify-center mt-8">
+    {% for block in section.blocks %}
+      {% if block.type == 'step_block' %}
+        <div class="flex flex-col items-center justify-center text-center">
+          {% if block.settings.image != blank %}
+            <img
+              src="{{ block.settings.image | image_url: width: 100 }}"
+              alt="{{ block.settings.title }}"
+              width="64"
+              height="64"
+              class="h-[64px] w-auto mb-2"
+            >
+          {% endif %}
+          {% if block.settings.title != blank %}
+            <p class="text-14-bold mb-[2px] text-center">{{ block.settings.title }}</p>
+          {% endif %}
+          {% if block.settings.description != blank %}
+            <p class="text-14-regular text-center max-w-[90px] lg:max-w-[120px]">{{ block.settings.description }}</p>
+          {% endif %}
+        </div>
+        {% if forloop.last != true %}
+          <div class="border-r border-[#E1E1D9] w-[1px] self-stretch lg:h-[80px]"></div>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="text-18-bold uppercase mt-[34px] inline-flex items-baseline gap-2">
+    {{ _starting_at_text }}
+    {%- comment -%} Discounted Price - matches price.liquid structure {%- endcomment -%}
+    <span class="text-(--color-brunt-orange) priceRange" data-bundle-hero-discounted-price>
+      <span class="igPrice"></span>
+    </span>
+    {%- comment -%} Regular Price (compare at) - matches price.liquid structure {%- endcomment -%}
+    <span
+      class="text-(--color-gray-accessible) text-14-regular line-through compareAtPrice"
+      data-bundle-hero-regular-price
+    >
+      <span class="igComparePrice"></span>
+    </span>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const CURRENCY_SYMBOL = '{{ localization.country.currency.symbol }}';
+
+    // Update bundle hero "Starting At" prices using minimum prices from each bundle-collection
+    function updateBundleHeroPrices() {
+      const bundleAtc = document.querySelector('bundle-atc-component');
+      const bundleCollections = document.querySelectorAll('bundle-collection-component');
+
+      // If components aren't ready yet, retry after a short delay
+      if (!bundleAtc || bundleCollections.length === 0) {
+        return false;
+      }
+
+      const discountPercentage = parseInt(bundleAtc.dataset.discountPercentage || '0', 10);
+      let totalMinPrice = 0;
+
+      // Sum up MINIMUM prices from each bundle-collection (static - cheapest product in each)
+      bundleCollections.forEach(collection => {
+        const minPrice = parseInt(collection.dataset.minPrice || '0', 10);
+        totalMinPrice += minPrice;
+      });
+
+      // Calculate discounted price
+      const discountMultiplier = (100 - discountPercentage) / 100;
+      const totalDiscountedPrice = Math.floor(totalMinPrice * discountMultiplier);
+
+      // Format prices (matching price.liquid structure)
+      const formattedDiscountedPrice = formatBundlePrice(totalDiscountedPrice, CURRENCY_SYMBOL, 'price');
+      const formattedRegularPrice = formatBundlePrice(totalMinPrice, CURRENCY_SYMBOL, 'compare');
+
+      // Update DOM - targeting inner igPrice/igComparePrice spans like price.liquid
+      const discountedPriceEl = document.querySelector('[data-bundle-hero-discounted-price] .igPrice');
+      const regularPriceEl = document.querySelector('[data-bundle-hero-regular-price] .igComparePrice');
+
+      if (discountedPriceEl) {
+        discountedPriceEl.innerHTML = formattedDiscountedPrice;
+      }
+      if (regularPriceEl && totalMinPrice > totalDiscountedPrice) {
+        regularPriceEl.innerHTML = formattedRegularPrice;
+      }
+
+      return true;
+    }
+
+    // Format price matching price.liquid output structure
+    // type: 'price' uses top-[-0.2em], 'compare' uses top-[-0.3em]
+    function formatBundlePrice(priceInCents, currencySymbol, type) {
+      const whole = Math.floor(priceInCents / 100);
+      const decimal = priceInCents % 100;
+      const supClass = type === 'compare' ? 'top-[-0.3em]' : 'top-[-0.2em]';
+      if (decimal > 0) {
+        const paddedDecimal = decimal.toString().padStart(2, '0');
+        return currencySymbol + whole + '<sup class="' + supClass + '">' + paddedDecimal + '</sup>';
+      }
+      return currencySymbol + whole;
+    }
+
+    // Initial update with retry mechanism (bundle-collection components are below hero)
+    // This is static - based on minimum prices, doesn't change with variant selection
+    function initBundleHeroPrices() {
+      if (!updateBundleHeroPrices()) {
+        // Retry after sections are likely loaded
+        setTimeout(updateBundleHeroPrices, 500);
+        setTimeout(updateBundleHeroPrices, 1000);
+      }
+    }
+
+    // Initialize on DOMContentLoaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initBundleHeroPrices);
+    } else {
+      initBundleHeroPrices();
+    }
+  })();
+</script>
+{% schema %}
+{
+  "name": "Bundle Hero",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Bundle Hero"
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading"
+    },
+    {
+      "type": "text",
+      "id": "starting_at_text",
+      "label": "Starting at text",
+      "default": "Bundles Starting At:"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "breadcrumbs",
+      "name": "Breadcrumbs",
+      "limit": 1
+    },
+    {
+      "type": "step_block",
+      "name": "Step Block",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title"
+        },
+        {
+          "type": "text",
+          "id": "description",
+          "label": "Description"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bundle Hero"
+    }
+  ]
+}
+{% endschema %}

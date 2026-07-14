@@ -1,0 +1,262 @@
+{%- doc -%}
+  Renders an individual product item in the cart upsell section.
+  Based on UPSELLmd documentation.
+  
+  @param {object} product - The product object
+  @param {string} section_id - The section ID for product forms
+  @param {string} [class] - Additional CSS classes for the item container
+  @param {string} [item_class] - Additional CSS classes specifically for the cartUpsell__item element
+  @param {string} [btn-class] - Additional CSS classes for the add-to-cart button
+  @param {string} [context] - Context where this is rendered (e.g., 'pdp', 'cart')
+{%- enddoc -%}
+
+{%- liquid
+  assign product_id = product.id | split: '/' | last
+  
+  # Check for color option
+  assign has_color_option = false
+  assign color_option_name = 'color'
+  for option in product.options_with_values
+    assign option_name_lower = option.name | downcase
+    if option_name_lower contains color_option_name
+      assign has_color_option = true
+      assign color_option = option
+      break
+    endif
+  endfor
+  
+  # Check for size option
+  assign has_size_option = false
+  assign size_option_name = 'size'
+  for option in product.options_with_values
+    assign option_name_lower = option.name | downcase
+    if option_name_lower contains size_option_name
+      assign has_size_option = true
+      assign size_option = option
+      break
+    endif
+  endfor
+  
+  # Check if default product (first option value contains "default")
+  assign is_default_product = false
+  if product.options.first.values.first
+    assign first_value_lower = product.options.first.values.first | downcase
+    if first_value_lower contains 'default'
+      assign is_default_product = true
+    endif
+  endif
+  
+  # Get initial variant and image
+  assign selected_variant = product.selected_or_first_available_variant
+  assign initial_image = selected_variant.featured_image
+  if initial_image == blank
+    assign initial_image = selected_variant.featured_media
+  endif
+  if initial_image == blank
+    assign initial_image = product.featured_media
+  endif
+  
+  # Get initial price
+  assign initial_price = selected_variant.price
+  assign initial_compare_price = selected_variant.compare_at_price
+  
+  # Calculate price parts for superscript display
+  assign price_floor = initial_price | divided_by: 100 | floor | prepend: localization.country.currency.symbol | strip
+  assign price_sup = initial_price | modulo: 100
+  
+  # Calculate compare price parts for superscript display (only if compare price exists and is greater)
+  assign compare_price_floor = blank
+  assign compare_price_sup = 0
+  if initial_compare_price != blank and initial_compare_price > initial_price
+    assign compare_price_floor = initial_compare_price | divided_by: 100 | floor | prepend: localization.country.currency.symbol | strip
+    assign compare_price_sup = initial_compare_price | modulo: 100
+  endif
+  
+  # Get product tags for cart properties
+  assign product_tags = product.tags | join: ',' | downcase
+  assign filtered_tags = blank
+  assign tag_array = product.tags
+  for tag in tag_array
+    assign tag_lower = tag | downcase
+    if tag_lower == 'boots' or tag_lower == 'apparel' or tag_lower == 'accessories'
+      if filtered_tags == blank
+        assign filtered_tags = tag
+      else
+        assign filtered_tags = filtered_tags | append: ',' | append: tag
+      endif
+    endif
+  endfor
+  
+  # Get safety rating metafield
+  assign safety_rating = product.metafields.custom.enable_safety_rating | default: 'false'
+  
+  # Get cart callout metafields
+  assign enable_cart_callout = product.metafields.custom.enable_cart_callout | default: 'false'
+  assign cart_callout_title = product.metafields.custom.cart_callout_title
+  assign cart_callout_subtitle = product.metafields.custom.cart_callout_subtitle
+  
+  # Get review badge
+  assign review_badge = product.metafields.okendo.StarRatingSnippet
+-%}
+
+<article 
+  class="cartUpsell__item p-3  mb-3 {{ class }} {{ item_class }} bg-[#ffffff]"
+  data-product-id="{{ product.id }}"
+  data-product-handle="{{ product.handle }}"
+  data-product-type="{{ product.product_type }}"
+  data-has-color-option="{{ has_color_option }}"
+  data-is-default-product="{{ is_default_product }}"
+  data-filtered-tags="{{ filtered_tags }}"
+  data-safety-rating="{{ safety_rating }}"
+  data-initial-variant-id="{{ selected_variant.id }}"
+  data-initial-price="{{ initial_price }}"
+  data-initial-compare-price="{{ initial_compare_price }}"
+  aria-labelledby="upsell-title-{{ product.id }}"
+>
+  {%- comment -%} Cart Callout {%- endcomment -%}
+  {%- if enable_cart_callout == 'true' and cart_callout_title != blank -%}
+    <div class="cartUpsell__callout mb-2">
+      {%- if cart_callout_title != blank -%}
+        <div class="cartUpsell__callout-title text-12-bold">{{ cart_callout_title }}</div>
+      {%- endif -%}
+      {%- if cart_callout_subtitle != blank -%}
+        <div class="cartUpsell__callout-subtitle text-12-regular">{{ cart_callout_subtitle }}</div>
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+  
+  <div class="flex gap-3 relative">
+    {%- comment -%} Product Image {%- endcomment -%}
+    <a 
+      href="{{ product.url }}" 
+      class="upsell-image absolute flex-shrink-0 w-20 h-20 md:w-23.5 md:h-23.5"
+      data-product-image-container
+      aria-label="{{ product.title | escape }}"
+    >
+      {%- if initial_image -%}
+        {% render 'image',
+          imageData: initial_image,
+          width: 200,
+          class: 'w-full h-full object-cover cartUpsell__image',
+          alt_text: product.title,
+          fit: 'cover',
+          load: false,
+          priority: false,
+          objectPosition: 'center',
+          aspectRatio: '1/1'
+        %}
+      {%- else -%}
+        <div class="w-full h-full bg-[#f2f2f2] rounded"></div>
+      {%- endif -%}
+    </a>
+    
+    {%- comment -%} Product Details {%- endcomment -%}
+    <div class="flex-1 flex flex-col  min-w-0">
+      {%- comment -%} Review Badge {%- endcomment -%}
+      {%- if review_badge != blank -%}
+        <div class="cartUpsell__review ml-25.5 mt-[-7px]" data-review-badge>
+          {{ review_badge }}
+        </div>
+      {%- endif -%}
+      
+      {%- comment -%} Product Title {%- endcomment -%}
+      <div class="upsell-title-container flex flex-row items-center justify-between ml-25.5">
+        <h3 class="upsell-title text-16-regular font-normal line-clamp-2 text-inherit"
+          id="upsell-title-{{ product.id }}"
+        >
+          {{ product.title }}
+        </h3>
+        <product-price
+          class="upsell-price-container"
+          data-product-id="{{ product.id }}"
+        >
+          <div ref="priceContainer">
+            <span class="upsell-price text-16-bold">
+              {{ price_floor }}{% if price_sup > 0 %}<sup class="top-[-0.2em]">{{ price_sup }}</sup>{% endif %}
+            </span>
+            {%- if initial_compare_price != blank and initial_compare_price > initial_price -%}
+              <span class="upsell-price-compare text-12-regular line-through text-gray-accessible ml-1">
+                {{ compare_price_floor }}{% if compare_price_sup > 0 %}<sup class="top-[-0.3em]">{{ compare_price_sup }}</sup>{% endif %}
+              </span>
+            {%- endif -%}
+          </div>
+        </product-price>
+      </div>
+      
+      {%- comment -%} Price {%- endcomment -%}
+      
+      
+        {%- comment -%} Variant Picker - Use variant-quick-add for all options {%- endcomment -%}
+      {%- if is_default_product == false -%}
+        <div class="cartUpsell__options mt-1">
+          {%- comment -%} Options Drawer {%- endcomment -%}
+          <div 
+            class="cartUpsell__bottom cartUpsell__drawer" 
+            data-options-drawer
+            role="group"
+            aria-label="Product options for {{ product.title | escape }}"
+          >
+        
+              <div class="cartUpsell__variant-picker" data-variant-picker-wrapper>
+                {% render 'variant-quick-add', product_resource: product, section_id: section_id, context: context %}
+              </div>
+          </div>
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+  
+  {%- comment -%} Product Data (for JavaScript) {%- endcomment -%}
+  <script type="application/json" data-product-data>
+    {
+      "id": {{ product.id | json }},
+      "handle": {{ product.handle | json }},
+      "title": {{ product.title | json }},
+      "product_type": {{ product.product_type | json }},
+      "inventory_quantity": {{ product.inventory_quantity | json }},
+      "options": [
+        {%- for option in product.options_with_values -%}
+          {
+            "name": {{ option.name | json }},
+            "position": {{ option.position | json }},
+            "values": [
+              {%- for value in option.values -%}
+                {{ value | json }}{% unless forloop.last %},{% endunless %}
+              {%- endfor -%}
+            ]
+          }{% unless forloop.last %},{% endunless %}
+        {%- endfor -%}
+      ],
+      "variants": [
+        {%- for variant in product.variants limit: 250 -%}
+          {
+            "id": {{ variant.id | json }},
+            "available": {{ variant.available | json }},
+            "inventory_quantity": {{ variant.inventory_quantity | json }},
+            "price": {{ variant.price | json }},
+            "compare_at_price": {{ variant.compare_at_price | json }},
+            "image": {% if variant.image %}{{ variant.image | image_url: width: 400 | json }}{% else %}null{% endif %},
+            "option1": {{ variant.option1 | json }},
+            "option2": {{ variant.option2 | json }},
+            "option3": {{ variant.option3 | json }}
+          }{% unless forloop.last %},{% endunless %}
+        {%- endfor -%}
+      ],
+      "featured_image": {% if product.featured_image %}{{ product.featured_image | image_url: width: 400 | json }}{% else %}null{% endif %}
+    }
+  </script>
+  <script>
+    (function() {
+      const productDataScript = document.currentScript.previousElementSibling;
+      if (productDataScript && productDataScript.getAttribute('data-product-data')) {
+        try {
+          const productData = JSON.parse(productDataScript.textContent);
+          console.log("variants:", productData.variants);
+        } catch (e) {
+          console.error("[Cart Upsell] Error parsing product data:", e);
+        }
+      }
+    })();
+  </script>
+</article>
+

@@ -1,0 +1,315 @@
+{% liquid
+  assign _settings = section.settings
+  assign category = _settings.category
+  assign max_products = 2
+  assign compare_categories = _settings.compare_categories
+%}
+
+<compare-drawer-component
+  id="compare-drawer"
+  class="compare-drawer"
+  {{ section.shopify_attributes }}
+  category-name="{{ category }}"
+>
+  <dialog
+    ref="dialog"
+    class="compare-drawer__dialog dialog-modal dialog-drawer fixed bottom-0 md:bottom-auto w-full h-[80dvh] max-h-[80dvh] md:h-full md:max-h-[100dvh] md:max-w-[400px] overflow-y-hidden rounded-t-2xl md:rounded-none m-[auto_0_0_0] md:m-[0_0_0_auto] p-0 text-asphalt"
+    scroll-lock
+  >
+    <div class="h-full overflow-hidden flex flex-col">
+      {% comment %} Header - Always Visible {% endcomment %}
+      <div class="px-3 py-5 shadow-[0px_0px_10px_0px_rgba(0,0,0,0.10)]">
+        <div class="flex items-center justify-between">
+          <span ref="headerText" class="text-16-bold-caps uppercase">
+            Choose
+            <span class="text-brunt-orange">{{ max_products }}</span>
+            {{ category }} to Compare
+          </span>
+
+          <button
+            ref="closeButton"
+            on:click="compare-drawer-component/close"
+            class="button-unstyled ml-auto"
+            aria-label="{{ 'actions.close_dialog' | t }}"
+          >
+            {% render 'icon', icon: 'close', class: 'w-5 h-5' %}
+          </button>
+        </div>
+
+        <div
+          ref="selectedProductsContainer"
+          class="flex justify-start items-start gap-2 flex-wrap content-start"
+        ></div>
+      </div>
+
+      {% comment %} Selection View {% endcomment %}
+      <div ref="selectionView" class="flex flex-col overflow-y-scroll motion-reduce" aria-label="Compare Products">
+        <div class="flex-1 p-3">
+          {% if compare_categories.count > 0 %}
+            {% for compare_category in compare_categories %}
+              {%- comment -%} Product List {%- endcomment -%}
+              {% assign products = compare_category.product_list.value %}
+
+              {%- comment -%} Get first product and find lowest priced product {%- endcomment -%}
+              {% assign first_product = null %}
+              {% assign lowest_price_product = null %}
+              {% for product in products %}
+                {% if first_product == null %}
+                  {% assign first_product = product %}
+                {% endif %}
+                {% if lowest_price_product == null or product.price < lowest_price_product.price %}
+                  {% assign lowest_price_product = product %}
+                {% endif %}
+              {% endfor %}
+
+              {% comment %} Check if category has only 1 product {% endcomment %}
+              {% if products.size == 1 %}
+                {% comment %} Render single product directly without accordion {% endcomment %}
+                <div
+                  class="flex items-center gap-2 border-b border-[#D9D9D9] py-[10px] px-2"
+                  data-category="{{ compare_category.name.value }}"
+                >
+                  {% if first_product.featured_image %}
+                    <img
+                      src="{{ first_product.featured_image | image_url: width: 100 }}"
+                      alt="{{ first_product.title }}"
+                      class="w-16 h-16 object-cover brightness-110"
+                      loading="lazy"
+                      width="100"
+                      height="100"
+                    >
+                  {% endif %}
+                  <div class="flex-1">
+                    <p class="text-14-regular inline">
+                      {{ first_product.title }} •
+                      {% render 'price',
+                        product_resource: first_product,
+                        price_class: 'text-14-regular inline',
+                        show_price_range: true
+                      %}
+                    </p>
+                    <div class="productCard__rating">
+                      {% render 'okendo-reviews-product-rating-summary', product: first_product %}
+                    </div>
+                  </div>
+
+                  {% render 'checkbox',
+                    id: first_product.id,
+                    name: 'compare-product',
+                    value: first_product.id,
+                    label: first_product.title,
+                    show_label: false
+                  %}
+                </div>
+              {% else %}
+                {% comment %} Accordion for categories with multiple products {% endcomment %}
+                <accordion-custom>
+                  <details>
+                    <summary class="p-0">
+                      <div class="flex items-center gap-3 cursor-pointer list-none py-[10px] border-b border-[#D9D9D9] min-h-[85px]">
+                        {% if first_product.featured_image %}
+                          <img
+                            src="{{ first_product.featured_image | image_url: width: 100 }}"
+                            alt="{{ compare_category.name.value }}"
+                            class="w-16 h-16 object-cover summary-closed brightness-110"
+                            loading="lazy"
+                            width="100"
+                            height="100"
+                          >
+                        {% endif %}
+                        <div class="flex-1">
+                          <p class="text-14-regular inline">
+                            The {{ compare_category.name.value }} • From
+                            {% render 'price',
+                              product_resource: lowest_price_product,
+                              price_class: 'inline text-14-regular'
+                            %}
+                          </p>
+                          <div class="text-14-light">{{ products.size }} Styles</div>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                          <div
+                            class="w-3 h-3 bg-brunt-orange rounded-full category-indicator hidden"
+                            data-category-indicator="{{ compare_category.name.value }}"
+                          ></div>
+                          <span class="icon-animated w-5 h-5">
+                            {% render 'icon', icon: 'caret-down', class: 'w-5 h-5 transition-rotate duration-300' %}
+                          </span>
+                        </div>
+                      </div>
+                    </summary>
+
+                    {% if products.size > 0 %}
+                      <div class="details-content">
+                        {% for product in products %}
+                          <div
+                            class="flex items-center gap-2 border-b border-[#f2f2ee] py-[10px] px-2"
+                            data-category="{{ compare_category.name.value }}"
+                          >
+                            {% if product.featured_image %}
+                              <img
+                                src="{{ product.featured_image | image_url: width: 100 }}"
+                                alt="{{ product.title }}"
+                                class="w-16 h-16 object-cover brightness-110"
+                                loading="lazy"
+                                width="100"
+                                height="100"
+                              >
+                            {% endif %}
+                            <div class="flex-1">
+                              <p class="text-14-regular inline">
+                                {{ product.title }} •
+                                {% render 'price',
+                                  product_resource: product,
+                                  price_class: 'text-14-regular inline',
+                                  show_price_range: true
+                                %}
+                              </p>
+                              <div class="productCard__rating">
+                                {% render 'okendo-reviews-product-rating-summary', product: product %}
+                              </div>
+                            </div>
+
+                            {% render 'checkbox',
+                              id: product.id,
+                              name: 'compare-product',
+                              value: product.id,
+                              label: product.title
+                            %}
+                          </div>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </details>
+                </accordion-custom>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      {% comment %} Comparison View (hidden by default) {% endcomment %}
+      <div ref="comparisonView" class="flex-1 hidden overflow-y-scroll motion-reduce">
+        {% render 'comparison-chart', category: category %}
+      </div>
+
+      {% comment %} Footer {% endcomment %}
+      <div ref="footerSection" class="px-3 pt-4 pb-5 shadow-[0px_0px_10px_0px_rgba(0,0,0,0.10)] mt-auto">
+        {% comment %} Footer Message {% endcomment %}
+        <div
+          ref="maxLimitMessage"
+          class="items-center gap-2 text-14-regular text-brunt-orange justify-center mb-[18px] hidden"
+        >
+          {% render 'icon', icon: 'info', class: 'w-6 h-6' %}
+          You can select only {{ max_products }}
+          {{ category }} at a time
+        </div>
+        <div class="flex items-center justify-between">
+          {% render 'button',
+            label: 'Clear All',
+            type: 'button',
+            style: 'link',
+            class: 'flex-1 uppercase underline compare-drawer__clear-all-button opacity-50',
+            buttonRef: 'clearAllButton',
+            disabled: true
+          %}
+          {% render 'button',
+            label: 'Compare',
+            type: 'button',
+            style: 'primary',
+            class: 'flex-1 compare-drawer__compare-button',
+            buttonRef: 'compareButton',
+            disabled: true
+          %}
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  {% comment %} Compare Categories Data {% endcomment %}
+  {% render 'compare-drawer-data',
+    category: category,
+    max_products: max_products,
+    compare_categories: compare_categories
+  %}
+</compare-drawer-component>
+
+{% stylesheet %}
+  /* Animation properties - can't be converted to Tailwind */
+  .compare-drawer__dialog {
+    --dialog-drawer-opening-animation: slideInTop;
+    --dialog-drawer-closing-animation: slideOutBottom;
+  }
+
+  .compare-drawer__dialog[open] {
+    animation: var(--dialog-drawer-opening-animation) var(--animation-speed) var(--animation-easing) forwards;
+  }
+
+  .compare-drawer__dialog.dialog-closing {
+    animation: var(--dialog-drawer-closing-animation) var(--animation-speed) var(--animation-easing);
+  }
+
+  @media (min-width: 768px) {
+    .compare-drawer__dialog {
+      --dialog-drawer-opening-animation: slideInLeft;
+      --dialog-drawer-closing-animation: slideOutLeft;
+    }
+  }
+
+  .compare-option__selected {
+    background-color: #f2f2ee;
+    border-radius: 4px;
+  }
+
+  /* Hide category indicator when accordion is open */
+  details[open] .category-indicator {
+    display: none !important;
+  }
+
+  /* Highlight selected product rows */
+  [data-category]:has(input[name='compare-product']:checked) {
+    background-color: #f2f2ee;
+  }
+
+  [data-category]:has(input[name='compare-product']:checked) img {
+    filter: unset;
+  }
+{% endstylesheet %}
+
+<script
+  src="{{ 'accordion-custom.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+<script
+  src="{{ 'compare-drawer.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+
+{% schema %}
+{
+  "name": "Compare Drawer",
+  "settings": [
+    {
+      "type": "text",
+      "id": "category",
+      "label": "Category",
+      "info": "Name of the category to compare. Eg. Boots, Apparel, Accessories, etc."
+    },
+    {
+      "type": "metaobject_list",
+      "id": "compare_categories",
+      "label": "Compare Categories",
+      "metaobject_type": "compare_categories",
+      "info": "Add the categories you want to compare"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Compare Drawer"
+    }
+  ]
+}
+{% endschema %}

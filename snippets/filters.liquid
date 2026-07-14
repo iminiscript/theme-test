@@ -1,0 +1,73 @@
+{%- doc -%}
+  Renders the filters component.
+
+  @param {object} filters - The collection filters
+  @param {string} section_id - The section ID
+  @param {boolean} batch_mode - Whether to batch filter updates (drawer mode)
+{%- enddoc -%}
+
+<div
+  class="flex flex-col gap-7"
+  {% if batch_mode %}
+    data-batch-mode="true"
+  {% endif %}
+>
+  {%- liquid
+    assign has_active_filters = false
+    assign active_filters_count = 0
+    for filter in filters
+      if filter.active_values.size > 0
+        assign has_active_filters = true
+        assign active_filters_count = active_filters_count | plus: filter.active_values.size
+      endif
+    endfor
+  -%}
+
+  {% render 'active-filters',
+    filters: filters,
+    active_filters_count: active_filters_count,
+    has_active_filters: has_active_filters
+  %}
+
+  {% for filter in filters %}
+    {% if filter.values.size > 1 %}
+      <facet-inputs-component class="flex-col gap-3 flex">
+        <h4 class="text-16-bold">{{ filter.label }}</h4>
+
+        <div class="flex flex-col gap-4" on:click="/updateFilters">
+          {% for value in filter.values %}
+            {%- assign input_id = filter.param_name
+              | append: '-'
+              | append: forloop.index
+              | append: '-'
+              | append: section_id
+            -%}
+            {%- if batch_mode -%}
+              {%- assign input_id = input_id | append: '-drawer' -%}
+            {%- endif -%}
+            <label
+              for="filter-{{ input_id }}"
+              class="flex items-center gap-[10px] cursor-pointer"
+              role="checkbox"
+              aria-checked="{% if value.active %}true{% else %}false{% endif %}"
+              tabindex="0"
+            >
+              <input
+                type="checkbox"
+                id="filter-{{ input_id }}"
+                name="{{ value.param_name }}"
+                value="{{ value.value }}"
+                class="w-5 h-5 checked:accent-asphalt cursor-pointer"
+                {% if value.active %}
+                  checked
+                {% endif %}
+                ref="facetInputs[]"
+              >
+              <span class="text-16-light">{{ value.label }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </facet-inputs-component>
+    {% endif %}
+  {% endfor %}
+</div>

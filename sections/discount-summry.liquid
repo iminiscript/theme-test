@@ -1,0 +1,46 @@
+<!-- Section: Bulk Discount -->
+<section class="bulk-discount-section  py-12 md:py-16">
+  <div class="container-content">
+    <div class="discount-content text-center px-3 md:px-0">
+      <h4 class="">{{ section.settings.title }}</h4>
+      <p class="discount-description pb-4">{{ section.settings.description }}</p>
+      
+      <div class="discount-tiers flex">
+        {% content_for 'blocks' %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Bulk Discount",
+  "tag": "section",
+  "class": "section-bulk-discount",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "SAVE UP TO 25% ON YOUR FAVORITE BRUNT PRODUCTS"
+    },
+    {
+      "type": "textarea",
+      "id": "description",  
+      "label": "Description",
+      "default": "Discounts that scale with your team. Get automatic savings when you order more products of the same category—no codes, no hassle. Perfect for teams big and small."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "_discount-tier"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bulk Discount",
+      "category": "Discount"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,407 @@
+<div class="tabbed-collections bg-white py-12 md:py-16 px-3 md:px-8 lg:px-12" data-section-id="{{ section.id }}">
+  <div class="container-layout flex flex-col gap-5 md:gap-8">
+    {% if section.settings.title != blank %}
+      <h2 class="text-heading-4 text-center">
+        {{ section.settings.title }}
+      </h2>
+    {% endif %}
+
+    <nav class="tabbed-collections__tabs flex flex-wrap justify-center items-center gap-3 md:gap-10" role="tablist" aria-label="Collection tabs">
+      {% for block in section.blocks %}
+        {% assign tabId = 'tab-' | append: block.id %}
+        {% assign collection = block.settings.collection %}
+        <button
+          id="tab-button-{{ block.id }}"
+          class="tabbed-collections__tab relative cursor-pointer text-14-regular uppercase text-asphalt pb-0.5 transition-all hover:text-asphalt focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brunt-orange {% if forloop.first %}is-active font-normal{% endif %}"
+          role="tab"
+          aria-controls="{{ tabId }}"
+          aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+          data-tab-target="{{ tabId }}"
+          data-collection-handle="{{ collection.handle }}"
+          data-collection-title="{{ collection.title }}"
+          data-collection-url="{{ collection.url }}"
+        >
+          {{ block.settings.tab_title | default: collection.title | default: 'Tab' }}
+          <span class="tabbed-collections__tab-indicator absolute bottom-0 left-0 right-0 h-[1px] bg-asphalt origin-center transition-transform {% if forloop.first %}scale-x-100{% else %}scale-x-0{% endif %}"></span>
+        </button>
+      {% endfor %}
+    </nav>
+
+    {% for block in section.blocks %}
+      {% assign tabId = 'tab-' | append: block.id %}
+      {% assign collection = block.settings.collection %}
+      {% assign max_products_desktop = section.settings.max_products_desktop %}
+      {% assign max_products_mobile = section.settings.max_products_mobile %}
+      
+      <div
+        id="{{ tabId }}"
+        class="tabbed-collections__panel {% unless forloop.first %}hidden{% endunless %}"
+        data-panel-index="{{ forloop.index0 }}"
+        data-collection-handle="{{ collection.handle }}"
+        role="tabpanel"
+        aria-labelledby="tab-button-{{ block.id }}"
+        {% unless forloop.first %}aria-hidden="true"{% endunless %}
+        {{ block.shopify_attributes }}
+      >
+        {% if collection and collection.products.size > 0 %}
+          {%- liquid
+            assign products_limit = max_products_desktop
+            if max_products_mobile > max_products_desktop
+              assign products_limit = max_products_mobile
+            endif
+          -%}
+          <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6 mb-5 md:mb-8">
+            {% for product in collection.products limit: products_limit %}
+              {%- liquid
+                assign visibility_class = ''
+
+                if forloop.index > max_products_desktop and forloop.index <= max_products_mobile
+                  assign visibility_class = 'lg:hidden'
+                elsif forloop.index > max_products_mobile and forloop.index <= max_products_desktop
+                  assign visibility_class = 'hidden lg:block'
+                endif
+              -%}
+              {% render 'product-card', product: product, section_name: 'tabbed-collections', class: visibility_class %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-8 md:py-12">
+            <p class="text-14-regular text-asphalt">
+              {% if collection != empty %}
+                No products found in this collection.
+              {% else %}
+                Please select a collection for this tab.
+              {% endif %}
+            </p>
+          </div>
+        {% endif %}
+
+        {% if block.settings.enable_cta %}
+          <div class="flex justify-center">
+            {% assign style_class = block.settings.class |  append: 'w-full md:w-auto' %}
+            {% render 'button',
+              label: block.settings.label,
+              url: block.settings.link,
+              style: block.settings.style_class,
+              color: block.settings.color,
+              size: block.settings.size,
+              responsive_size: block.settings.responsive_size,
+              target: block.settings.open_in_new_tab,
+              class: style_class,
+              width_small: block.settings.width_small,
+              custom_width_small: block.settings.custom_width_small,
+              width_medium: block.settings.width_medium,
+              custom_width_medium: block.settings.custom_width_medium,
+              width_large: block.settings.width_large,
+              custom_width_large: block.settings.custom_width_large
+            %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+{{ 'tabbed-collections.js' | asset_url | script_tag }}
+
+{% schema %}
+{
+  "name": "Tabbed Collections",
+  "class": "tabbed-collections-section",
+  "max_blocks": 10,
+  "blocks": [
+    {
+      "type": "collection-tab",
+      "name": "Collection Tab",
+      "settings": [
+        {
+          "type": "text",
+          "id": "tab_title",
+          "label": "Tab Title",
+          "default": "{{ block.settings.collection.title }}"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "Collection"
+        },
+        {
+          "type": "header",
+          "content": "Button/Link"
+        },
+        {
+          "type": "checkbox",
+          "id": "enable_cta",
+          "label": "Enable CTA",
+          "default": false
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "t:settings.label",
+          "default": "Shop All {{ block.settings.collection.title }}",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "t:settings.link",
+          "default": "{{ block.settings.collection.url }}",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "checkbox",
+          "id": "open_in_new_tab",
+          "label": "t:settings.open_new_tab",
+          "default": false,
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "select",
+          "id": "style_class",
+          "label": "button style",
+          "options": [
+            {
+              "value": "primary",
+              "label": "Primary"
+            },
+            {
+              "value": "secondary",
+              "label": "Secondary"
+            },
+            {
+              "value": "link",
+              "label": "link"
+            }
+          ],
+          "default": "primary",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "select",
+          "id": "color",
+          "label": "t:settings.color",
+          "options": [
+            {
+              "value": "orange",
+              "label": "Orange"
+            },
+            {
+              "value": "asphalt",
+              "label": "Asphalt"
+            },
+            {
+              "value": "white",
+              "label": "White"
+            }
+          ],
+          "default": "orange",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "select",
+          "id": "size",
+          "label": "t:settings.size",
+          "options": [
+            {
+              "value": "small",
+              "label": "t:options.small"
+            },
+            {
+              "value": "medium",
+              "label": "t:options.medium"
+            },
+            {
+              "value": "large",
+              "label": "t:options.large"
+            }
+          ],
+          "default": "medium",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "checkbox",
+          "id": "responsive_size",
+          "label": "Responsive Size",
+          "info": "Increases size on large screens",
+          "default": false,
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "text",
+          "id": "class",
+          "label": "t:settings.additional_classes",
+          "info": "t:settings.additional_classes_info",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "header",
+          "content": "t:content.size",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "select",
+          "id": "width_small",
+          "label": "Width - Small Screens",
+          "options": [
+            {
+              "value": "fit",
+              "label": "Fit"
+            },
+            {
+              "value": "fill",
+              "label": "Fill"
+            },
+            {
+              "value": "custom",
+              "label": "Custom"
+            }
+          ],
+          "default": "fit",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "number",
+          "id": "custom_width_small",
+          "label": "Custom Width - Small Screens",
+          "info": "Max-width in px",
+          "visible_if": "{{ block.settings.width_small == 'custom' }}"
+        },
+        {
+          "type": "select",
+          "id": "width_medium",
+          "label": "Width - Medium Screens",
+          "options": [
+            {
+              "value": "fit",
+              "label": "Fit"
+            },
+            {
+              "value": "fill",
+              "label": "Fill"
+            },
+            {
+              "value": "custom",
+              "label": "Custom"
+            }
+          ],
+          "default": "fit",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "number",
+          "id": "custom_width_medium",
+          "label": "Custom Width - Medium Screens",
+          "info": "Max-width in px",
+          "visible_if": "{{ block.settings.width_medium == 'custom' }}"
+        },
+        {
+          "type": "select",
+          "id": "width_large",
+          "label": "Width - Large Screens",
+          "options": [
+            {
+              "value": "fit",
+              "label": "Fit"
+            },
+            {
+              "value": "fill",
+              "label": "Fill"
+            },
+            {
+              "value": "custom",
+              "label": "Custom"
+            }
+          ],
+          "default": "fit",
+          "visible_if": "{{ block.settings.enable_cta }}"
+        },
+        {
+          "type": "number",
+          "id": "custom_width_large",
+          "label": "Custom Width - Large Screens",
+          "info": "Max-width in px",
+          "visible_if": "{{ block.settings.width_large == 'custom' }}"
+        }
+      ]
+    }
+  ],
+  "settings": [
+    {
+      "type": "header",
+      "content": "Section Settings"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "Shop Our Lineup"
+    },
+    {
+      "type": "range",
+      "id": "max_products_desktop",
+      "label": "Max Products Desktop Up",
+      "min": 4,
+      "max": 16,
+      "step": 4,
+      "default": 8,
+      "info": "Maximum number of products shown per tab on Desktop Up"
+    },
+    {
+      "type": "range",
+      "id": "max_products_mobile",
+      "label": "Max Products Tablet Down",
+      "min": 2,
+      "max": 10,
+      "step": 2,
+      "default": 4,
+      "info": "Maximum number of products shown per tab on Tablet Down"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Tabbed Collections",
+      "category": "Collection",
+      "blocks": [
+        {
+          "type": "collection-tab"
+        },
+        {
+          "type": "collection-tab"
+        },
+        {
+          "type": "collection-tab"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
+
+<style>
+  /* Active tab font weight */
+  .tabbed-collections__tab.is-active {
+    font-weight: 400;
+  }
+
+  /* Tab indicator animation on hover and active state */
+  .tabbed-collections__tab:hover .tabbed-collections__tab-indicator,
+  .tabbed-collections__tab.is-active .tabbed-collections__tab-indicator {
+    transform: scaleX(1);
+  }
+
+  /* Fade-in animation for panel transitions */
+  .tabbed-collections__panel {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+</style>
+

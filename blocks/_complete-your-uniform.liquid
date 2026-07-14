@@ -1,0 +1,62 @@
+{%- liquid
+  # Get products from metafield
+  assign complete_your_uniform_products = product.metafields.custom.complete_your_uniform.value
+
+  assign title = block.settings.title
+  
+  # Get section ID for product forms
+  if section.id
+    assign section_id = section.id
+  else
+    assign section_id = 'complete-your-uniform'
+  endif
+-%}
+
+  
+  {%- if complete_your_uniform_products != blank and complete_your_uniform_products.size > 0 -%}
+    {% render 'cart-upsell',
+      products: complete_your_uniform_products,
+      section_id: section_id,
+      title: title,
+      context: 'pdp',
+      limit: 10,
+      item_class: 'border border-medium-smoke complete-uniform'
+    %}
+  {%- else -%}
+    <div class="text-center py-8">
+      <p class="text-14-regular">No products available to complete your uniform.</p>
+    </div>
+  {%- endif -%}
+
+<script>
+  //const completeYourUniform = {{ complete_your_uniform_products | json }};
+
+  //console.log('completeYourUniform', completeYourUniform);
+
+  // completeYourUniform.forEach(product => {
+  //   console.log('variants.length', product.variants.length);
+  //   console.log('has_only_default_variant', product);
+  // });
+  //console.log({{ product.selected_or_first_available_variant.metafields.data.media }});
+</script>
+
+{% schema %}
+  {
+    "name": "Complete Your Uniform",
+    "class": "complete-your-uniform",
+    "tag": "div",
+    "settings": [
+      {
+        "type": "text",
+        "id": "title",
+        "label": "Title",
+        "default": "Complete Your Uniform"
+      }
+    ],
+    "presets": [
+      {
+        "name": "Complete Your Uniform"
+      }
+    ]
+  }
+{% endschema %}

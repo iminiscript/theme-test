@@ -1,0 +1,106 @@
+{% liquid
+  assign _settings = section.settings
+  assign compare_chart_category = _settings.chart_category
+  assign default_products = _settings.default_products
+
+  # Convert product objects to just IDs for JSON serialization
+  assign default_product_ids = ''
+  if default_products.size > 0
+    for product in default_products
+      if forloop.first
+        assign default_product_ids = product.id
+      else
+        assign default_product_ids = default_product_ids | append: ',' | append: product.id
+      endif
+    endfor
+  endif
+%}
+
+<div class="container-layout text-asphalt">
+  <div>
+    {% for block in section.blocks %}
+      {% if block.type == 'breadcrumbs' %}
+        <div {{ block.shopify_attributes }}>
+          {% render 'breadcrumbs' %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div>
+    <div class="text-center pb-6 lg:pb-12 pt-8 lg:pt-16 px-3 lg:px-0 mb-5">
+      <h1 class="text-heading-2">{{ _settings.heading }}</h1>
+      <p class="text-16-regular mt-1 mb-5 md:mb-8">{{ _settings.sub_heading }}</p>
+      {% liquid
+        assign button_label = 'Select ' | append: compare_chart_category | append: ' to Compare'
+      %}
+      {% render 'button',
+        label: button_label,
+        on_click: '#compare-drawer/open',
+        style: 'primary',
+        color: 'orange',
+        size: 'large',
+        width_small: 'fill',
+        width_medium: 'custom',
+        custom_width_medium: 320,
+        width_large: 'custom',
+        custom_width_large: 320,
+        data_attrs: 'data-comparison-mode="external"'
+      %}
+    </div>
+
+    {% comment %} Comparison Chart Display {% endcomment %}
+    <div id="page-comparison-chart" class="max-w-[1000px] mx-auto">
+      {% render 'comparison-chart',
+        category: compare_chart_category,
+        context: 'page',
+        default_product_ids: default_product_ids
+      %}
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Compare Chart",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Compare Chart"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading"
+    },
+    {
+      "type": "text",
+      "id": "sub_heading",
+      "label": "Sub Heading"
+    },
+    {
+      "type": "text",
+      "id": "chart_category",
+      "label": "Chart Product's Category"
+    },
+    {
+      "type": "product_list",
+      "id": "default_products",
+      "label": "Default Products",
+      "limit": 2
+    }
+  ],
+  "blocks": [
+    {
+      "type": "breadcrumbs",
+      "name": "Breadcrumbs",
+      "limit": 1
+    }
+  ],
+  "presets": [
+    {
+      "name": "Compare Chart"
+    }
+  ]
+}
+{% endschema %}

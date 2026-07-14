@@ -1,0 +1,100 @@
+.header__navDrawer .sidebarMenu__nav:not(:first-of-type) {
+  margin-bottom: 2rem;
+}
+.header__navDrawer .sidebarMenu__nav:not(:first-of-type) .sidebarMenu__navLink {
+  font-family: "Interstate Regular", sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+}
+.header__navDrawer .sidebarMenu__nav:not(:first-of-type) .sidebarMenu__featureCallouts {
+  display: none;
+}
+@media (min-width: 80rem) {
+  .header__navDrawer .sidebarMenu__nav:not(:first-of-type) {
+    margin-bottom: 0;
+    display: inline-grid;
+  }
+  .header__navDrawer .sidebarMenu__nav:not(:first-of-type) .sidebarMenu__navLink {
+    font-family: "Interstate Bold", sans-serif;
+    font-size: 1.5rem;
+    line-height: 1.875rem;
+  }
+  .header__navDrawer .sidebarMenu__nav:not(:first-of-type) .sidebarMenu__featureCallouts {
+    display: block;
+  }
+}
+
+.header__closeNav.is--visible {
+  display: block;
+}
+
+.sidebarMenu__navItemToggle.isExpanded {
+  border-bottom: 0.5px solid #aeaea4;
+  background-color: #f2f2ee;
+}
+.sidebarMenu__navItemToggle.isExpanded .lazyPicture__elem {
+  filter: unset;
+}
+.sidebarMenu__navItemToggle--first {
+  padding: 0.5rem 2rem;
+  min-height: 5rem;
+}
+
+@media (max-width: 85.365rem) {
+  .menu--open {
+    height: 100%;
+    overflow: hidden;
+  }
+  .menu--open .icon--menuClose {
+    display: inline-block;
+  }
+  .menu--open .icon--menu {
+    display: none;
+  }
+}
+
+.icon--menuClose {
+  display: none;
+}
+
+.isExpanded .caratDown {
+  transform: rotate(-180deg);
+}
+
+.link-inline:hover {
+  color: #c74f1f;
+}
+
+.link-inline:hover svg g {
+  stroke: #c74f1f !important;
+}
+
+.sidebarMenu__navLinkImage {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.sidebarMenu__navLinkImage .lazyPicture__elem {
+  filter: brightness(1.1);
+}
+
+@media (min-width: 80rem) {
+  .sidebarMenu__navLinkImage .lazyPicture__elem {
+    filter: unset;
+  }
+}
+
+.is--inactive {
+  opacity: 0.2;
+}
+
+.subMenu__navGrandList {
+  padding-top: 0.75rem;
+}
+
+@media (min-width: 80rem) {
+  .sidebarMenu__drawer--desktop .sidebarMenu__contact {
+    display: block;
+    margin-top: auto;
+  }
+}

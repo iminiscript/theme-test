@@ -1,0 +1,32 @@
+{%- doc -%}
+  Renders safety rating message when _enable_safety_rating property is true.
+  
+  @param {object} [item] - Cart item object (for cart items)
+  @param {string} [enable_safety_rating] - Product metafield value (for product forms)
+{%- enddoc -%}
+
+{%- liquid
+  assign show_safety_rating = false
+  
+  # Check if this is a cart item context
+  if item
+    if item.properties._enable_safety_rating == true or item.properties._enable_safety_rating == 'true'
+      assign show_safety_rating = true
+    endif
+  # Check if this is a product form context (via metafield)
+  elsif enable_safety_rating
+    if enable_safety_rating == 'true' or enable_safety_rating == true
+      assign show_safety_rating = true
+    endif
+  endif
+-%}
+
+{%- if show_safety_rating -%}
+  <div class="safety-rating text-14-regular mt-2 flex items-center gap-2">
+   {% render 'icon', icon: 'safety-rating' %}
+    <span class="safety-rating__text">
+      This product is not certified to safety standards outside ASTM (United States)
+    </span>
+  </div>
+{%- endif -%}
+

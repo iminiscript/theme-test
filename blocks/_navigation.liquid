@@ -1,0 +1,37 @@
+<button class="sidebarMenu__mainTrigger text-14-bold-caps no-underline text-asphalt hidden lg:block lg:m-auto" data-trigger="{{ block.settings.navigation_title | handleize }}">{{ block.settings.navigation_title }}</button>
+
+<div class="sidebarMenu__drawerWrapper bg-white h-full">
+  <button class="sidebarMenu__drawerTrigger hidden absolute p-[20px_32px_21px_21px] top-0 text-sm leading-5 uppercase text-[#121212] font-bold -ml-[21px] -mt-[20px] z-20 bg-white [&.is--visible]:block [&.is--active]:underline [&.is--active]:underline-offset-[3px] [&.is--active]:decoration-2 [&.is--active]:text-brunt-orange" data-trigger="{{ block.settings.navigation_title | handleize }}">{{ block.settings.navigation_title }}</button>
+    <div class="sidebarMenu__drawer--desktop lg:absolute lg:top-[calc(100%+21px)] lg:left-0 lg:bg-white lg:-translate-x-[100vw] lg:[.is--active_&]:-translate-x-[21px] lg:transition-transform lg:duration-300 lg:ease-in-out lg:w-[25rem] lg:h-screen lg:z-10">
+    <div class="sidebarMenu__subNavWrapper lg:flex lg:flex-col lg:h-full lg:overflow-auto">{% content_for 'blocks' %}</div>
+  </div>
+</div>
+
+{% schema %}
+  {
+    "name": "Navigation",
+    "tag": "nav",
+    "class": "sidebarMenu__nav menuDrawer__container",
+    "settings": [
+      {
+        "type": "text",
+        "id": "navigation_title",
+        "label": "Navigation Title"
+      }
+    ],
+    "blocks": [
+      {
+        "type": "_sub-navigation"
+      },
+      {
+        "type": "_feature-carousel"
+      }
+    ],
+    "presets": [
+      {
+        "name": "Navigation",
+        "category": "Navigation"
+      }
+    ]
+  }
+{% endschema %}

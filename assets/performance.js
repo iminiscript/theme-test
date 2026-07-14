@@ -22,13 +22,29 @@ class ThemePerformance {
    */
   measureFromEvent(benchmarkName, event) {
     const metricName = `${this.metricPrefix}:${benchmarkName}`;
-    performance.mark(`${metricName}:start`, {
-      startTime: event.timeStamp,
-    });
+    const startMarkerName = `${metricName}:start`;
+    const endMarkerName = `${metricName}:end`;
 
-    performance.mark(`${metricName}:end`);
+    // Check if start marker exists
+    const startMarker = performance.getEntriesByName(startMarkerName, "mark")[0];
 
-    performance.measure(metricName, `${metricName}:start`, `${metricName}:end`);
+    if (!startMarker) {
+      // If start marker doesn't exist, create it now to prevent errors
+      // This handles cases where the start marker wasn't created before the event
+      performance.mark(startMarkerName);
+    }
+
+    // Create end marker
+    performance.mark(endMarkerName);
+
+    // Measure between start and end markers
+    try {
+      performance.measure(metricName, startMarkerName, endMarkerName);
+    } catch (e) {
+      // If measurement fails, log a warning but don't throw
+      // Performance measurement is non-critical and shouldn't break functionality
+      console.warn(`[Performance] Failed to measure ${metricName}:`, e.message);
+    }
   }
 
   /**
@@ -36,7 +52,7 @@ class ThemePerformance {
    * @returns {void}
    */
   measureFromMarker(startMarker) {
-    const metricName = startMarker.name.replace(/:start$/, '');
+    const metricName = startMarker.name.replace(/:start$/, "");
     const endMarker = performance.mark(`${metricName}:end`);
 
     performance.measure(metricName, startMarker.name, endMarker.name);
@@ -59,4 +75,4 @@ class ThemePerformance {
   }
 }
 
-export const cartPerformance = new ThemePerformance('cart-performance');
+export const cartPerformance = new ThemePerformance("cart-performance");

@@ -2,12 +2,11 @@
 
 {%- doc -%}
   Renders the blog post featured image block.
+
+  @param {object} image - The image object from article.image
 {%- enddoc -%}
 
-{% liquid
-  assign block_settings = block.settings
-  assign image = closest.article.image
-%}
+{%- assign block_settings = block.settings -%}
 
 <div
   class="blog-post-featured-image blog-post-featured-image--{{ block.id }} blog-post-featured-image--height-{{ block_settings.height }} spacing-style size-style"
@@ -97,7 +96,6 @@
     {
       "type": "select",
       "id": "image_ratio",
-      "label": "t:settings.aspect_ratio",
       "options": [
         {
           "value": "adapt",
@@ -116,7 +114,8 @@
           "label": "t:options.landscape"
         }
       ],
-      "default": "adapt"
+      "default": "adapt",
+      "label": "t:settings.aspect_ratio"
     },
     {
       "type": "select",

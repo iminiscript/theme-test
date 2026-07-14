@@ -1,0 +1,26 @@
+<div>
+  {% content_for 'blocks' %}
+</div>
+
+{% schema %}
+{
+  "name": "t:names.page",
+  "class": "section-wrapper",
+  "blocks": [
+    {
+      "type": "@theme"
+    },
+    {
+      "type": "@app"
+    },
+    {
+      "type": "_divider"
+    }
+  ],
+  "disabled_on": {
+    "groups": ["header"]
+  },
+  "settings": [
+  ]
+}
+{% endschema %}

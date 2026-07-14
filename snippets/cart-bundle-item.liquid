@@ -1,0 +1,128 @@
+{%- comment -%}
+  Renders a bundle cart item (multiple products grouped together)
+  
+  @param {object} bundle_item - The bundle display item object
+  @param {array} bundle_group - Array of cart items in the bundle
+  @param {string} bundle_title - The bundle title from properties
+  @param {string} bundle_image - The bundle image URL from properties
+  @param {string} bundle_link - The bundle link URL from properties
+  @param {number} bundle_regular_price - Regular price before discount
+  @param {number} bundle_discounted_price - Discounted price
+  @param {number} bundle_discount_percentage - Discount percentage
+{%- endcomment -%}
+
+{%- assign bundle_title = bundle_title | default: bundle_item.bundle_title -%}
+{%- assign bundle_image = bundle_image | default: bundle_item.bundle_image -%}
+{%- assign bundle_link = bundle_link | default: bundle_item.bundle_link | default: '/pages/bundle-builder' -%}
+{%- assign bundle_regular_price = bundle_regular_price | default: bundle_item.bundle_regular_price -%}
+{%- assign bundle_discounted_price = bundle_discounted_price | default: bundle_item.bundle_discounted_price -%}
+{%- assign bundle_discount_percentage = bundle_discount_percentage | default: bundle_item.bundle_discount_percentage -%}
+{%- assign bundle_group = bundle_group | default: bundle_item.bundle_group -%}
+{%- assign bundle_options_with_values = bundle_options_with_values | default: bundle_item.bundle_options_with_values -%}
+{%- assign bundle_product_type = bundle_product_type | default: bundle_item.bundle_product_type -%}
+
+
+
+<tr role="row" 
+    class="cart-items__table-row cart-items__bundle-row pb-6" 
+    ref="cartItemRows[]" 
+    data-key="{{ bundle_item.key }}"
+    data-bundle-type="{{ bundle_item.properties._bundle_type }}"
+    data-bundle-ids="{{ bundle_item.properties._bundle_ids }}">
+  
+  {%- comment -%} Product Image {%- endcomment -%}
+  <td class="cart-items__media cart-items__span-2" role="cell">
+    {%- if bundle_image != blank -%}
+      <a href="{{ bundle_link }}" 
+         class="cart-items__media-container"
+         style="--ratio: 1;">
+        <img src="{{ bundle_image }}" 
+             alt="{{ bundle_title }}"
+             class="cart-items__media-image border-style"
+             loading="lazy">
+      </a>
+    {%- elsif bundle_item.image -%}
+      {%- liquid
+        assign ratio = bundle_item.image.aspect_ratio
+        assign border_opacity = settings.cart_thumbnail_border_opacity | divided_by: 100.0
+        assign border_override = '--border-width: [cart_thumbnail_border_width]px; --border-style: [cart_thumbnail_border_style]; --border-color: rgb(var(--color-border-rgb) / [cart_thumbnail_border_opacity]); --border-radius: [cart_thumbnail_border_radius]px;' | replace: '[cart_thumbnail_border_width]', settings.cart_thumbnail_border_width | replace: '[cart_thumbnail_border_style]', settings.cart_thumbnail_border | replace: '[cart_thumbnail_border_opacity]', border_opacity | replace: '[cart_thumbnail_border_radius]', settings.cart_thumbnail_border_radius
+      %}
+      <a href="{{ bundle_link }}" 
+         class="cart-items__media-container"
+         style="--ratio: {{ ratio }};">
+        {{- bundle_item.image | image_url: width: 250 | image_tag: class: 'cart-items__media-image border-style', style: border_override -}}
+      </a>
+    {%- endif -%}
+  </td>
+  
+  {%- comment -%} Product Information {%- endcomment -%}
+  <td class="cart-items__details cart-items__span-2" role="cell">
+    {%- comment -%} Bundle Title {%- endcomment -%}
+    <p>
+      <a href="{{ bundle_link }}" 
+         class="cart-items__title text-16-bold">
+        {{ bundle_title }}
+      </a>
+    </p>
+  
+    
+    {%- comment -%} Individual Items in Bundle {%- endcomment -%}
+    {% render 'bundle-cart-options', bundle_ids: bundle_item.properties._bundle_ids %}
+  </td>
+  
+  {%- comment -%} Price and Remove Button {%- endcomment -%}
+  <td class="cart-items__delete cart-items__span-2" role="cell">
+    {%- comment -%} Remove Button {%- endcomment -%}
+    <button class="button button--tertiary cart-items__remove" 
+            type="button"
+            data-bundle-remove="true"
+            aria-label="{{ 'accessibility.remove_item' | t: title: bundle_title | escape }}">
+      {% render 'icon', icon: 'delete', class: 'w-5 h-5' %}
+      <span class="visually-hidden">Remove</span>
+    </button>
+  </td>
+
+  <td class="cart-items__quantity mt-2 cart-items__span-3" role="cell">
+      {%- comment -%} Quantity Selector {%- endcomment -%}
+      {%- assign can_update_quantity = bundle_item.instructions.can_update_quantity | default: true, allow_false: true -%}
+      {% render 'bundle-quantity-selector',
+        bundle_item: bundle_item,
+        bundle_ids: bundle_item.properties._bundle_ids,
+        in_cart_quantity: bundle_item.quantity,
+        line_index: bundle_item.index,
+        min: 0,
+        class: 'cart-primary-typography border border-medium-smoke',
+        can_update_quantity: can_update_quantity
+      %}
+    </td>
+    <td class="cart-items__price mt-2 flex items-end justify-end" role="cell">
+      {% render 'bundle-cart-price', bundle_ids: bundle_item.properties._bundle_ids %}
+    </td>
+</tr>
+{% stylesheet %}
+  .cart-items__bundle-list {
+    padding-inline-start: 0;
+  }
+  
+  .cart-items__bundle-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .cart-items__bundle-row {
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .cart-items__bundle-row:last-child {
+    border-bottom: none;
+  }
+  
+  @media (max-width: 750px) {
+    .cart-items__bundle-list li {
+      font-size: 0.875rem;
+    }
+  }
+{% endstylesheet %}
+

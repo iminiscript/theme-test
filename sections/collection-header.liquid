@@ -1,0 +1,124 @@
+{% liquid
+  assign _settings = section.settings
+  assign banner_image_mobile = _settings.banner_image_mobile
+  assign banner_image_desktop = _settings.banner_image_desktop
+  assign banner_cta_label = _settings.banner_cta_label
+  assign banner_cta_link = _settings.banner_cta_link
+  assign enable_compare_drawer = _settings.enable_compare_drawer
+%}
+
+<div class="pb-6 pt-8 px-3 md:px-8 md:pt-16 md:pb-12 lg:px-0 text-center max-w-[1000px] mx-auto">
+  <h1 class="text-heading-2">
+    {{ collection.title }}
+  </h1>
+
+  {% if collection.description %}
+    <div class="font-interstate text-16-regular mt-1">{{ collection.description | strip_html }}</div>
+  {% endif %}
+
+  {% if banner_image_mobile or banner_image_desktop %}
+    <div class="w-full mt-5 md:mt-8">
+      {% if banner_image_mobile %}
+        <img
+          src="{{ banner_image_mobile | image_url: width: 768 }}"
+          alt="{{ collection.title }}"
+          class="md:hidden w-full max-h-[605px] object-cover"
+          width="768"
+          height="328"
+        >
+      {% endif %}
+      {% if banner_image_desktop %}
+        <img
+          src="{{ banner_image_desktop | image_url: width: 1920 }}"
+          alt="{{ collection.title }}"
+          class="w-full object-cover h-[368px] max-w-[1000px] lg:h-[250px] hidden md:block mx-auto"
+          width="1920"
+          height="305"
+        >
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% assign show_cta = false %}
+  {% if banner_cta_link != blank or enable_compare_drawer %}
+    {% assign show_cta = true %}
+  {% endif %}
+
+  {% if show_cta %}
+    <div class="flex justify-center w-full mx-auto mt-5 md:mt-8">
+      {% if enable_compare_drawer %}
+        {% render 'button',
+          label: banner_cta_label,
+          style: 'primary',
+          color: 'orange',
+          size: 'large',
+          width_small: 'fill',
+          width_medium: 'custom',
+          custom_width_medium: 320,
+          width_large: 'custom',
+          custom_width_large: 320,
+          on_click: '#compare-drawer/open'
+        %}
+      {% else %}
+        {% comment %} Simple URL: render as link {% endcomment %}
+        {% render 'button',
+          label: banner_cta_label,
+          url: banner_cta_link,
+          style: 'primary',
+          color: 'orange',
+          size: 'large',
+          width_small: 'fill',
+          width_medium: 'custom',
+          custom_width_medium: 320,
+          width_large: 'custom',
+          custom_width_large: 320
+        %}
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% schema %}
+{
+  "name": "Collection Header",
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  },
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "banner_image_mobile",
+      "label": "Banner Image Mobile"
+    },
+    {
+      "type": "image_picker",
+      "id": "banner_image_desktop",
+      "label": "Banner Image Desktop"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_compare_drawer",
+      "label": "Enable Compare Drawer",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "banner_cta_label",
+      "label": "Banner CTA Label",
+      "default": "Shop Now"
+    },
+    {
+      "type": "url",
+      "id": "banner_cta_link",
+      "label": "Banner CTA Link",
+      "info": "Hidden when Compare Drawer is enabled",
+      "visible_if": "{{ section.settings.enable_compare_drawer == false }}"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Collection Header",
+      "category": "t:categories.collections"
+    }
+  ]
+}
+{% endschema %}

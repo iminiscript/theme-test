@@ -1,0 +1,89 @@
+<style>
+  /* Timeline Progress Bar - Responsive */
+  [data-timeline-progress] {
+    --progress-percentage: 0%;
+    /* Mobile: use height */
+    height: var(--progress-percentage);
+    width: 0.5rem; /* w-2 */
+  }
+  
+  /* Desktop: use width */
+  @media (min-width: 768px) {
+    [data-timeline-progress] {
+      height: 0.5rem; /* h-2 */
+      width: var(--progress-percentage);
+    }
+  }
+
+  /* Screen reader only - visually hidden but accessible to assistive technologies */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+</style>
+
+<div class="relative flex flex-col md:flex-row w-full h-[284px] md:h-auto justify-between gap-7 md:gap-0" data-timeline role="list" aria-label="Order status timeline">
+  <!-- Visually hidden aria-live region for status updates -->
+  <div class="sr-only" aria-live="polite" aria-atomic="true" data-timeline-announce></div>
+  
+  <div class="absolute top-6 md:top-3 left-3 md:left-6 right-6 md:mx-auto h-[80%] w-2 md:h-2 md:w-[95%] bg-medium-smoke" aria-hidden="true">
+    <div class="absolute w-2 md:h-2 transition-all duration-300 ease-in-out rounded bg-brunt-orange" data-timeline-progress style="--progress-percentage: 0%;" aria-hidden="true"></div>
+  </div>
+
+  <div class="timeline-item relative flex flex-row md:flex-col gap-3 md:gap-2 items-start" data-status="order_placed" role="listitem" aria-label="Order Placed — completed">
+    <div class="timeline-icon w-8 h-8 rounded-full item-center border-2 border-brunt-orange bg-brunt-orange flex items-center justify-center relative z-10 transition-all duration-300 ease-in-out" aria-hidden="true">
+      <div class="" data-checkmark aria-hidden="true">
+        {% render 'icons', icon: 'checkmark' %}
+      </div>
+    </div>
+    <div class="text-left pt-1 md:pt-0">
+      <p class="text-16-bold">Order Placed</p>
+      <p class="text-16-regular pt-0.5 md:pt-0" data-date>&nbsp;</p>
+    </div>
+  </div>
+
+  <div class="timeline-item relative flex flex-row md:flex-col gap-3 md:gap-2 items-start md:items-center" data-status="in_transit" role="listitem" aria-label="In Transit — pending">
+    <div class="timeline-icon w-8 h-8 rounded-full item-center border-2 border-brunt-orange bg-white flex items-center justify-center relative z-10 transition-all duration-300 ease-in-out" aria-hidden="true">
+      <div class="hidden" data-checkmark aria-hidden="true">
+        {% render 'icons', icon: 'checkmark' %}
+      </div>
+    </div>
+    <div class="text-left md:text-center pt-1 md:pt-0">
+      <p class="text-16-bold">In Transit</p>
+      <p class="text-16-regular pt-0.5 md:pt-0" data-date>&nbsp;</p>
+    </div>
+  </div>
+
+  <div class="timeline-item relative flex flex-row md:flex-col gap-3 md:gap-2 items-start md:items-center" data-status="out_for_delivery" role="listitem" aria-label="Out for Delivery — pending">
+    <div class="timeline-icon w-8 h-8 rounded-full item-center border-2 border-brunt-orange bg-white flex items-center justify-center relative z-10 transition-all duration-300 ease-in-out" aria-hidden="true">
+      <div class="hidden" data-checkmark aria-hidden="true">
+        {% render 'icons', icon: 'checkmark' %}
+      </div>
+    </div>
+    <div class="text-left md:text-center pt-1 md:pt-0">
+      <p class="text-16-bold">Out for Delivery</p>
+      <p class="text-16-regular pt-0.5 md:pt-0" data-date>&nbsp;</p>
+    </div>
+  </div>
+
+  <div class="timeline-item relative flex flex-row md:flex-col gap-3 md:gap-2 items-start md:items-end" data-status="delivered" role="listitem" aria-label="Delivered — pending">
+    <div class="timeline-icon w-8 h-8 rounded-full item-center border-2 border-brunt-orange bg-white flex items-center justify-center relative z-10 transition-all duration-300 ease-in-out" aria-hidden="true">
+      <div class="hidden" data-checkmark aria-hidden="true">
+        {% render 'icons', icon: 'checkmark' %}
+      </div>
+    </div>
+    <div class="text-left md:text-right pt-1 md:pt-0">
+      <p class="text-16-bold">Delivered</p>
+      <p class="text-16-regular pt-0.5 md:pt-0" data-date>&nbsp;</p>
+    </div>
+  </div>
+
+</div>
+

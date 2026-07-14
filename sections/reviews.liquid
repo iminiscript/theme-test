@@ -1,0 +1,433 @@
+{%- liquid
+  assign section_id = section.id
+  assign heading_label = section.settings.heading_label
+  assign heading = section.settings.heading
+  assign bg_color = section.settings.background_color
+  assign text_color = section.settings.text_color
+  assign config_id = section.id | replace: '-', '_' | replace: '--', '_'
+
+  if section.settings.override_theme_swiper_settings
+    assign autoplay_enabled = section.settings.autoplay_enabled
+    assign autoplay_interval = section.settings.autoplay_interval | times: 1000
+    assign animation_speed = section.settings.animation_speed
+  else
+    assign autoplay_enabled = settings.autoplay_enabled
+    assign autoplay_interval = settings.autoplay_interval | times: 1000
+    assign animation_speed = settings.animation_speed
+  endif
+-%}
+
+<div class="reviews-carousel-wrapper py-12 md:py-16 {{ bg_color }}" data-section-id="{{ section.id }}">
+  <div class="container-layout flex flex-col gap-5 md:gap-8 overflow-hidden">
+    {%- comment -%} Section Header {%- endcomment -%}
+    {%- if heading_label != blank or heading != blank -%}
+      <div class="flex flex-col gap-2 text-center uppercase">
+        {%- if heading_label != blank -%}
+          <p class="text-16-bold-caps text-brunt-orange">
+            {{ heading_label }}
+          </p>
+        {%- endif -%}
+
+        {%- if heading != blank -%}
+          <h2 class="text-heading-4 text-balance {{ text_color }}">
+            {{ heading }}
+          </h2>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+
+    {%- comment -%} Carousel Container {%- endcomment -%}
+    <div class="relative">
+      <div class="swiper__carousel reviews container-content overflow-hidden" data-config="reviewsCarouselConfig_{{ config_id }}">
+        <div class="swiper-wrapper">
+          {%- for block in section.blocks -%}
+            {% assign last3 = forloop.length | minus: 3 %}
+            {% if forloop.index >= last3 %}
+              {% assign placement = forloop.index | minus: forloop.length | minus: 1  %}
+            {% else %}
+              {% assign placement = forloop.index | minus: 1  %}
+            {% endif %}
+            {% render 'review-card', block: block, defaultPlacement: placement  %}
+          {%- endfor -%}
+        </div>
+      </div>
+
+      <button
+        class="reviews-nav-prev absolute left-3 md:left-8 lg:left-0 top-[45.5%] z-20 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-asphalt flex items-center justify-center hover:bg-light-smoke hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brunt-orange"
+        aria-label="Previous review"
+      >
+        {% render 'icon', icon: 'pointer-arrow-left' %}
+      </button>
+
+      <button
+        class="reviews-nav-next absolute right-3 md:right-8 lg:right-0 top-[45.5%] z-20 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-asphalt flex items-center justify-center hover:bg-light-smoke hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brunt-orange"
+        aria-label="Next review"
+      >
+        {% render 'icon', icon: 'pointer-arrow-right' %}
+      </button>
+
+      {%- comment -%} Pagination Dots {%- endcomment -%}
+      {%- if section.blocks.size > 1 -%}
+        <div class="reviews-pagination flex justify-center gap-2 mt-5"></div>
+      {%- endif -%}
+    </div>
+  </div>
+</div>
+
+<script>
+  // Reviews Carousel Configuration for {{ section.id }}
+  window.reviewsCarouselConfig_{{ config_id }} = {
+    slidesPerView: 'auto',
+    centeredSlides: true,
+    spaceBetween: 0,
+    loop: true,
+    resizeObserver: false, // Disable resize observer for better performance
+    speed: {{ animation_speed }},
+    autoplay: {{ autoplay_enabled }} && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? {
+      delay: {{ autoplay_interval }},
+      disableOnInteraction: false,
+      pauseOnMouseEnter: true,
+    } : false,
+    navigation: {
+      nextEl: "[data-section-id='{{ section.id }}'] .reviews-nav-next",
+      prevEl: "[data-section-id='{{ section.id }}'] .reviews-nav-prev",
+    },
+    pagination: {
+      el: "[data-section-id='{{ section.id }}'] .reviews-pagination",
+      clickable: true,
+      type: 'bullets',
+      renderBullet: function (index, className) {
+        return `<span class="${className}" role="button" aria-label="Go to slide ${index + 1}">
+          <span class="reviews-progress-bar"></span>
+        </span>`;
+      }
+    },
+    on: {
+      init: function(swiper) {
+        if (typeof window.updateSlideStyles === 'function') {
+          window.updateSlideStyles(swiper);
+        }
+        if (typeof window.attachPaginationHandlers === 'function') {
+          window.attachPaginationHandlers(swiper, "[data-section-id='{{ section.id }}'] .reviews-pagination");
+        }
+      },
+      slideChange: function(swiper) {
+        if (typeof window.updateSlideStyles === 'function') {
+          window.updateSlideStyles(swiper);
+        }
+      },
+      slideChangeTransitionStart: function(swiper) {
+        if (typeof window.updateSlideStyles === 'function') {
+          window.updateSlideStyles(swiper);
+        }
+      },
+      slideChangeTransitionEnd: function(swiper) {
+        if (typeof window.updateSlideStyles === 'function') {
+          window.updateSlideStyles(swiper);
+        }
+      },
+      transitionEnd: function(swiper) {
+        if (typeof window.updateSlideStyles === 'function') {
+          window.updateSlideStyles(swiper);
+        }
+      },
+      autoplayTimeLeft: function(swiper, time, progress) {
+        if (typeof window.updateProgressBar === 'function') {
+          window.updateProgressBar(
+            swiper,
+            progress,
+            ".reviews-carousel-wrapper",
+            ".reviews-pagination",
+            ".reviews-progress-bar"
+          );
+        }
+      }
+    }
+  };
+</script>
+
+<style>
+  /* Swiper pagination custom styles */
+  .reviews-pagination {
+    display: flex;
+    gap: 8px;
+  }
+
+  .reviews-pagination .swiper-pagination-bullet {
+    width: 16px;
+    height: 8px;
+    background: var(--color-medium-asphalt);
+    border-radius: 100px;
+    opacity: 1;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: width 0.3s ease, background 0.3s ease;
+  }
+
+  .reviews-pagination .swiper-pagination-bullet-active {
+    width: 36px;
+    {% if autoplay_enabled %}
+      background: var(--color-medium-asphalt);
+    {% else %}
+      background: var(--color-brunt-orange);
+    {% endif %}
+  }
+
+  .reviews-progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--color-brunt-orange);
+    border-radius: inherit;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  /* Ensure progress bar only shows on active bullet */
+  .reviews-pagination .swiper-pagination-bullet:not(.swiper-pagination-bullet-active) .reviews-progress-bar {
+    width: 0% !important;
+    display: none;
+  }
+
+  /* Scope bullet margin to hero carousel only */
+  .reviews-pagination .swiper-pagination-bullet {
+      margin: 0 !important;
+  }
+
+  /* Slide transition styles */
+  [data-section-id="{{ section.id }}"] .swiper-slide {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 225px;
+    opacity: 0.6;
+    z-index: 1;
+    min-height: 360px !important;
+    height: auto;
+    width: 60%;
+    display: flex;
+  }
+
+  /* Medium screens: Fixed 480px width, centered slide - scoped to promo cards */
+  @media (min-width: 768px) {
+    [data-section-id="{{ section.id }}"] .swiper-slide {
+      width: 360px !important;
+      flex-shrink: 0;
+    }
+  }
+
+  [data-section-id="{{ section.id }}"] .swiper-slide[data-placement="null"] {
+    transform: scale(0.8);
+  }
+  [data-section-id="{{ section.id }}"] .swiper-slide[data-placement="-3"] {
+    transform: scale(0.8) translateX(153px);
+  }
+  [data-section-id="{{ section.id }}"] .swiper-slide[data-placement="-2"] {
+    transform: scale(0.8) translateX(87px);
+  }
+  [data-section-id="{{ section.id }}"] .swiper-slide[data-placement="-1"] {
+    transform: scale(0.8) translateX(21px);
+  }
+  [data-section-id="{{ section.id }}"] .swiper-slide[data-placement="0"] {
+    opacity: 1 !important;
+    transform: scale(1);
+    z-index: 2 !important;
+  }
+  [data-section-id="{{ section.id }}"] .swiper-slide[data-placement="1"] {
+    transform: scale(0.8) translateX(-21px);
+  }
+  [data-section-id="{{ section.id }}"] .swiper-slide[data-placement="2"] {
+    transform: scale(0.8) translateX(-87px);
+  }
+  [data-section-id="{{ section.id }}"] .swiper-slide[data-placement="3"] {
+    transform: scale(0.8) translateX(-153px);
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Reviews",
+  "tag": "section",
+  "class": "section-reviews",
+  "max_blocks": 10,
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading_label",
+      "label": "Heading Label",
+      "default": "REVIEWS"
+    },
+    {
+      "type": "textarea",
+      "id": "heading",
+      "label": "Heading",
+      "default": "500,000+ Workers Have Switched To BRUNT, So Should You"
+    },
+    {
+      "type": "checkbox",
+      "id": "override_theme_swiper_settings",
+      "label": "Swiper Override",
+      "default": false,
+      "info": "Override the default swiper theme settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "autoplay_enabled",
+      "label": "Enable Autoplay",
+      "default": true,
+      "info": "Automatically advances slides",
+      "visible_if" : "{{ section.settings.override_theme_swiper_settings }}"
+    },
+    {
+      "type": "range",
+      "id": "autoplay_interval",
+      "label": "Autoplay Interval (seconds)",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "default": 5,
+      "info": "Time between slide transitions",
+      "visible_if" : "{{ section.settings.override_theme_swiper_settings }}"
+    },
+    {
+      "type": "range",
+      "id": "animation_speed",
+      "label": "Animation Speed (ms)",
+      "min": 200,
+      "max": 1000,
+      "step": 100,
+      "default": 500,
+      "info": "Speed of slide transitions",
+      "visible_if" : "{{ section.settings.override_theme_swiper_settings }}"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "select",
+      "id": "background_color",
+      "label": "Background Color",
+      "options": [
+        { "value": "bg-white", "label": "White" },
+        { "value": "bg-light-smoke", "label": "Light Smoke" },
+        { "value": "bg-medium-smoke", "label": "Medium Smoke" },
+        { "value": "bg-asphalt", "label": "Asphalt" }
+      ],
+      "default": "bg-light-smoke"
+    },
+    {
+      "type": "select",
+      "id": "text_color",
+      "label": "Text Color",
+      "options": [
+        { "value": "text-black", "label": "Black" },
+        { "value": "text-asphalt", "label": "Asphalt" },
+        { "value": "text-medium-smoke", "label": "Medium Smoke" },
+        { "value": "text-light-smoke", "label": "Light Smoke" },
+        { "value": "text-white", "label": "White" }
+      ],
+      "default": "text-asphalt"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "review_card",
+      "name": "Review Card",
+      "settings": [
+        {
+          "type": "text",
+          "id": "headline",
+          "label": "Review Headline",
+          "default": "Great Product!"
+        },
+        {
+          "type": "textarea",
+          "id": "review_text",
+          "label": "Review Text",
+          "default": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+        },
+        {
+          "type": "text",
+          "id": "reviewer_name",
+          "label": "Reviewer Name",
+          "default": "John Doe"
+        },
+        {
+          "type": "text",
+          "id": "product_name",
+          "label": "Product Name",
+          "default": "Product Name"
+        },
+        {
+          "type": "url",
+          "id": "product_url",
+          "label": "Product URL"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Reviews",
+      "category": "Social Proof",
+      "blocks": [
+        {
+          "type": "review_card",
+          "settings": {
+            "headline": "Best Work Boots Ever!",
+            "review_text": "These boots are incredibly durable and comfortable. I've worn them every day for 6 months and they still look great!",
+            "reviewer_name": "Mike Johnson",
+            "product_name": "MARIN Work Boot"
+          }
+        },
+        {
+          "type": "review_card",
+          "settings": {
+            "headline": "Worth Every Penny",
+            "review_text": "Finally found work boots that don't hurt my feet after a long day. The quality is outstanding!",
+            "reviewer_name": "Sarah Williams",
+            "product_name": "JACKSON Safety Boot"
+          }
+        },
+        {
+          "type": "review_card",
+          "settings": {
+            "headline": "Highly Recommend",
+            "review_text": "Switched from another brand and couldn't be happier. These boots are built to last!",
+            "reviewer_name": "David Brown",
+            "product_name": "MARIN Work Boot"
+          }
+        },
+        {
+          "type": "review_card",
+          "settings": {
+            "headline": "Amazing Quality",
+            "review_text": "The craftsmanship is top-notch. You can tell these are made to withstand tough conditions.",
+            "reviewer_name": "James Anderson",
+            "product_name": "IRONCLAD Boot"
+          }
+        },
+        {
+          "type": "review_card",
+          "settings": {
+            "headline": "Perfect Fit",
+            "review_text": "Great arch support and they fit like a glove right out of the box. No break-in period needed!",
+            "reviewer_name": "Lisa Martinez",
+            "product_name": "JACKSON Safety Boot"
+          }
+        },
+        {
+          "type": "review_card",
+          "settings": {
+            "headline": "Game Changer",
+            "review_text": "My old boots used to kill my feet. These BRUNT boots are a total game changer!",
+            "reviewer_name": "Robert Taylor",
+            "product_name": "MARIN Work Boot"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

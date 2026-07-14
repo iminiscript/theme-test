@@ -1,0 +1,162 @@
+<div class="relative w-full">
+  <button
+    id="localization-trigger"
+    class="flex w-full items-center gap-3 border border-white py-2 px-4 text-left focus:outline-2 focus:outline-brunt-orange hover:bg-white/5"
+    role="combobox"
+    aria-haspopup="listbox"
+    aria-labelledby="localization-label localization-selected-text"
+    aria-expanded="false"
+    type="button"
+  >
+    <img
+      class="min-w-6 w-6 h-6 rounded-full overflow-hidden object-cover"
+      src="{{ localization.country | image_url }}"
+      alt="{{ localization.country.name }}"
+    />
+    <span id="localization-selected-text" class="w-full text-14-regular">
+      {{ localization.country.name }} - {{ localization.country.currency.iso_code }} {{ localization.country.currency.symbol }}
+    </span>
+    <span class="svg-wrapper icon-caret w-6 h-6 transition-transform duration-200" aria-hidden="true">
+      {{- 'icon-caret.svg' | inline_asset_content -}}
+    </span>
+  </button>
+
+  {% form 'localization' %}
+    <input type="hidden" id="hidden-country" name="country_code" value="{{ localization.country.iso_code }}">
+    <ul
+      id="localization-list"
+      class="absolute bottom-full left-0 right-0 mb-1 max-h-72 overflow-auto divide-y divide-medium-smoke bg-white text-black shadow-xl hidden"
+      role="listbox"
+      aria-labelledby="localization-label"
+      aria-expanded="false"
+    >
+      {%- for country in localization.available_countries -%}
+        <li
+          id="option-{{ country.iso_code }}"
+          role="option"
+          class="flex items-center justify-between gap-3 cursor-pointer px-4 py-2 hover:bg-white/10 focus:bg-brunt-orange/10 outline-none"
+          data-country-code="{{ country.iso_code }}"
+          tabindex="-1"
+          aria-selected="{% if country.iso_code == localization.country.iso_code %}true{% else %}false{% endif %}"
+        >
+          <div class="flex items-center gap-3">
+            <img
+              class="min-w-6 w-6 h-6 rounded-full overflow-hidden object-cover"
+              src="{{ country | image_url }}"
+              alt="{{ country.name }}"
+            />
+            <span class="text-sm">
+              {{ country.name }} - {{ country.currency.iso_code }} {{ country.currency.symbol }}
+            </span>
+          </div>
+          {% if country.iso_code == localization.country.iso_code %}
+            <svg width="20" height="20" viewBox="0 0 20 20">{% render 'icon', icon: 'check_mark' %}</svg>
+          {% endif %}
+        </li>
+      {%- endfor -%}
+    </ul>
+  {% endform %}
+</div>
+
+<script>
+  (function () {
+    const trigger = document.getElementById('localization-trigger');
+    const list = document.getElementById('localization-list');
+    const hidden = document.getElementById('hidden-country');
+    const form = list?.closest('form');
+
+    if (!trigger || !list || !hidden || !form) return;
+
+    const caret = trigger.querySelector('.icon-caret');
+
+    function openList() {
+      list.classList.remove('hidden');
+      list.setAttribute('aria-expanded', 'true');
+      trigger.setAttribute('aria-expanded', 'true');
+      caret && caret.classList.add('rotate-180');
+      // Focus currently selected option for keyboard users
+      const selected = list.querySelector('[aria-selected="true"]');
+      (selected || list.firstElementChild)?.focus();
+    }
+
+    function closeList() {
+      list.classList.add('hidden');
+      list.setAttribute('aria-expanded', 'false');
+      trigger.setAttribute('aria-expanded', 'false');
+      caret && caret.classList.remove('rotate-180');
+    }
+
+    function toggleList() {
+      const isOpen = list.getAttribute('aria-expanded') === 'true';
+      isOpen ? closeList() : openList();
+    }
+
+    // Click handlers
+    trigger.addEventListener('click', toggleList);
+
+    list.addEventListener('click', (e) => {
+      const li = e.target.closest('[role="option"]');
+      if (!li) return;
+      const code = li.getAttribute('data-country-code');
+      if (!code) return;
+      hidden.value = code;
+      form.submit();
+    });
+
+    // Keyboard nav for trigger
+    trigger.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (list.getAttribute('aria-expanded') !== 'true'){
+            openList();
+        } else {
+          // Move focus to first/selected item
+          const selected = list.querySelector('[aria-selected="true"]');
+          (selected || list.firstElementChild)?.focus();
+        }
+      } else if (e.key === 'Escape') {
+        closeList();
+      }
+    });
+
+    // Keyboard nav inside list
+    list.addEventListener('keydown', (e) => {
+      const current = document.activeElement.closest('[role="option"]');
+      if (!current) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        (current.nextElementSibling || list.firstElementChild)?.focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        (current.previousElementSibling || list.lastElementChild)?.focus();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        list.firstElementChild?.focus();
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        list.lastElementChild?.focus();
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        current.click();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeList();
+        trigger.focus();
+      }
+  });
+
+    // Close on outside click / blur
+    document.addEventListener('click', (e) => {
+      if (!list.contains(e.target) && !trigger.contains(e.target)) {
+        closeList();
+      }
+    });
+
+    // Ensure closing when focus leaves both
+    document.addEventListener('focusin', (e) => {
+      if (!list.contains(e.target) && !trigger.contains(e.target)) {
+        closeList();
+      }
+    });
+  })();
+</script>

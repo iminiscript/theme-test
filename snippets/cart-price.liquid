@@ -1,0 +1,102 @@
+{%- doc -%}
+  Renders a price with optional strike-through original price when discounted.
+  
+  @param {number} final_price - The final/discounted price amount (in cents)
+  @param {number} original_price - The original price amount (in cents), optional
+  @param {boolean} currency_code_enabled - Whether to show currency code
+  @param {string} [ref] - Optional ref attribute for text-component
+  @param {string} [additional_classes] - Additional CSS classes for the final price
+  @param {string} [data_attributes] - Additional data attributes for the final price
+  @param {boolean} [show_savings] - Whether to show savings message below prices (only when discounted)
+  @param {string} [savings_label] - Label text for savings message (e.g., "You're saving ")
+{%- enddoc -%}
+
+{%- liquid
+  assign has_discount = false
+  if original_price and original_price > final_price
+    assign has_discount = true
+  endif
+
+  if currency_code_enabled
+    assign final_price_formatted = final_price | money_with_currency
+    if has_discount
+      assign original_price_formatted = original_price | money_with_currency
+    endif
+  else
+    assign final_price_formatted = final_price | money
+    if has_discount
+      assign original_price_formatted = original_price | money
+    endif
+  endif
+
+  assign final_price_parts = final_price_formatted | split: '.'
+  assign final_integer_part = final_price_parts[0]
+  assign final_decimal_part = final_price_parts[1]
+
+  if has_discount
+    assign original_price_parts = original_price_formatted | split: '.'
+    assign original_integer_part = original_price_parts[0]
+    assign original_decimal_part = original_price_parts[1]
+  endif
+
+  # Set default classes
+  if has_discount
+    assign final_price_class = 'text-16-bold text-[#c74f1f] pr-1'
+    if additional_classes
+      assign final_price_class = final_price_class | append: ' ' | append: additional_classes
+    endif
+  else
+    # When no discount, use additional_classes if provided, otherwise default to text-16-bold
+    if additional_classes
+      assign final_price_class = additional_classes
+    else
+      assign final_price_class = 'text-16-bold'
+    endif
+  endif
+
+  # Calculate and format savings if needed
+  if has_discount and show_savings
+    assign savings_amount = original_price | minus: final_price
+    if currency_code_enabled
+      assign savings_formatted = savings_amount | money_with_currency
+    else
+      assign savings_formatted = savings_amount | money
+    endif
+  endif
+-%}
+
+{% if has_discount %}
+  <div class="flex flex-col items-end">
+    <div class="flex flex-row items-center">
+      <text-component 
+        {% if ref %}ref="{{ ref }}"{% endif %}
+        value="{{ final_price_formatted | strip_html }}"
+        class="{{ final_price_class }}"
+        {{ data_attributes }}
+      >
+        {{ final_integer_part }}{% if final_decimal_part != '00' %}<sup>{{ final_decimal_part }}</sup>{% endif %}
+      </text-component>
+      <text-component 
+        value="{{ original_price_formatted | strip_html }}"
+        class="text-12-regular line-through text-gray-500"
+      >
+        {{ original_integer_part }}{% if original_decimal_part != '00' %}<sup>{{ original_decimal_part }}</sup>{% endif %}
+      </text-component>
+    </div>
+    {% if show_savings and savings_formatted %}
+      <span class="text-12-light text-asphalt mt-1">
+        {{ savings_label }}{{ savings_formatted }}
+      </span>
+    {% endif %}
+  </div>
+{% else %}
+  <text-component 
+    {% if ref %}ref="{{ ref }}"{% endif %}
+    value="{{ final_price_formatted | strip_html }}"
+    class="{{ final_price_class }}"
+    {{ data_attributes }}
+  >
+    {{ final_integer_part }}{% if final_decimal_part != '00' %}<sup>{{ final_decimal_part }}</sup>{% endif %}
+  </text-component>
+{% endif %}
+

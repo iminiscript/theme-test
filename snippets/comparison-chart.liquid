@@ -1,0 +1,144 @@
+{% comment %}
+  Reusable Comparison Chart Component
+
+  Parameters:
+  - category: (required) The category name to display (e.g., "Boots", "Apparel")
+  - context: (optional) 'page' or 'drawer' - determines if it listens for external events
+  - default_product_ids: (optional) Comma-separated string of product IDs to display initially
+
+  Usage:
+  {% render 'comparison-chart', category: 'Boots' %}
+  {% render 'comparison-chart', category: 'Boots', context: 'page', default_product_ids: '123,456' %}
+
+  Note: The parent container should handle visibility and scrolling classes.
+{% endcomment %}
+
+{% liquid
+  assign chart_context = context | default: 'drawer'
+  assign context_class = ''
+  if chart_context == 'page'
+    assign context_class = 'external-chart'
+  endif
+%}
+
+<comparison-chart-component
+  class="{{ context_class }}"
+  data-category="{{ category }}"
+  data-context="{{ chart_context }}"
+  data-default-product-ids="{{ default_product_ids }}"
+>
+  {% comment %} Loading skeleton - only show for page context {% endcomment %}
+  {% if chart_context == 'page' %}
+    <div ref="comparisonLoader" class="comparison__chartLoader">
+      <svg class="comparison__chartLoader-svg" viewBox="0 0 351 507" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect opacity="0.7" width="73" height="123" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" y="147" width="73" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" y="195" width="73" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" y="243" width="73" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" y="291" width="73" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" y="339" width="73" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" y="387" width="73" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" y="435" width="73" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" y="483" width="73" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="89" width="123" height="123" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="89" y="147" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="89" y="195" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="89" y="243" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="89" y="291" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="89" y="339" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="89" y="387" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="89" y="435" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="89" y="483" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="228" width="123" height="123" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="228" y="147" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="228" y="195" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="228" y="243" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="228" y="291" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="228" y="339" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="228" y="387" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="228" y="435" width="123" height="24" rx="4" fill="#F2F2F2"/>
+        <rect opacity="0.7" x="228" y="483" width="123" height="24" rx="4" fill="#F2F2F2"/>
+      </svg>
+    </div>
+  {% endif %}
+
+  <div ref="comparisonContent" class="w-full">
+    {%- comment -%} Table will be rendered here via JS {%- endcomment -%}
+  </div>
+</comparison-chart-component>
+
+{% stylesheet %}
+  /* Comparison Table Styles */
+  /* Alternating row backgrounds starting from 2nd row */
+  .comparison-table tbody tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+
+  .comparison-table .metafield-rich_text_field p {
+    font-size: 14px;
+  }
+
+  .external-chart .comparison-table th:first-child {
+    padding-left: 12px;
+  }
+
+  .external-chart .comparison-table td:last-child {
+    padding-right: 12px;
+  }
+
+  @media (min-width: 448px) {
+    .external-chart .comparison-table th:first-child {
+      padding-left: 32px;
+    }
+
+    .external-chart .comparison-table td:last-child {
+      padding-right: 32px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .external-chart .comparison-table th:first-child {
+      padding-left: 48px;
+    }
+
+    .external-chart .comparison-table td:last-child {
+      padding-right: 48px;
+    }
+  }
+
+  .external-chart .comparison-table td a {
+    max-width: 160px;
+    margin: 12px auto 0 auto;
+  }
+
+  /* Loading skeleton styles */
+  .comparison__chartLoader {
+    max-width: 90rem; /* 1440px */
+    width: 100%;
+    display: block;
+  }
+
+  .comparison__chartLoader-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  @media (min-width: 768px) {
+    .comparison__chartLoader {
+      padding: 14px 0;
+      margin: 0 auto;
+    }
+  }
+
+  /* Hide loader when chart is loaded */
+  .comparison__chartLoader.hidden {
+    display: none;
+  }
+{% endstylesheet %}
+
+<script
+  src="{{ 'comparison-chart.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>

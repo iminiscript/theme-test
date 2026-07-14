@@ -1,0 +1,39 @@
+{% comment %} Render out the Above Footer content here {% endcomment %}
+<div class="text-white bg-asphalt flex flex-col divide-y divide-white gap-0">
+    <div aria-label="Footer Main Section" class="py-6">
+        <div aria-label="Footer Main Section Content">
+            {% comment %} Render the Main Section Content here {% endcomment %}
+        </div>
+        <div aria-label="Footer Main Section Navigation">
+            {% comment %} Render the Main Section Navigation here {% endcomment %}
+        </div>
+        <div aria-label="Footer Main Section Country Selector">
+            {% comment %} Render the Main Section Country selector here {% endcomment %}
+        </div>
+    </div>
+    <div aria-label="Footer Middle" class="py-6 text-center">
+        <div class="w-full max-w-6xl inline-flex justify-center flex-wrap gap-x-12 gap-y-6">
+            {% comment %} render out the Secondary Nav here and output all the links, if they are manually entered or through a menu reference if a menu is selected in the settings on the Secondary Nav group{% endcomment %}
+        </div>
+    </div>
+    <div aria-label="Footer Bottom" class="py-6">
+        <p class="text-12-light text-center">
+            &copy; {{ 'now' | date: '%Y' }} Maverick Work Wear, Inc. All Rights Reserved.
+        </p>
+    </div>
+</div>
+
+{% schema %}
+{
+  "name": "Above Footer",
+  "tag": "group",
+  "blocks": [
+  ],
+  "settings": [],
+  "presets": [
+    {
+      "name": "Above Footer"
+    }
+  ]
+}
+{% endschema %}

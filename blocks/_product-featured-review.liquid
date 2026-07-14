@@ -1,0 +1,60 @@
+{%- if block.settings.content != blank -%}
+  <div
+    class="product__featuredReview flex flex-col gap-4 justify-center items-center p-5 bg-light-smoke"
+    data-section-id="{{ section.id }}"
+    {{ block.shopify_attributes }}
+  >
+    <div class="review__rating flex gap-2">
+      {% for i in (1..5) %}
+        {% render 'icons', icon: 'star' %}
+      {% endfor %}
+    </div>
+    <div class="review__content text-14-regular text-center">
+      {{ block.settings.content }}
+    </div>
+    <div class="review__author flex gap-3 text-16-regular">
+      {% if block.settings.author != blank %}
+        <span class="review__authorName">{{ block.settings.author }}</span>
+        <span class="review__authorSeparator">|</span>
+      {% endif %}
+      <span class="review__verified flex gap-1">
+        {% render 'icons', icon: 'check-circle-filled' %}
+        Verified Buyer
+      </span>
+    </div>
+  </div>
+{%- endif -%}
+
+{% stylesheet %}
+  .review__content * {
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: inherit;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Product Featured Review",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "author",
+      "label": "Author",
+      "default": "John Doe"
+    },
+    {
+      "type": "richtext",
+      "id": "content",
+      "label": "Content",
+      "default": "<p>Content</p>"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product Featured Review"
+    }
+  ]
+}
+{% endschema %}

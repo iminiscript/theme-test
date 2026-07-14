@@ -1,0 +1,86 @@
+{%- liquid
+  assign image = block.settings.image
+  assign video = block.settings.video
+-%}
+
+<div
+  class="swiper-slide"
+  data-block-id="{{ block.id }}"
+>
+  <div class="relative aspect-[9/16] max-h-[564px] w-[225px] md:w-[320px] lg:w-[318px] js-social-reel__container bg-black overflow-hidden">
+    <button
+      tabindex="0"
+      class="absolute inset-0 js-social-reel__trigger cursor-pointer w-full h-full border-0 p-0 bg-transparent focus-visible:outline-2 focus-visible:outline-brunt-orange group"
+      aria-label="Play video"
+      type="button"
+    >
+      {%- if image != blank -%}
+        {% render 'image',
+          imageData: image,
+          class: 'w-full h-full object-cover',
+          alt_text: 'Video thumbnail',
+          fit: 'cover'
+        %}
+      {%- elsif video.preview_image -%}
+        {% render 'image',
+          imageData: video.preview_image,
+          class: 'w-full h-full object-cover',
+          alt_text: 'Video thumbnail',
+          fit: 'cover'
+        %}
+      {%- else -%}
+        <div class="w-full h-full flex items-center justify-center bg-medium-asphalt">
+          {{ 'image' | placeholder_svg_tag: 'w-full h-full object-cover fill-black' }}
+        </div>
+      {%- endif -%}
+      <div
+        class="absolute inset-0 flex items-center justify-center transition-all duration-300 pointer-events-none"
+        aria-hidden="true"
+      >
+        <div class="transform group-hover:scale-110 group-focus-visible:scale-110 transition-all duration-300">
+          {% render 'icon', icon: 'video' %}
+        </div>
+      </div>
+    </button>
+    <div class="absolute inset-0 js-social-reel__video" style="display: none;">
+      {{
+        video
+        | video_tag:
+          controls: true,
+          autoplay: false,
+          loop: false,
+          muted: false,
+          preload: 'metadata',
+          playsinline: true,
+          class: 'w-full h-full object-cover js-social-reel__player'
+      }}
+    </div>
+  </div>
+</div>
+
+
+{% schema %}
+{
+  "name": "Social Reel",
+  "tag": null,
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Thumbnail Image",
+      "info": "Required: Thumbnail image shown before video plays"
+    },
+    {
+      "type": "video",
+      "id": "video",
+      "label": "Video",
+      "info": "Required: Shopify video for this reel"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Reel"
+    }
+  ]
+}
+{% endschema %}

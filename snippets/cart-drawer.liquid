@@ -1,0 +1,297 @@
+{%- doc -%}
+  Renders the cart drawer, a slide-out panel that displays the contents of the cart. It includes the cart icon that acts as a trigger.
+
+  @param {object} [settings] - An object containing theme settings.
+
+  @param {boolean} [settings.auto_open_cart_drawer] - If `true`, the cart drawer opens automatically after an item is
+  added.
+  @param {string} [settings.drawer_color_scheme] - The color scheme for the drawer.
+{%- enddoc -%}
+
+<script
+  src="{{ 'cart-drawer.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+<script
+  src="{{ 'component-gwp-progressbar.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+
+<cart-drawer-component
+  class="cart-drawer relative"
+  {{ block.shopify_attributes }}
+  {% if settings.auto_open_cart_drawer %}
+    auto-open
+  {% endif %}
+>
+  <button
+    class="button header-actions__action button-unstyled"
+    on:click="/open"
+    aria-label="{{ 'accessibility.open_cart_drawer' | t }} {{ 'accessibility.cart_count' | t}}: {{ cart.item_count }}"
+  >
+  {% render 'icon', icon: 'cart', class: 'h-5 w-5 md:h-6 md:w-6' %}
+      <span class="cart-bubble__text-count absolute flex items-center justify-center -right-[7px] -bottom-[3px] w-[14px] h-[14px] bg-[#c74f1f] text-white text-[10px] rounded-full{% if cart == empty %} hidden{% endif %}" ref="cartBubbleCount" aria-hidden="true" data-testid="cart-bubble">{{ cart.item_count }}</span>
+  </button>
+
+  <dialog
+    ref="dialog"
+    class="cart-drawer__dialog dialog-modal dialog-drawer color-{{ settings.drawer_color_scheme }}{% if cart.empty? %} cart-drawer--empty{%endif%}"
+    scroll-lock
+  >
+    <div class="cart-drawer__inner">
+      <cart-items-component
+        class="cart-items-component"
+        data-section-id="{{ section.id }}"
+      >
+        {%- if cart.empty? -%}
+          <div
+            class="cart-drawer__header fill py-4.5 px-4"
+            id="cart-drawer-header"
+          >            
+            <div class="flex items-center justify-between w-full">
+              <span class="cart-drawer__heading text-16-bold-caps">
+                {{ 'content.cart_title' | t }}
+                {% render 'cart-bubble' %}
+              </span>
+
+              <button
+                ref="closeButton"
+                on:click="cart-drawer-component/close"
+                class="button  cart-drawer__close-button button-unstyled"
+                aria-label="{{ 'actions.close_dialog' | t }}"
+              >
+                <span class="svg-wrapper">
+                  {{- 'icon-close.svg' | inline_asset_content -}}
+                </span>
+              </button>
+            </div>
+          </div>
+          {% render 'cart-products' %}
+        {%- else -%}
+          <div
+            class="cart-drawer__header fill py-4.5 px-4"
+            id="cart-drawer-header"
+          >            
+            <div class="flex items-center justify-between w-full">
+              <span class="cart-drawer__heading text-16-bold-caps">
+                {{ 'content.cart_title' | t }}
+                {% render 'cart-bubble' %}
+              </span>
+
+              <button
+                ref="closeButton"
+                on:click="cart-drawer-component/close"
+                class="button  cart-drawer__close-button button-unstyled"
+                aria-label="{{ 'actions.close_dialog' | t }}"
+              >
+                <span class="svg-wrapper">
+                  {{- 'icon-close.svg' | inline_asset_content -}}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="cart-drawer__content motion-reduce"
+            aria-label="{{ 'accessibility.cart' | t }}"
+            style="--header-height: 60px;"
+          >
+            
+            <scroll-hint
+              class="cart-drawer__items pt-2 pb-2 overflow-x-hidden"
+            >
+              {%- liquid
+              assign show_gwp = false
+              assign is_usd = false
+              if cart.currency.iso_code == 'USD'
+                assign is_usd = true
+              endif
+              
+              comment
+                Show if: (USD and enable_gwp) OR (INT and enable_cart_bar_int) OR (both enabled)
+              endcomment
+              if is_usd and settings.enable_gwp
+                assign show_gwp = true
+              elsif is_usd == false and settings.enable_cart_bar_int
+                assign show_gwp = true
+              elsif settings.enable_gwp and settings.enable_cart_bar_int
+                assign show_gwp = true
+              endif
+            -%}
+            
+            {%- if show_gwp -%}
+              {% render 'gwp-progressbar', section_id: section.id, class: 'cart-drawer-gwp-progressbar border-b border-medium-smoke' %}
+            {%- endif -%}
+              {% render 'cart-products' %}
+              
+              {%- liquid
+                # Determine which collection to use for cart upsell based on product tags in cart
+                assign has_boots_tag = false
+                assign has_apparel_tag = false
+                assign selected_collection_handle = blank
+                assign all_product_tags_info = blank
+                
+                # Check all cart items for tags
+                for item in cart.items
+                  assign product_tags = item.product.tags | join: ',' | downcase
+                  assign product_tags_original = item.product.tags | join: ','
+                  
+                  # Build debug info for all product tags
+                  if all_product_tags_info == blank
+                    assign all_product_tags_info = item.product.title | append: ': ' | append: product_tags_original
+                  else
+                    assign all_product_tags_info = all_product_tags_info | append: ' | ' | append: item.product.title | append: ': ' | append: product_tags_original
+                  endif
+                  
+                  # Check for boots tag
+                  if product_tags contains 'boots'
+                    assign has_boots_tag = true
+                  endif
+                  
+                  # Check for apparel tag
+                  if product_tags contains 'apparel'
+                    assign has_apparel_tag = true
+                  endif
+                endfor
+                
+                # Determine which collection to show based on tags
+                # Logic: boots only → Boots YMAL, apparel only → apparel-ymal, both/neither → Mixed YMAL
+                assign collection_type = blank
+                if has_boots_tag == true and has_apparel_tag == false
+                  # Only boots tag found - show Boots YMAL
+                  assign collection_type = 'Boots YMAL'
+                  if settings.cart_upsell_boots_ymal != blank
+                    assign boots_collection = collections[settings.cart_upsell_boots_ymal]
+                    if boots_collection != blank
+                      assign selected_collection_handle = boots_collection.handle
+                    endif
+                  endif
+                elsif has_apparel_tag == true and has_boots_tag == false
+                  # Only apparel tag found - show apparel-ymal
+                  assign collection_type = 'apparel-ymal'
+                  if settings.cart_upsell_apparel_ymal != blank
+                    assign apparel_collection = collections[settings.cart_upsell_apparel_ymal]
+                    if apparel_collection != blank
+                      assign selected_collection_handle = apparel_collection.handle
+                    endif
+                  endif
+                else
+                  # Both tags found OR neither tag found - show Mixed YMAL
+                  assign collection_type = 'Mixed YMAL'
+                  if settings.cart_upsell_mixed_ymal != blank
+                    assign mixed_collection = collections[settings.cart_upsell_mixed_ymal]
+                    if mixed_collection != blank
+                      assign selected_collection_handle = mixed_collection.handle
+                    endif
+                  endif
+                endif
+                
+                # Fallback to default collection if no settings collections are configured
+                if selected_collection_handle == blank
+                  assign selected_collection_handle = 'apparel-ymal'
+                  assign collection_type = 'apparel-ymal (fallback)'
+                endif
+              -%}
+              
+              {% render 'cart-upsell', 
+                class: 'bg-[#f2f2f2] cart-upsell-drawer', 
+                title: {{ settings.cart_upsell_title }}, 
+                collection_handle: selected_collection_handle, 
+                context: 'drawer',
+                section_id: section.id, 
+                limit: 10 %}
+              
+              {% render 'cart-labels', 
+                show_subtotal: true, 
+                show_discount: true, 
+                show_total: true,
+                show_shipping: true,
+                show_tax: true %}
+
+            </scroll-hint>
+
+            <div
+              class="cart-drawer__summary py-4 px-3"
+            >
+              {% render 'cart-summary' %}
+            </div>
+          </div>
+        {%- endif -%}
+      </cart-items-component>
+    </div>
+  </dialog>
+</cart-drawer-component>
+
+{% stylesheet %}
+  .cart-items-component {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cart-drawer__heading .cart-bubble {
+    width: fit-content;
+    border-radius: var(--style-border-radius-buttons-primary);
+    aspect-ratio: auto;
+    padding: var(--cart-padding);
+  }
+
+  .cart-drawer__heading .cart-bubble[data-maintain-ratio] {
+    aspect-ratio: 1;
+    min-width: 26px;
+  }
+
+  .cart-drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex-direction: column-reverse;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.10);
+  }
+
+  .cart-drawer__dialog {
+    overflow: hidden;
+  }
+
+  .cart-drawer__inner {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .cart-drawer__content {
+    height: calc(100% - var(--header-height));
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cart-drawer__summary {
+    background-color: var(--color-background);
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.10);
+  }
+
+  .cart-drawer__summary .cart__ctas {
+    padding: 12px 0;
+  }
+
+   .cart-items__loading {
+   display: none;
+  }
+
+  .cart-drawer__dialog.isLoading .cart-items__loading {
+    display: block;
+  }
+  .cart-drawer__close-button .svg-wrapper  svg {
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
+  }
+{% endstylesheet %}

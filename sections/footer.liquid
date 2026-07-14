@@ -1,257 +1,426 @@
+{% liquid
+  assign _section = section.settings
+  assign logo = settings.logo
+%}
+{{ 'footer.js' | asset_url | script_tag }}
 
+<div class="text-white bg-asphalt flex flex-col border-t-1 border-white divide-y divide-white gap-0">
+  <!-- Footer Main -->
+  <div aria-label="Footer Main Section" class="py-10 lg:py-16 px-3 md:px-8 lg:px-12">
+    <div class="w-full container-layout flex justify-between lg:mx-auto flex-col lg:flex-row gap-12 lg:gap-0">
+      <!-- Main Section Content -->
+      <div aria-label="Footer Main Section Content" class="lg:max-w-[480px] flex flex-col gap-8 lg:gap-16">
+        <div class='text-center lg:text-left'>
+          <a href="/" aria-label="{{ shop.name }}" class="inline-block">
+           {% if logo != blank %}
+             <img
+               src="{{ logo | image_url }}"
+               alt="{{ shop.name }}"
+              class="h-[140px] max-h-[100px] lg:max-h-[140px] overflow-hidden max-w-full"
+             >
+          {% endif %}
+          </a>
+          {%- for block in section.blocks -%}
+            {% case block.type %}
+              {% when 'footer_content' %}
+                <div class="flex flex-col gap-4 pt-10 ">
+                  <h4>{{ block.settings.lead_capture_headline }}</h4>
+                  {%- assign content = block.settings.content -%}
 
-<div class="section-background color-{{ section.settings.color_scheme }}"></div>
-<div
-  class="section section--{{ section.settings.section_width }} color-{{ section.settings.color_scheme }}"
->
-  {% liquid
-    assign total_blocks = section.blocks.size
+                  {%- assign icon_map = '$icon-money-circle|money-circle,$icon-new-badge|new-badge,$icon-gift|gift' | split: ',' -%}
 
-    # Grid layout calculations
-    assign grid_columns = total_blocks | at_most: 4
+                  {%- for pair in icon_map -%}
+                    {%- assign parts = pair | split: '|' -%}
+                    {%- assign token = parts[0] -%}
+                    {%- assign icon_name = parts[1] -%}
+                    {%- capture icon_html -%}
+                      <svg class="inline-block align-text-top w-6 h-6 mr-2 fill-white">
+                        {%- render 'icon', icon: icon_name -%}
+                      </svg>
+                    {%- endcapture -%}
+                    {%- assign content = content | replace: token, icon_html -%}
+                  {%- endfor -%}
 
-    # Calculate last row counts using modulo arithmetic
-    # last_row_count = (total_blocks - 1) % N + 1
-    assign last_row_count = total_blocks | minus: 1 | modulo: 4 | plus: 1
-    assign tablet_last_row_count = total_blocks | minus: 1 | modulo: 2 | plus: 1
+                  {{ content }}
+                </div>
+            {% endcase %}
+          {%- endfor -%}
+        </div>
 
-    # Check if there are orphaned elements (single item in last row)
-    assign has_isolated_grid_item_desktop = false
-    assign has_isolated_grid_item_tablet = false
+        {%- for block in section.blocks -%}
+          {% case block.type %}
+            {% when 'footer_newsletter' %}
+              {% if block.settings.enable_newsletter %}
+                <div class='w-full max-w-[500px] lg:max-w-full mx-auto'>
+                  {% if localization.country.name == 'United States' %}
+                    <div class="newsletter-container">
+                      <form
+                        method='post'
+                        action='https://api.postscript.io/api/v2/subscribers'
+                        id="sms-newsletter-form"
+                        novalidate
+                      >
+                        <div class="flex h-[50px]">
+                          <input
+                            placeholder='Enter Your Phone Number'
+                            type='tel'
+                            name='phone_number'
+                            class='bg-white h-[50px] w-full px-4 text-asphalt placeholder:text-medium-asphalt text-16-light border-0 rounded-l focus:outline-none focus:ring-2 focus:ring-brunt-orange'
+                            id='phone-input'
+                            autocomplete='tel'
+                            maxlength='14'
+                          >
+                          <button
+                            type='submit'
+                            class='btn-md btn-primary-orange py-2 uppercase font-bold rounded-r border-0 focus:outline-none focus:ring-2 focus:ring-brunt-orange'
+                            id='sms-submit-btn'
+                          >
+                            Subscribe
+                          </button>
+                        </div>
+                        <div id="newsletter-error" class="hidden mt-4 flex gap-2 text-14-regular bg-gentle-pink w-full px-3 py-2 h-10 rounded text-cherry items-center">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            {%- render 'icon', icon: 'alert' -%}
+                          </svg>
+                          <span id="newsletter-error-text"></span>
+                        </div>
 
-    if total_blocks > 4 and last_row_count == 1
-      assign has_isolated_grid_item_desktop = true
-    endif
+                        <div class="text-12-regular mt-4">
+                          {{ block.settings.legal_copy | replace: '<p>', '' | replace: '</p>', '' | replace: '<a ', '<a class="text-white" '}}
+                        </div>
+                      </form>
+                      <h5 id="newsletter-success" class="hidden mt-4"></h5>
+                    </div>
+                  {% else %}
+                    <div class="newsletter-container">
+                      <form
+                        id='email-newsletter-form'
+                        class='email-newsletter-form'
+                        action='https://manage.kmail-lists.com/subscriptions/subscribe'
+                        data-ajax-submit='https://manage.kmail-lists.com/ajax/subscriptions/subscribe'
+                        method='POST'
+                        novalidate
+                      >
+                        <input type='hidden' name='g' value='HYLLsZ'>
+                        <div class='email-form-wrapper flex h-[50px]'>
+                          <input
+                            class='bg-white h-[50px] w-full px-4 text-asphalt placeholder:text-medium-asphalt text-16-light border-0 rounded-l focus:outline-none focus:ring-2 focus:ring-brunt-orange'
+                            type='email'
+                            name='email'
+                            value=''
+                            id='email-input'
+                            placeholder='Email Address'
+                            autocomplete='email'
+                            required
+                          >
+                          <button
+                            type='submit'
+                            class='btn-md btn-primary-orange py-2 uppercase font-bold rounded-r border-0 focus:outline-none focus:ring-2 focus:ring-brunt-orange'
+                            id='email-submit-btn'
+                            data-bww-id='email-signup-klaviyo-btn-click'
+                          >
+                            Sign&nbsp;Up
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                    <div class="mt-4">
+                      <h5 id="newsletter-success" class="hidden"></h5>
 
-    if total_blocks == 5
-      assign has_isolated_grid_item_tablet = true
-    endif
-  %}
-  <div
-    class="
-      footer-content
-      spacing-style
-      {% if has_isolated_grid_item_desktop %}footer-content--isolated-grid-item-desktop{% endif %}
-      {% if has_isolated_grid_item_tablet %}footer-content--isolated-grid-item-tablet{% endif %}
-    "
-    style="
-      {%  render 'spacing-style', settings: section.settings %}
-      --footer-gap: {{ section.settings.gap }}px;
-      --grid-columns: {{ grid_columns }};
-      --last-row-count: {{ last_row_count }};
-      --tablet-last-row-count: {{ tablet_last_row_count }};
-    "
-  >
-    {% content_for 'blocks' %}
+                      <div id="newsletter-error" class="hidden gap-2 text-14-regular bg-gentle-pink w-full px-3 py-2 h-10 rounded text-cherry items-center">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          {%- render 'icon', icon: 'alert' -%}
+                        </svg>
+                        <span id="newsletter-error-text"></span>
+                      </div>
+                    </div>
+                  {% endif %}
+                </div>
+              {% endif %}
+          {% endcase %}
+        {% endfor %}
+
+        <ul class="flex justify-center lg:justify-start gap-8">
+          {%- for block in section.blocks -%}
+            {% case block.type %}
+              {% when 'footer_social' %}
+              <li>
+                <a
+                  href='{{block.settings.social_url}}'
+                  target='_blank'
+                  data-bww-id='footer-social-links-{{ block.settings.social_alt }}'
+                  aria-label='{{ block.settings.social_alt }}'
+                >
+                  <img
+                    src="{{ block.settings.social_asset | image_url }}"
+                    alt="{{ block.settings.social_alt }}"
+                    class="h-8 w-8"
+                  >
+                </a>
+              </li>
+            {% endcase %}
+          {%- endfor -%}
+        </ul>
+      </div>
+
+      <!-- Main Section Navigation (Primary menu) -->
+      <div aria-label="Footer Main Section Navigation" class="flex flex-col lg:justify-between gap-7 md:gap-8 lg:gap-0">
+        <ul class='lg:flex lg:gap-x-12'>
+          {%- for item in linklists[_section.primary_nav].links -%}
+            {%- if item.links != blank -%}
+              <accordion-custom class="block lg:hidden">
+                <details
+                  class="border-medium-smoke border-b-1 {% if forloop.index == 1 %}border-t-1{% endif %} text-lg py-6"
+                  data-testid="accordion-details"
+                >
+                  <summary
+                    id="nav-trigger-{{ section.id }}-{{ forloop.index }}"
+                    class="flex p-0 font-bold text-white hover:text-light-smoke active:text-medium-smoke cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-6 focus-visible:outline-brunt-orange"
+                    aria-expanded="false"
+                    aria-controls="nav-content-{{ section.id }}-{{ forloop.index }}"
+                    role="button"
+                    tabindex="0"
+                    aria-describedby="nav-description-{{ section.id }}-{{ forloop.index }}"
+                  >
+                    <h5 class="text-subheading-2 font-bold m-0 p-0 uppercase">
+                      {{ item.title }}
+                    </h5>
+                    <span
+                      id="nav-description-{{ section.id }}-{{ forloop.index }}"
+                      class="svg-wrapper icon-caret icon-animated w-6 h-6"
+                      aria-hidden="true"
+                    >
+                      {{- 'icon-caret.svg' | inline_asset_content -}}
+                    </span>
+                  </summary>
+
+                  <ul
+                    id="nav-content-{{ section.id }}-{{ forloop.index }}"
+                    class="details-content pt-5 flex flex-col gap-4"
+                    role="region"
+                    aria-labelledby="nav-trigger-{{ section.id }}-{{ forloop.index }}"
+                  >
+                    {%- capture nav -%}
+                      {%- if forloop.index == 1 and settings.enable_chat_with_us -%}
+                        <li class='chat js-footer__chatTrigger'>
+                          <a
+                            href='javascript:void(0)'
+                            class='no-underline text-white'
+                            data-bww-id='footer-links-chat'
+                            onclick="GorgiasChat.isOpen() ? GorgiasChat.close() : GorgiasChat.open();">
+                            <p class='text-14-regular pb-0.5'>{{ _section.chat_heading }}</p>
+                            {%- if _section.chat_details != blank -%}
+                              <p class="text-12-regular lg:max-w-[180px]">
+                                {{ _section.chat_details }}
+                              </p>
+                            {%- endif -%}
+                          </a>
+                        </li>
+                      {%- endif -%}
+                      {%- for sub_link in item.links -%}
+                        <li>
+                          {%- if sub_link.links != blank -%}
+                            {%- for grandchild_link in sub_link.links -%}
+                            <a
+                              href='{{ grandchild_link.url }}'
+                              class='no-underline text-white'
+                              data-bww-id='footer-links-{{ grandchild_link.title | replace: " ", "-" }}'
+                            >
+                              <p class='text-14-regular pb-0.5'>{{ sub_link.title }}</p>
+                              <p class="text-12-regular lg:max-w-[180px]">
+                                {{- grandchild_link.title -}}
+                              </p>
+                            </a>
+                            {%- endfor -%}
+                          {%- else -%}
+                            {%- if sub_link.title == 'Accessibility' -%}
+                              <span
+                                data-acsb='trigger'
+                                class='text-14-regular'
+                                data-bww-id='footer-links-{{ sub_link.title | replace: " ", "-" }}'
+                              >
+                                {{- sub_link.title -}}
+                              </span>
+                            {%- else -%}
+                              <a
+                                href='{{ sub_link.url }}'
+                                class='text-14-regular no-underline text-white'
+                                data-bww-id='footer-links-{{ sub_link.title | replace: " ", "-" }}'
+                              >
+                                {{- sub_link.title -}}
+                              </a>
+                            {%- endif -%}
+                          {%- endif -%}
+                        </li>
+                      {%- endfor -%}
+                    {%- endcapture -%}
+                    {{ nav }}
+                  </ul>
+                </details>
+              </accordion-custom>
+
+              <li class='hidden lg:flex lg:flex-col lg:gap-6 min-w-[180px]'>
+                <p class='text-subheading-2'>
+                  {{ item.title }}
+                </p>
+                <ul class='flex flex-col gap-4'>
+                  {{ nav }}
+                </ul>
+              </li>
+            {%- endif -%}
+          {%- endfor -%}
+        </ul>
+        <div class="flex lg:justify-end">
+          <div class="w-full lg:w-[430px]">
+            <p class="text-16-bold-caps mb-2">Find Brunt In Your Country</p>
+            {% render 'localization' %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Middle (Secondary menu) -->
+  <div aria-label="Footer Middle" class="py-6 px-4 md:px-8 lg:px-12 text-center">
+    <div class="w-full container-layout inline-flex justify-center flex-col md:flex-row md:flex-wrap gap-x-12 gap-y-6">
+      {%- for link in linklists[_section.secondary_nav].links -%}
+        <div class="text-14-regular mx-auto md:mx-0">
+          <a
+            href="{{ link.url }}"
+            data-bww-id="footer-links-{{ link.title | handleize }}"
+            class="flex items-center gap-1 no-underline text-white"
+          >
+            {{ link.title | remove: '$' -}}
+            {%- if link.title contains '$' -%}
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" class="w-8" viewBox="0 0 30 14"><path d="M7.4 12.8h6.8l3.1-11.6H7.4C4.2 1.2 1.6 3.8 1.6 7s2.6 5.8 5.8 5.8z" style="fill-rule:evenodd;clip-rule:evenodd;fill:#fff"></path><path d="M22.6 0H7.4c-3.9 0-7 3.1-7 7s3.1 7 7 7h15.2c3.9 0 7-3.1 7-7s-3.2-7-7-7zm-21 7c0-3.2 2.6-5.8 5.8-5.8h9.9l-3.1 11.6H7.4c-3.2 0-5.8-2.6-5.8-5.8z" style="fill-rule:evenodd;clip-rule:evenodd;fill:#06f"></path><path d="M24.6 4c.2.2.2.6 0 .8L22.5 7l2.2 2.2c.2.2.2.6 0 .8-.2.2-.6.2-.8 0l-2.2-2.2-2.2 2.2c-.2.2-.6.2-.8 0-.2-.2-.2-.6 0-.8L20.8 7l-2.2-2.2c-.2-.2-.2-.6 0-.8.2-.2.6-.2.8 0l2.2 2.2L23.8 4c.2-.2.6-.2.8 0z" style="fill:#fff"></path><path d="M12.7 4.1c.2.2.3.6.1.8L8.6 9.8c-.1.1-.2.2-.3.2-.2.1-.5.1-.7-.1L5.4 7.7c-.2-.2-.2-.6 0-.8.2-.2.6-.2.8 0L8 8.6l3.8-4.5c.2-.2.6-.2.9 0z" style="fill:#06f"></path></svg>
+              </span>
+            {%- endif -%}
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Footer Bottom -->
+  <div aria-label="Footer Bottom" class="py-6">
+    <p class="text-12-light text-center">
+      &copy; {{ 'now' | date: '%Y' }} Maverick Work Wear, Inc. All Rights Reserved.
+    </p>
   </div>
 </div>
 
-{% stylesheet %}
-  .footer-content {
-    contain: content;
-    content-visibility: auto;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--footer-gap);
-    align-items: start;
-  }
-
-  .footer-content .menu__heading__default {
-    font-weight: var(--font-heading--weight);
-  }
-
-  @media screen and (min-width: 750px) and (max-width: 989px) {
-    .footer-content {
-      grid-template-columns: repeat(min(var(--grid-columns), 3), 1fr);
-      grid-auto-flow: row;
-    }
-
-    .footer-content[style*='--grid-columns: 4'] {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .footer-content--isolated-grid-item-tablet > :last-child {
-      grid-column: 1 / -1;
-    }
-  }
-
-  @media screen and (min-width: 990px) {
-    .footer-content {
-      grid-template-columns: repeat(var(--grid-columns), 1fr);
-    }
-
-    /* Single item centered */
-    .footer-content[style*='--grid-columns: 1'] {
-      justify-items: center;
-    }
-
-    .footer-content--isolated-grid-item-desktop > :last-child {
-      grid-column: 1 / -1;
-    }
-  }
-{% endstylesheet %}
 
 {% schema %}
 {
   "name": "t:names.footer",
   "class": "section-wrapper",
-  "blocks": [
-    {
-      "type": "_divider"
-    },
-    {
-      "type": "@app"
-    },
-    {
-      "type": "button"
-    },
-    {
-      "type": "follow-on-shop"
-    },
-    {
-      "type": "group"
-    },
-    {
-      "type": "icon"
-    },
-    {
-      "type": "image"
-    },
-    {
-      "type": "menu"
-    },
-    {
-      "type": "payment-icons"
-    },
-    {
-      "type": "text"
-    },
-    {
-      "type": "logo"
-    },
-    {
-      "type": "jumbo-text"
-    },
-    {
-      "type": "social-links"
-    },
-    {
-      "type": "email-signup"
-    }
-  ],
-  "enabled_on": {
-    "groups": ["footer"]
-  },
+  "tag": "footer",
   "settings": [
     {
-      "type": "select",
-      "id": "section_width",
-      "label": "t:settings.width",
-      "options": [
-        {
-          "value": "page-width",
-          "label": "t:options.page"
-        },
-        {
-          "value": "full-width",
-          "label": "t:options.full"
-        }
-      ],
-      "default": "page-width"
+      "type": "link_list",
+      "id": "primary_nav",
+      "label": "Primary Footer Menu"
     },
     {
-      "type": "range",
-      "id": "gap",
-      "label": "t:settings.gap",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 0
+      "type": "link_list",
+      "id": "secondary_nav",
+      "label": "Secondary Footer Menu"
     },
     {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "label": "t:settings.color_scheme",
-      "default": "scheme-1"
+      "type": "text",
+      "id": "chat_heading",
+      "label": "Chat Heading",
+      "default": "Chat With Us",
+      "visible_if": "{{ settings.enable_chat_with_us }}"
     },
     {
-      "type": "header",
-      "content": "t:content.padding"
-    },
-    {
-      "type": "range",
-      "id": "padding-block-start",
-      "label": "t:settings.top",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 20
-    },
-    {
-      "type": "range",
-      "id": "padding-block-end",
-      "label": "t:settings.bottom",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px",
-      "default": 20
+      "type": "text",
+      "id": "chat_details",
+      "label": "Chat Details",
+      "default": "Customer Service Hours - Monday to Friday 9AM - 5PM (ET)",
+      "visible_if": "{{ settings.enable_chat_with_us }}"
     }
   ],
+  "blocks": [
+    {
+      "type": "footer_content",
+      "name": "Footer Content",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "lead_capture_headline",
+          "label": "Lead Capture Headline",
+          "default": "Join Our Community"
+        },
+        {
+          "type": "richtext",
+          "id": "content",
+          "label": "Content",
+          "default": "<p> $icon-dollar and stuff</p>",
+          "info": "used to show the benefits, use $icon-name to generate an icon, ex. $icon-dollar"
+        }
+      ]
+    },
+    {
+      "type": "footer_newsletter",
+      "name": "Footer Newsletter",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "enable_newsletter",
+          "label": "Enable Newsletter Form",
+          "default": true
+        },
+        {
+          "type": "richtext",
+          "id": "legal_copy",
+          "label": "Legal Copy"
+        }
+      ]
+    },
+    {
+      "type": "footer_social",
+      "name": "Footer Social",
+      "limit": 5,
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "social_asset",
+          "label": "Social Asset"
+        },
+        {
+          "type": "url",
+          "id": "social_url",
+          "label": "Social Url"
+        },
+        {
+          "type": "text",
+          "id": "social_alt",
+          "label": "Social Label",
+          "info": "The alt for the image and aria labels"
+        },
+      ]
+    }
+  ],
+  "enabled_on": { "groups": ["footer"] },
   "presets": [
     {
-      "name": "t:names.footer",
-      "category": "t:categories.footer",
-      "settings": {
-        "gap": 20,
-        "color_scheme": "scheme-1",
-        "padding-block-start": 36,
-        "padding-block-end": 36
-      },
-      "blocks": {
-        "newsletter-group": {
-          "type": "group",
-          "settings": {
-            "content_direction": "column",
-            "vertical_on_mobile": true,
-            "horizontal_alignment": "flex-start",
-            "vertical_alignment": "center",
-            "gap": 6,
-            "width": "fill",
-            "inherit_color_scheme": true
-          },
-          "blocks": {
-            "newsletter-heading": {
-              "type": "text",
-              "settings": {
-                "text": "t:html_defaults.join_our_email_list",
-                "width": "100%",
-                "alignment": "left",
-                "type_preset": "h3"
-              }
-            },
-            "newsletter-text": {
-              "type": "text",
-              "settings": {
-                "text": "t:html_defaults.get_exclusive_deals_and_early_access_to_new_products",
-                "width": "100%",
-                "alignment": "left",
-                "type_preset": "rte"
-              }
-            }
-          },
-          "block_order": ["newsletter-heading", "newsletter-text"]
+      "name": "Footer",
+      "category": "Footer",
+      "blocks": [
+        {
+          "type": "footer_content"
         },
-        "newsletter-form": {
-          "type": "email-signup",
-          "settings": {
-            "width": "fill"
-          }
+        {
+          "type": "footer_newsletter"
+        },
+        {
+          "type": "footer_social"
         }
-      },
-      "block_order": ["newsletter-group", "newsletter-form"]
+      ]
     }
   ]
 }

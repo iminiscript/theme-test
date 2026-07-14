@@ -1,4 +1,4 @@
-import { debounce, throttle, prefersReducedMotion } from '@theme/utilities';
+import { debounce, throttle, prefersReducedMotion } from "@theme/utilities";
 
 /**
  * Timeout duration (in milliseconds) after which scroll is considered to have ended.
@@ -89,7 +89,7 @@ export class Scroller {
     this.#onScrollEnd = options.onScrollEnd;
 
     this.element = element;
-    this.element.addEventListener('scroll', this.#handleScroll);
+    this.element.addEventListener("scroll", this.#handleScroll);
   }
 
   /**
@@ -112,7 +112,7 @@ export class Scroller {
     const willChange = currentPosition !== value;
 
     if (willChange) {
-      this.#scroll({ ...options, method: 'scrollTo', value });
+      this.#scroll({ ...options, method: "scrollTo", value });
     } else if (this.#isScrolling) {
       // If the scroll has started but then it's released in the same original position,
       // the scroll event will not fire, so we need to manually trigger the scroll end.
@@ -127,7 +127,7 @@ export class Scroller {
    * @param {boolean} [options.instant] - Whether to scroll instantly.
    */
   by(value, options) {
-    this.#scroll({ ...options, method: 'scrollBy', value });
+    this.#scroll({ ...options, method: "scrollBy", value });
   }
 
   /**
@@ -146,7 +146,7 @@ export class Scroller {
 
     // Check if we need to scroll at all
     const currentPosition = this.element[`scroll${this.#edge}`];
-    const targetPosition = method === 'scrollBy' ? currentPosition + value : value;
+    const targetPosition = method === "scrollBy" ? currentPosition + value : value;
     const scrollDistance = Math.abs(targetPosition - currentPosition);
 
     // If the distance is negligible, don't scroll and resolve immediately
@@ -158,7 +158,7 @@ export class Scroller {
 
     this.element[method]({
       [this.#edge.toLowerCase()]: value,
-      behavior: instant ? 'instant' : 'smooth',
+      behavior: instant ? "instant" : "smooth",
     });
   }
 
@@ -185,7 +185,7 @@ export class Scroller {
    * @returns {'Left' | 'Top'}
    */
   get #edge() {
-    return this.axis === 'x' ? 'Left' : 'Top';
+    return this.axis === "x" ? "Left" : "Top";
   }
 
   /**
@@ -196,7 +196,7 @@ export class Scroller {
       return;
     }
 
-    this.#promise = new Promise((resolve) => (this.#resolve = resolve));
+    this.#promise = new Promise(resolve => (this.#resolve = resolve));
   }
 
   #reset = () => {
@@ -238,7 +238,7 @@ export class Scroller {
     /**
      * @param {boolean} userEvent
      */
-    (userEvent) => {
+    userEvent => {
       this.#resolve?.();
       if (userEvent) this.#endCallback();
       this.#reset();
@@ -258,14 +258,14 @@ export class Scroller {
   set snap(value) {
     // Changing the snap behavior will trigger a scroll event, which we should ignore
     this.#ignore = true;
-    this.element.style.setProperty('scroll-snap-type', value ? `${this.axis} mandatory` : 'none');
+    this.element.style.setProperty("scroll-snap-type", value ? `${this.axis} mandatory` : "none");
   }
 
   /**
    * Destroys the Scroller instance.
    */
   destroy() {
-    this.element.removeEventListener('scroll', this.#handleScroll);
+    this.element.removeEventListener("scroll", this.#handleScroll);
   }
 }
 
@@ -276,14 +276,14 @@ export class Scroller {
  */
 function getScrollAxis(el) {
   if (el.scrollHeight > el.clientHeight && el.scrollWidth === el.clientWidth) {
-    return 'y';
+    return "y";
   }
 
   if (el.scrollWidth > el.clientWidth && el.scrollHeight === el.clientHeight) {
-    return 'x';
+    return "x";
   }
 
-  return el.scrollWidth > el.scrollHeight ? 'x' : 'y';
+  return el.scrollWidth > el.scrollHeight ? "x" : "y";
 }
 
 /**
@@ -294,7 +294,7 @@ function getScrollAxis(el) {
  */
 function calculatePaddingStart(element, axis) {
   const computedStyle = getComputedStyle(element);
-  const value = axis === 'x' ? computedStyle.paddingInlineStart : computedStyle.paddingBlockStart;
+  const value = axis === "x" ? computedStyle.paddingInlineStart : computedStyle.paddingBlockStart;
 
   return parseFloat(value);
 }
@@ -308,7 +308,7 @@ function calculatePaddingStart(element, axis) {
  * @param {'start' | 'center' | 'end'} [options.inline='start'] - The inline alignment of the element.
  * @param {Element} [options.ancestor] - The ancestor element to scroll into view.
  */
-export function scrollIntoView(element, { ancestor, behavior = 'smooth', block = 'start', inline = 'start' } = {}) {
+export function scrollIntoView(element, { ancestor, behavior = "smooth", block = "start", inline = "start" } = {}) {
   if (!ancestor) {
     return element.scrollIntoView({ behavior, block, inline });
   }
@@ -328,11 +328,11 @@ export function scrollIntoView(element, { ancestor, behavior = 'smooth', block =
    */
   const calculateScrollOffset = (alignment, ancestorStart, ancestorLength, elemStart, elemLength, currentScroll) => {
     switch (alignment) {
-      case 'start':
+      case "start":
         return currentScroll + elemStart - ancestorStart;
-      case 'center':
+      case "center":
         return currentScroll + elemStart - ancestorStart - ancestorLength / 2 + elemLength / 2;
-      case 'end':
+      case "end":
         return currentScroll + elemStart - ancestorStart - ancestorLength + elemLength;
       default:
         return currentScroll;
@@ -366,57 +366,31 @@ export function scrollIntoView(element, { ancestor, behavior = 'smooth', block =
   ancestor.scrollTo({ top: scrollTop, left: scrollLeft, behavior });
 }
 
-// Still extends HTMLElement over Component so that refs are still available to parent components (e.g. Slideshow)
 class ScrollHint extends HTMLElement {
-  /** @type {number | null} */
-  #rafId = null;
-
   connectedCallback() {
-    this.addEventListener('scroll', this.#handleScroll);
+    this.addEventListener("scroll", this.#update);
     this.#resizeObserver.observe(this);
   }
 
   disconnectedCallback() {
-    this.removeEventListener('scroll', this.#handleScroll);
+    this.removeEventListener("scroll", this.#update);
     this.#resizeObserver.disconnect();
-    if (this.#rafId !== null) {
-      cancelAnimationFrame(this.#rafId);
-      this.#rafId = null;
-    }
   }
-
-  #handleScroll = () => {
-    // Throttle scroll updates with requestAnimationFrame to avoid layout thrashing
-    if (this.#rafId !== null) return;
-
-    this.#rafId = requestAnimationFrame(() => {
-      this.#rafId = null;
-      this.#update();
-    });
-  };
 
   #update = () => {
     const { scrollTop, scrollHeight, clientHeight, scrollLeft, scrollWidth, clientWidth } = this;
-    const scrollDirection = scrollWidth > clientWidth ? 'horizontal' : 'vertical';
+    const scrollDirection = scrollWidth > clientWidth ? "horizontal" : "vertical";
     const scrollPercentage =
-      scrollDirection === 'vertical'
+      scrollDirection === "vertical"
         ? scrollTop / (scrollHeight - clientHeight)
         : scrollLeft / (scrollWidth - clientWidth);
 
-    this.style.maskImage = Number.isNaN(scrollPercentage)
-      ? ''
-      : `linear-gradient(
-        to ${scrollDirection === 'vertical' ? 'bottom' : 'right'},
-        transparent ${scrollPercentage > 0 ? 1 : 0}%,
-        black ${scrollPercentage < 0.1 ? scrollPercentage * 100 : 10}%,
-        black ${scrollPercentage > 0.9 ? scrollPercentage * 100 : 90}%,
-        transparent 100%
-      )`;
+    this.style.maskImage = Number.isNaN(scrollPercentage) ? "" : scrollDirection === "vertical" ? `` : ``;
   };
 
   #resizeObserver = new ResizeObserver(this.#update);
 }
 
-if (!customElements.get('scroll-hint')) {
-  customElements.define('scroll-hint', ScrollHint);
+if (!customElements.get("scroll-hint")) {
+  customElements.define("scroll-hint", ScrollHint);
 }

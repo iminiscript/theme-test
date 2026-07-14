@@ -1,0 +1,263 @@
+<script src="{{ 'dialog.js' | asset_url }}" defer="defer" type="module"></script>
+
+<dialog-component id="notify-me-email-modal" class="notify-me-email-modal">
+  <dialog
+    ref="dialog"
+    class="notify-me-email-modal__dialog dialog-modal dialog-modal-bottom px-3 pb-6 pt-5"
+    aria-modal="true"
+    aria-labelledby="notify-me-email-modal-title"
+    scroll-lock
+    on:click="/closeDialogOnClickOutside"
+    on:keydown="/closeDialogOnEscapePress"
+  >
+    <div class="notify-me-email-modal__content flex gap-3 flex-col h-full max-h-fit">
+      <div class="notify-me-email-modal__header">
+        <p id="notify-me-email-modal-title" class="notify-me-email-modal__title text-14-light">
+          {{ settings.email_waitlist }}
+        </p>
+        <button
+          ref="closeButton"
+          on:click="/closeDialog"
+          class="notify-me-email-modal__close button button-unstyled"
+          aria-label="Close notify me modal"
+        >
+          {{- 'icon-close.svg' | inline_asset_content -}}
+        </button>
+      </div>
+
+      <form class="notify-me-email-modal__form flex gap-2" data-notify-email-form novalidate>
+        <div class="notify-me-email-modal__body">
+          <div class="notify-me-email-modal__input-wrapper">
+            <input
+              type="email"
+              name="email"
+              class="notify-me-email-modal__input"
+              placeholder="Email Address"
+              autocomplete="email"
+              required
+              data-notify-email-input
+              aria-label="Email address"
+            >
+            <div class="notify-me-email-modal__error hidden" data-notify-email-error role="alert">
+              <span data-notify-email-error-text></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="notify-me-email-modal__footer">
+          <button
+            type="submit"
+            class="notify-me-email-modal__submit-btn btn btn-md btn-primary-asphalt w-full"
+            data-notify-email-submit
+            aria-label="Submit email notification"
+          >
+            <span data-notify-email-submit-text>Notify Me</span>
+          </button>
+          <div class="notify-me-email-modal__message hidden" data-notify-email-message role="alert">
+            <span data-notify-email-message-text></span>
+          </div>
+        </div>
+      </form>
+    </div>
+  </dialog>
+</dialog-component>
+
+{% stylesheet %}
+  .notify-me-email-modal__dialog {
+    border: var(--style-border-popover);
+    max-width: 500px;
+    width: 100%;
+    max-height: fit-content;
+    overflow: hidden;
+    box-shadow: var(--shadow-popover);
+    border-radius: var(--style-border-radius-popover) var(--style-border-radius-popover) 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    margin: 0;
+  }
+
+  /* Desktop: Hide modal, use inline form instead */
+  @media screen and (min-width: 768px) {
+    .notify-me-email-modal__dialog {
+      display: none;
+    }
+  }
+
+  .notify-me-email-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+
+  .notify-me-email-modal__close {
+    padding: var(--padding-xs);
+    cursor: pointer;
+    transition: transform 0.15s var(--animation-timing-bounce);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .notify-me-email-modal__close:active {
+    transform: scale(0.8);
+  }
+
+  .notify-me-email-modal__form {
+    display: flex;
+    flex: 1;
+    height: 100%;
+  }
+
+  .notify-me-email-modal__body {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .notify-me-email-modal__input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-sm);
+  }
+
+  .notify-me-email-modal__input {
+    width: 100%;
+    padding: var(--padding-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--style-border-radius);
+    font-size: var(--font-size--md);
+    line-height: 1.5;
+    transition: border-color 0.2s var(--animation-easing);
+  }
+
+  .notify-me-email-modal__input:focus {
+    outline: none;
+    border-color: var(--color-brunt-orange);
+    box-shadow: 0 0 0 2px rgba(var(--color-brunt-orange), 0.2);
+  }
+
+  .notify-me-email-modal__input:invalid:not(:placeholder-shown) {
+    border-color: var(--color-cherry);
+  }
+
+  .notify-me-email-modal__error {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-xs);
+    padding: var(--padding-sm);
+    background-color: rgba(var(--color-cherry-rgb), 0.1);
+    border: 1px solid var(--color-cherry);
+    border-radius: var(--style-border-radius);
+    color: var(--color-cherry);
+    font-size: var(--font-size--sm);
+  }
+
+  .notify-me-email-modal__error.hidden {
+    display: none;
+  }
+
+  .notify-me-email-modal__footer {
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-sm);
+  }
+
+  .notify-me-email-modal__message {
+    padding: var(--padding-sm);
+    border-radius: var(--style-border-radius);
+    font-size: var(--font-size--sm);
+    text-align: center;
+  }
+
+  .notify-me-email-modal__message.hidden {
+    display: none;
+  }
+
+  .notify-me-email-modal__message.success {
+    background-color: rgba(var(--color-success-rgb), 0.1);
+    border: 1px solid var(--color-success);
+    color: var(--color-success);
+  }
+
+  .notify-me-email-modal__message.error {
+    background-color: rgba(var(--color-cherry-rgb), 0.1);
+    border: 1px solid var(--color-cherry);
+    color: var(--color-cherry);
+  }
+
+  /* Desktop inline form styles */
+  .product__addToCart--notify-email-inline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-md);
+  }
+
+  .product__addToCart--notify-email-inline .product__addToCartButton {
+    display: none;
+  }
+
+  .notify-email-inline-input {
+    width: 100%;
+    padding: var(--padding-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--style-border-radius);
+    font-size: var(--font-size--md);
+    line-height: 1.5;
+    transition: border-color 0.2s var(--animation-easing);
+  }
+
+  .notify-email-inline-input:focus {
+    outline: none;
+    border-color: var(--color-brunt-orange);
+    box-shadow: 0 0 0 2px rgba(var(--color-brunt-orange), 0.2);
+  }
+
+  .notify-email-inline-submit {
+    min-height: 56px;
+  }
+
+  .notify-email-inline-error {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-xs);
+    padding: var(--padding-sm);
+    background-color: rgba(var(--color-cherry-rgb), 0.1);
+    border: 1px solid var(--color-cherry);
+    border-radius: var(--style-border-radius);
+    color: var(--color-cherry);
+    font-size: var(--font-size--sm);
+  }
+
+  .notify-email-inline-error.hidden {
+    display: none;
+  }
+
+  .notify-email-inline-message {
+    padding: var(--padding-sm);
+    border-radius: var(--style-border-radius);
+    font-size: var(--font-size--sm);
+    text-align: center;
+  }
+
+  .notify-email-inline-message.hidden {
+    display: none;
+  }
+
+  .notify-email-inline-message.success {
+    background-color: rgba(var(--color-success-rgb), 0.1);
+    border: 1px solid var(--color-success);
+    color: var(--color-success);
+  }
+
+  .notify-email-inline-message.error {
+    background-color: rgba(var(--color-cherry-rgb), 0.1);
+    border: 1px solid var(--color-cherry);
+    color: var(--color-cherry);
+  }
+{% endstylesheet %}

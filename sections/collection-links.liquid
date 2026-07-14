@@ -26,7 +26,6 @@
 <div
   class="section section--{{ section.settings.section_width }} color-{{ section.settings.color_scheme }} spacing-style"
   style="{% render 'spacing-style', settings: section.settings %}"
-  data-testid="collection-links-{{ section.id }}"
 >
   <collection-links-component
     layout="{{ section.settings.layout }}"
@@ -138,18 +137,16 @@
       grid-template-columns: 1fr var(--template-column-ratio);
       grid-template-areas: 'text image';
 
-      @media screen and (min-width: 750px) {
-        &[reverse] {
-          grid-template-areas: 'image text';
-          grid-template-columns: var(--template-column-ratio) 1fr;
-        }
+      &[reverse] {
+        grid-template-areas: 'image text';
+        grid-template-columns: var(--template-column-ratio) 1fr;
       }
 
       .collection-links__container {
         align-items: var(--alignment);
       }
 
-      @media screen and (max-width: 749px) {
+      @media (max-width: 749px) {
         grid-template-columns: 1fr;
         grid-template-areas: 'text' 'image';
         grid-gap: var(--gap-2xl);
@@ -184,7 +181,7 @@
     overflow: hidden;
     grid-area: image;
 
-    @media screen and (max-width: 749px) {
+    @media (max-width: 749px) {
       image-block {
         max-width: 100%;
       }

@@ -1,0 +1,150 @@
+{% liquid
+  assign _section = section.settings
+  assign _bundle_title = _section.bundle_title
+
+  # Get product from context:
+  # 1. If we're on a product page (via Section Rendering API), use that product
+  # 2. Otherwise, use the default product from settings
+  if product != blank
+    assign _current_product = product
+  elsif _section.default_product != blank
+    assign _current_product = _section.default_product
+  else
+    assign _current_product = blank
+  endif
+%}
+
+<script src="{{ 'bundle-showcase.js' | asset_url }}" defer="defer" type="module"></script>
+
+<bundle-showcase-component
+  data-section-id="{{ section.id }}"
+  {% if _current_product.handle %}
+    data-current-product-handle="{{ _current_product.handle }}"
+  {% endif %}
+  data-enable-safety-rating="{{ _current_product.metafields.custom.enable_safety_rating.value | default: false }}"
+>
+  <div
+    class="container-layout text-asphalt pt-2 px-3 pb-16 md:pt-3 md:px-8 md:pb-16 lg:pt-5 lg:px-0 lg:pb-12"
+    data-section-type="bundle-showcase"
+  >
+    <div class="flex gap-10 flex-col lg:flex-row">
+      <div class="w-full flex-1">
+        {% content_for 'block',
+          type: '_product-media-gallery',
+          id: 'product-media-gallery',
+          closest.product: _current_product
+        %}
+      </div>
+      <div class="w-full flex-1">
+        <div class="lg:mb-8">
+          <div>
+            <p class="text-16-bold text-brunt-orange mb-2">
+              <span class="bundle-showcase-index" data-skip-subtree-update="true"></span>
+              . Select Your {{ _bundle_title }}
+            </p>
+            <p class="bg-brunt-orange text-white px-2 py-1 text-14-bold inline-flex">
+              BUNDLE & SAVE&nbsp;
+              <span data-bundle-discount-percentage data-skip-subtree-update="true"></span>
+              %
+            </p>
+          </div>
+
+          <div class="my-4">
+            {% content_for 'block',
+              type: '_product-title-price',
+              id: 'product-title-price',
+              closest.product: _current_product
+            %}
+          </div>
+
+          <p class="mb-3">
+            <span class="text-14-bold">STYLE:</span>
+            <span>{{ _current_product.metafields.style_name.name | replace: '"', '&quot;' }}</span>
+          </p>
+
+          <div class="flex flex-col gap-10">
+            {% content_for 'block',
+              type: '_bundle-collection',
+              id: 'bundle-collection',
+              closest.collection: collection
+            %}
+            {% content_for 'block',
+              type: '_product-option-selectors',
+              id: 'product-option-selectors',
+              closest.product: _current_product
+            %}
+            {% content_for 'blocks' %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</bundle-showcase-component>
+
+<script>
+  // Number bundle-showcase sections sequentially and populate discount percentage
+  document.addEventListener('DOMContentLoaded', function () {
+    const bundleSections = document.querySelectorAll('[data-section-type="bundle-showcase"]');
+
+    // Get discount percentage from bundle-atc component
+    const bundleAtc = document.querySelector('bundle-atc-component');
+    const discountPercentage = bundleAtc?.dataset?.discountPercentage || '0';
+
+    bundleSections.forEach((section, index) => {
+      // Set section index
+      const indexSpan = section.querySelector('.bundle-showcase-index');
+      if (indexSpan) {
+        indexSpan.textContent = index + 1;
+      }
+
+      // Set discount percentage
+      const discountSpan = section.querySelector('[data-bundle-discount-percentage]');
+      if (discountSpan) {
+        discountSpan.textContent = discountPercentage;
+      }
+    });
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Bundle Showcase",
+  "settings": [
+    {
+      "type": "product",
+      "id": "default_product",
+      "label": "Default Product",
+      "info": "The product to display the bundle for when the page loads"
+    },
+    {
+      "type": "text",
+      "id": "bundle_title",
+      "label": "Bundle Title",
+      "info": "The title to display for the bundle",
+      "default": "Bundle Product"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "_product-media-gallery"
+    },
+    {
+      "type": "_product-title-price"
+    },
+    {
+      "type": "_product-option-selectors"
+    },
+    {
+      "type": "_bundle-collection"
+    },
+    {
+      "type": "bundle-atc"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bundle Showcase"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,207 @@
+<li class='nav__listItem' data-nav-type="{{ menu.title | replace: ' ', '-' | downcase }}">
+  <div class='navDrawer navDrawer--fromLeft menuDrawer' data-section-type='menuDrawer'>
+    <div class='navDrawer__content menuDrawer__content'>
+      <div class='navDrawer__main menuDrawer__main'>
+        <div class='sidebarMenu__navWrapper'>
+          <div class='sidebarMenu__nav menuDrawer__container js-first-child'>
+            <div class='sidebarMenu__navItem--wrapper'>
+              {%- for link in menu.links -%}
+                {% assign color_identifier = link.title | split: '#' %}
+                  {%- if color_identifier[1] -%}
+                    {%- assign title_color_red = true -%}
+                    {%- assign combined_title = color_identifier[1] | split: ' @ ' -%}
+                    {%- assign menu_title = combined_title.first | escape | strip -%}
+                  {%- else -%}
+                    {%- assign title_color_red = false -%}
+                    {%- assign combined_title = color_identifier[0] | split: ' @ ' -%}
+                    {%- assign menu_title = combined_title.first | escape | strip -%}
+                  {%- endif -%}
+                <div class='sidebarMenu__navItem' id='{{ combined_title.first | replace: ' ', '-' | downcase }}'>
+                  {%- if link.links != blank -%}
+                    <button class='sidebarMenu__navItemToggle js-menuExpand w-full flex gap-2 items-center justify-between lg:p-0'>
+                      <span
+                        class='sidebarMenu__navToggleButton sidebarMenu__navLink sidebarMenu__navLink--first sidebarMenu__navLink--bold'
+                        data-bww-id='main-nav-level-1-{{- combined_title.first | replace: ' ', '-' -}}-desktop'
+                      >
+                        {{- combined_title.first | escape -}}
+                      </span>
+                      {% render 'icons', icon: 'navigation-right', class: 'arrow-right' %}
+                    </button>
+                    <div class='sidebarMenu__navInner sidebarMenu__navInner--child'>
+                      <div class='sidebarMenu__navInner--wrapper'>
+                        <div class='sidebarMenu__navContent'>
+                          {%- if show_image -%}
+                            {%- unless combined_title.first == 'Help' -%}
+                              <a
+                                href='{{link.url}}'
+                                class='sidebarMenu__shopAll'
+                                data-bww-id='main-nav-level-2-shopAll-{{ combined_title.first | replace: ' ', '-' }}-desktop'
+                                >Shop All {{ combined_title.first | escape | capitalize }}
+                                {% render 'icons', icon: 'pop-out', class: 'sidebarMenu__shopAll--icon' %}
+                              </a>
+                            {%- endunless -%}
+                          {%- endif -%}
+                          {%- assign nav_title = combined_title.first | downcase | strip | handleize -%}
+                          {% render 'navigation-feature', blocks: blocks, nav_title: nav_title %}
+                          {%- for sub_link in link.links -%}
+                            {%- assign flag_identifier = sub_link.title | split: '$' -%}
+                            {%- if flag_identifier[1] -%}
+                              {%- assign show_usa_flag = true -%}
+                              {%- assign combined_sub_title = flag_identifier[1] | split: ' @ ' -%}
+                            {%- else -%}
+                              {%- assign show_usa_flag = false -%}
+                              {%- assign combined_sub_title = flag_identifier[0] | split: ' @ ' -%}
+                            {%- endif -%}
+                            <div class='sidebarMenu__navChild'>
+                              {%- if sub_link.links != blank -%}
+                                <button class='sidebarMenu__navItemToggle sidebarMenu__navItemToggle--first js-submenuExpand w-full flex gap-2 items-center justify-between lg:p-0 p-2 px-8 min-h-20'>
+                                  <div
+                                    class='sidebarMenu__navToggleButton sidebarMenu__navLink sidebarMenu__navToggleButton--second'
+                                    data-bww-id='main-nav-level-2-{{ combined_sub_title.first | replace: '', '-' }}-desktop'
+                                  >
+                                    {%- if show_image and sub_link.object.metafields.custom.navigation_image -%}
+                                      {%- render 'image' with imageData: sub_link.object.metafields.custom.navigation_image, width: 64, aspectRatio: 1.0, class: 'sidebarMenu__navLinkImage', alt_text: sub_link.object.title -%}
+                                    {%- endif -%}
+                                    <div class="sidebarMenu__navSubTitleTagDesc">
+                                      <p class='sidebarMenu__navSubTitleTag'>
+                                        <span class="sidebarMenu__navSubTitle">{{ combined_sub_title.first | escape }}</span>
+                                        {%- if show_usa_flag -%}
+                                          {% render 'icons', icon: 'flag' %}
+                                        {%- endif -%}
+                                        {%- if combined_sub_title.first != combined_sub_title.last -%}
+                                          <span class='sidebarMenu__tag'>
+                                            {{- combined_sub_title.last | upcase | escape -}}
+                                          </span>
+                                        {%- endif -%}
+                                      </p>
+                                      {%- if sub_link.object.metafields.nav.description != blank -%}
+                                        <p class='sidebarMenu__description il b4'>
+                                          {{- sub_link.object.metafields.nav.description -}}
+                                        </p>
+                                      {%- endif -%}
+                                    </div>
+                                  </div>
+                                  {% render 'icons', icon: 'caret-right' %}
+                                </button>
+                                <div class='sidebarMenu__navInner sidebarMenu__navInner--grand'>
+                                  <div class='sidebarMenu__navInner--wrapper'>
+                                    <div class='sidebarMenu__navContent'>
+                                      {%- if menu_title == 'Boots' -%}
+                                        <p class='sidebarMenu__navGrandTitle'>
+                                          {{ combined_sub_title.first | escape }} Styles
+                                        </p>
+                                      {%- endif -%}
+                                      <ul class='sidebarMenu__navGrandList no-list {% if menu_title == "Boots" %}sidebarMenu__navGrandList-left{% endif %}'>
+                                        {%- for sub_sub_link in sub_link.links -%}
+                                          {%- assign flag_identifier = sub_sub_link.title | split: '$' -%}
+                                          {%- if flag_identifier[1] -%}
+                                            {%- assign show_usa_flag = true -%}
+                                            {%- assign combined_grand_title = flag_identifier[1] | split: ' @ ' -%}
+                                          {%- else -%}
+                                            {%- assign show_usa_flag = false -%}
+                                            {%- assign combined_grand_title = flag_identifier[0] | split: ' @ ' -%}
+                                          {%- endif -%}
+                                          <li class='sidebarMenu__navGrandItem sidebarMenu__navSubItem'>
+                                            <a
+                                              href='{{ sub_sub_link.url }}'
+                                              class='sidebarMenu__navGrandLink link-inline block il text-sm leading-5 lg:ir lg:text-base lg:font-normal'
+                                              data-bww-id='main-nav-level-3-{{ combined_grand_title.first | replace: ' ', '-' | replace: '(', '' | replace: ')', ''  }}-desktop'
+                                            >
+                                              <span class="sidebarMenu__navSubTitle">{{ combined_grand_title.first | escape }}</span>
+                                              {%- if show_usa_flag -%}
+                                                {% render 'icons', icon: 'flag' %}
+                                              {%- endif -%}
+                                              {%- if combined_grand_title.first != combined_grand_title.last -%}
+                                                <span class='sidebarMenu__tag'>
+                                                  {{- combined_grand_title.last | upcase | escape -}}
+                                                </span>
+                                              {%- endif -%}
+                                            </a>
+                                          </li>
+                                        {%- endfor -%}
+                                      </ul>
+                                    </div>
+                                  </div>
+                                </div>
+                              {%- else -%}
+                                <div class='sidebarMenu__navItemToggle sidebarMenu__navItemToggle--first js-subMenuCollapse w-full flex gap-2 items-center justify-between lg:p-0 p-2 px-8 min-h-20'>
+                                  <a
+                                    href='{{ sub_link.url }}'
+                                    class='link-inline sidebarMenu__navLink sidebarMenu__navLink--first'
+                                    data-bww-id='main-nav-level-2-{{ combined_sub_title.first | replace: ' ', '-' | replace: '+', '' }}-desktop'
+                                  >
+                                    {%- if show_image and sub_link.object.metafields.custom.navigation_image -%}
+                                      {%- render 'image' with imageData: sub_link.object.metafields.custom.navigation_image, width: 64, aspectRatio: 1.0, class: 'sidebarMenu__navLinkImage', alt_text: sub_link.object.title -%}
+                                    {%- endif -%}
+                                    <div class="sidebarMenu__navSubTitleTagDesc">
+                                      <p class='sidebarMenu__navSubTitleTag'>
+                                        <span class="sidebarMenu__navSubTitle">{{ combined_sub_title.first | escape }}</span>
+                                        {%- if combined_sub_title.first != combined_sub_title.last -%}
+                                          <span class='sidebarMenu__tag'>
+                                            {{- combined_sub_title.last | upcase | escape -}}
+                                          </span>
+                                        {%- endif -%}
+                                      </p>
+                                      {%- if sub_link.object.metafields.nav.description != blank -%}
+                                        <p class='sidebarMenu__description il b4'>
+                                          {{- sub_link.object.metafields.nav.description -}}
+                                        </p>
+                                      {%- endif -%}
+                                    </div>
+                                  </a>
+                                </div>
+                              {%- endif -%}
+                            </div>
+                          {%- endfor -%}
+                        </div>
+                         {%- if show_women_link and combined_title.first == 'Boots' -%}
+                          <a
+                            href='/products/the-marin-womens'
+                            class='sidebarMenu__shopWomen'
+                            data-bww-id='main-nav-level-2-shop-womens-desktop'
+                            >Shop Women's Boots
+                            {% render 'icons', icon: 'pop-out', class: 'sidebarMenu__shopAll--icon' %}
+                          </a>
+                         {%- endif -%}
+                        {%- assign nav_title = combined_title.first | downcase | strip | handleize -%}
+                        {% render 'navigation-callouts', blocks: blocks, nav_title: nav_title, device_type: 'desktop' %}
+                      </div>
+                    </div>
+                  {%- else -%}
+                    <a
+                      href='{{ link.url }}'
+                      class='sidebarMenu__navLink link-inline js-menuCollapse sidebarMenu__navLink--first sidebarMenu__navLink--bold {% if title_color_red %} sidebarMenu__navLink--red {% endif %}'
+                      data-bww-id='main-nav-level-1-{{- combined_title.first | replace: ' ', '-'  -}}-alone-desktop'
+                    >
+                      {{- combined_title.first | escape }}
+                      {%- if combined_title.last != combined_title.first -%}
+                        <span class='sidebarMenu__tag'>{{ combined_title.last | upcase | escape }}</span>
+                      {%- endif -%}
+                    </a>
+                  {%- endif -%}
+                </div>
+              {%- endfor -%}
+              {%- if enable_quiz -%}
+                <div class="sidebarMenu__navItem sidebarMenu__navItem--hidden js-quizTrigger">
+                  <a
+                    href='?bsci=gcd'
+                    class='bsai-ci sidebarMenu__navLink link-inline js-menuCollapse sidebarMenu__navLink--first sidebarMenu__navLink--bold'
+                    data-bww-id='main-nav-level-1-quiz-alone-desktop'
+                    data-bsai-ci="gcd">
+                    Take Our Quiz
+                  </a>
+                </div>
+              {%- endif -%}
+            </div>
+          </div>
+          {%- assign main_nav_title = menu_handle | downcase | strip | handleize -%}
+          {% render 'navigation-callouts', blocks: blocks, nav_title: main_nav_title, device_type: 'desktop' %}
+          {%- assign disable_chat = _section.chat -%}
+          {%- assign disable_email = _section.email -%}
+          {%- assign disable_call_us = _section.call_us -%}
+          {% render 'navigation-contact', _section: _section, disable_chat: disable_chat, disable_email: disable_email, disable_call_us: disable_call_us, chat_class:'--desktop' %}
+        </div>
+      </div>
+    </div>
+  </div>
+</li>

@@ -1,130 +1,103 @@
-import { Component } from '@theme/component';
+import { Component } from "@theme/component";
 
 /**
- * Announcement banner custom element that allows fading between content.
- * Based on the Slideshow component.
- *
- * @typedef {object} Refs
- * @property {HTMLElement} slideshowContainer
- * @property {HTMLElement[]} [slides]
- * @property {HTMLButtonElement} [previous]
- * @property {HTMLButtonElement} [next]
- *
- * @extends {Component<Refs>}
+ * Announcement bar web component with Swiper integration
  */
-export class AnnouncementBar extends Component {
-  #current = 0;
-
+class AnnouncementBar extends Component {
   /**
-   * The interval ID for automatic playback.
-   * @type {number|undefined}
+   * @type {import('swiper').Swiper | null}
    */
-  #interval = undefined;
+  #swiper = null;
 
   connectedCallback() {
     super.connectedCallback();
-
-    this.addEventListener('mouseenter', this.suspend);
-    this.addEventListener('mouseleave', this.resume);
-    document.addEventListener('visibilitychange', this.#handleVisibilityChange);
-
-    this.play();
+    this.#initSwiper();
+    console.log("Announcement bar component registered and connected");
   }
 
-  next() {
-    this.current += 1;
-  }
-
-  previous() {
-    this.current -= 1;
+  disconnectedCallback() {
+    if (this.#swiper) {
+      this.#swiper.destroy(true, true);
+      this.#swiper = null;
+    }
   }
 
   /**
-   * Starts automatic slide playback.
-   * @param {number} [interval] - The time interval in seconds between slides.
+   * Initialize Swiper for announcement slides
    */
-  play(interval = this.autoplayInterval) {
-    if (!this.autoplay) return;
+  #initSwiper() {
+    const promoBarSlider = this.querySelector(".announcement-swiper");
 
-    this.paused = false;
-
-    this.#interval = setInterval(() => {
-      if (this.matches(':hover') || document.hidden) return;
-
-      this.next();
-    }, interval);
-  }
-
-  /**
-   * Pauses automatic slide playback.
-   */
-  pause() {
-    this.paused = true;
-    this.suspend();
-  }
-
-  get paused() {
-    return this.hasAttribute('paused');
-  }
-
-  set paused(paused) {
-    this.toggleAttribute('paused', paused);
-  }
-
-  /**
-   * Suspends automatic slide playback.
-   */
-  suspend() {
-    clearInterval(this.#interval);
-    this.#interval = undefined;
-  }
-
-  /**
-   * Resumes automatic slide playback if autoplay is enabled.
-   */
-  resume() {
-    if (!this.autoplay || this.paused) return;
-
-    this.pause();
-    this.play();
-  }
-
-  get autoplay() {
-    return Boolean(this.autoplayInterval);
-  }
-
-  get autoplayInterval() {
-    const interval = this.getAttribute('autoplay');
-    const value = parseInt(`${interval}`, 10);
-
-    if (Number.isNaN(value)) return undefined;
-
-    return value * 1000;
-  }
-
-  get current() {
-    return this.#current;
-  }
-
-  set current(current) {
-    this.#current = current;
-
-    let relativeIndex = current % (this.refs.slides ?? []).length;
-    if (relativeIndex < 0) {
-      relativeIndex += (this.refs.slides ?? []).length;
+    if (!promoBarSlider) {
+      console.warn("No swiper container found in announcement bar");
+      return;
     }
 
-    this.refs.slides?.forEach((slide, index) => {
-      slide.setAttribute('aria-hidden', `${index !== relativeIndex}`);
-    });
+    // Wait for Swiper to be available
+    if (typeof Swiper === "undefined") {
+      console.warn("Swiper not loaded yet, retrying...");
+      setTimeout(() => this.#initSwiper(), 100);
+      return;
+    }
+
+    const promoSlides = promoBarSlider.querySelectorAll(".announcement-swiper .swiper-slide");
+
+    if (promoBarSlider) {
+      const promoSwiper = new Swiper(promoBarSlider, {
+        slidesPerView: 1,
+        loop: false,
+        spaceBetween: 0,
+        autoplay: {
+          delay: 4000,
+          disableOnInteraction: false,
+          pauseOnMouseEnter: true,
+        },
+        navigation: {
+          nextEl: ".announcement__right",
+          prevEl: ".announcement__left",
+        },
+        on: {
+          slideChange: function () {
+            // Update aria-hidden and tabindex for all slides
+            const slides = this.slides;
+            const realIndex = this.realIndex; // Get real index in loop mode
+
+            let i = 0; // We still need an index counter
+            for (const slide of slides) {
+              // Check if this is the currently active slide
+              const isActive =
+                i === this.activeIndex || (this.isLoop && (i - this.loopedSlides) % promoSlides.length === realIndex);
+
+              if (isActive) {
+                slide.setAttribute("aria-hidden", "false");
+                const links = slide.querySelectorAll("a");
+                links.forEach(link => link.removeAttribute("tabindex"));
+              } else {
+                slide.setAttribute("aria-hidden", "true");
+                const links = slide.querySelectorAll("a");
+                links.forEach(link => link.setAttribute("tabindex", "-1"));
+              }
+
+              i++; // Increment the counter for each iteration
+            }
+          },
+        },
+      });
+
+      this.#swiper = promoSwiper;
+      console.log("Announcement bar Swiper initialized successfully");
+    }
   }
 
   /**
-   * Pause the slideshow when the page is hidden.
+   * Get the Swiper instance
+   * @returns {import('swiper').Swiper | null}
    */
-  #handleVisibilityChange = () => (document.hidden ? this.pause() : this.resume());
+  get swiper() {
+    return this.#swiper;
+  }
 }
 
-if (!customElements.get('announcement-bar-component')) {
-  customElements.define('announcement-bar-component', AnnouncementBar);
+if (!window.customElements.get("announcement-bar")) {
+  window.customElements.define("announcement-bar", AnnouncementBar);
 }

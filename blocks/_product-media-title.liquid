@@ -1,0 +1,30 @@
+<div class="product__top flex flex-col gap-6" {{ block.shopify_attributes }}>
+  <div class="product__topTitlePrice {% if block.settings.hide_title_on_desktop %} lg:hidden{% endif %}">
+    {% content_for 'block', type: '_product-title-price', id: 'product-title-price', closest.product: closest.product %}
+  </div>
+  {% content_for 'block',
+    type: '_product-media-gallery',
+    id: 'product-media-gallery',
+    closest.product: closest.product
+  %}
+</div>
+
+{% schema %}
+{
+  "name": "Product Media and Title",
+  "tag": null,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "hide_title_on_desktop",
+      "label": "Hide Title on Desktop",
+      "default": true
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product Media and Title"
+    }
+  ]
+}
+{% endschema %}

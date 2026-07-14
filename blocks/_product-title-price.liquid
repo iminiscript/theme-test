@@ -1,0 +1,74 @@
+<script src="{{ 'product-title-price.js' | asset_url }}" defer="defer" type="module"></script>
+
+{% liquid
+  assign product = closest.product
+%}
+<product-title-price
+  class="product__titleRatingShortDescription flex flex-col gap-3"
+  data-section-id="{{ section.id }}"
+  data-block-id="{{ block.id }}"
+  {{ block.shopify_attributes }}
+>
+  <div class="product__titleRating flex flex-col items-start justify-start gap-1">
+    <div class="product__rating">
+      {% render 'okendo-reviews-product-rating-summary', product: product %}
+    </div>
+    <h1 class="product__title text-heading-4 m-0">{{ product.title }}</h1>
+    {% if product.metafields.my_fields.short_description != blank %}
+      <p class="product__shortDescription text-16-bold">{{ product.metafields.my_fields.short_description }}</p>
+    {% endif %}
+  </div>
+  {% if block.settings.show_price %}
+    <div class="product__priceWrapper" data-product-price-wrapper data-product-id="{{ product.id }}">
+      <script type="application/json" data-currency-symbol="{{ localization.country.currency.symbol | escape }}">
+        {{ localization.country.currency.symbol | json }}
+      </script>
+      {% render 'price',
+        product_resource: product,
+        show_price_range: false,
+        price_class: 'text-16-bold',
+        compare_at_price_class: 'text-(--color-gray-accessible) text-12-regular line-through'
+      %}
+    </div>
+  {% endif %}
+  {% if block.settings.show_payment_terms %}
+    <div class="product__shopPay">
+      {% form 'product', product %}
+        <input
+          class="product__shopPayInput"
+          type="hidden"
+          name="id"
+          value="{{ product.selected_or_first_available_variant.id }}"
+        >
+        {{ form | payment_terms }}
+      {% endform %}
+    </div>
+  {% endif %}
+</product-title-price>
+
+{% schema %}
+{
+  "name": "Product Title & Price",
+  "tag": "div",
+  "class": "product__Header",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_price",
+      "label": "Show Price",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_payment_terms",
+      "label": "Show Payment Terms",
+      "default": true
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product Title & Price"
+    }
+  ]
+}
+{% endschema %}

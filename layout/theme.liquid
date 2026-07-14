@@ -1,11 +1,10 @@
 <!doctype html>
-<html
-  {% if request.design_mode %}
-    class="shopify-design-mode"
-  {% endif %}
-  lang="{{ request.locale.iso_code }}"
->
+<html class="no-js{% if request.design_mode %} shopify-design-mode{% endif %}" lang="{{ request.locale.iso_code }}">
   <head>
+    {%- render 'preload-fonts' -%}
+    {%- render 'stylesheets' -%}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css">
+
     {%- if settings.favicon != blank -%}
       <link
         rel="icon"
@@ -13,21 +12,28 @@
         href="{{ settings.favicon | image_url: width: 32, height: 32 }}"
       >
     {%- endif -%}
+    <!-- Begin Monetate ExpressTag Sync v8.1. Place at start of document head. DO NOT ALTER. -->
+    {% comment %}
+      <script type="text/javascript">
+        var monetateT = new Date().getTime();
+      </script>
+      <script type="text/javascript" src="//se.monetate.net/js/2/a-a3b0f153/p/bruntworkwear.com/entry.js"></script>
+    {% endcomment %}
+    <!-- End Monetate tag. -->
 
-    {% # theme-check-disable RemoteAsset %}
+    {% comment %} <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css"> {% endcomment %}
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js" defer></script>
+
     {% comment %} This a way to wait for main content to load when navigating to a new page so that the view transitions can work consistently {% endcomment %}
-    {% if settings.transition_to_main_product or settings.page_transition_enabled %}
-      <link
-        rel="expect"
-        href="#MainContent"
-        blocking="render"
-        id="view-transition-render-blocker"
-      >
-    {% endif %}
+    <link
+      rel="expect"
+      href="#MainContent"
+      blocking="render"
+      id="view-transition-render-blocker"
+    >
 
     {%- render 'meta-tags' -%}
-    {%- render 'stylesheets' -%}
-    {%- render 'fonts' -%}
     {%- render 'scripts' -%}
     {%- render 'theme-styles-variables' -%}
     {%- render 'color-schemes' -%}
@@ -37,82 +43,28 @@
     {% endif %}
 
     {{ content_for_header }}
-    {% # theme-check-enable RemoteAsset %}
+    <link rel="stylesheet" href="{{ 'product-critical.css' | asset_url }}" fetchpriority="high">
+    <!-- Begin Intelligems Tag. Place at end of document head. DO NOT ALTER. -->
+    {% comment %} <script defer src="https://cdn.intelligems.io/30893a358f65.js"></script> {% endcomment %}
   </head>
 
-  <body class="page-width-{{ settings.page_width }} card-hover-effect-{{ settings.card_hover_effect }}">
+  <body
+    class="page-width-{{ settings.page_width }} card-hover-effect-{{ settings.card_hover_effect }} header-height"
+  >
     {% render 'skip-to-content-link', href: '#MainContent', text: 'accessibility.skip_to_text' %}
-    <div id="header-group">
-      {% sections 'header-group' %}
-    </div>
 
-    <script>
-      // Inline header height and menu style calculations to prevent layout shift
-      // Note: Updates in calculateHeaderGroupHeight(), updateTransparentHeaderOffset() and setHeaderMenuStyle() utilities.js should be kept in sync with this function
-      (function setHeaderHeighCustomProperties() {
-        /*
-         * Header calculation functions for maintaining CSS variables
-         * Mimic calculateHeaderGroupHeight() in utilities.js
-         */
-        const header = document.querySelector('header-component');
-        const headerGroup = document.querySelector('#header-group');
-        const hasHeaderSection = headerGroup?.querySelector('.header-section');
+    <sticky-header-wrapper class="header-announcements-header fixed bg-white top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out">
+      {% section 'header-announcements' %}
+      {%- section 'header' -%}
+    </sticky-header-wrapper>
 
-        if (!header || !headerGroup) return;
-
-        const headerTopRow = header.querySelector('.header__row--top');
-        const headerHeight = header.offsetHeight;
-
-        // Calculate the total height of the header group
-        let headerGroupHeight = 0;
-        const children = headerGroup.children;
-        for (let i = 0; i < children.length; i++) {
-          const element = children[i];
-          if (element === header || !(element instanceof HTMLElement)) continue;
-          headerGroupHeight += element.offsetHeight;
-        }
-
-        // Check for transparent header special case
-        if (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
-          headerGroupHeight += headerHeight;
-        }
-
-        // Set CSS variables
-        document.body.style.setProperty('--header-height', `${headerHeight}px`);
-        document.body.style.setProperty('--header-group-height', `${headerGroupHeight}px`);
-
-        if (headerTopRow) {
-          window.requestAnimationFrame(function () {
-            document.body.style.setProperty('--top-row-height', `${headerTopRow.offsetHeight}px`);
-          });
-        }
-
-        /**
-         * Updates CSS custom properties for transparent header offset calculation
-         * Mimic updateTransparentHeaderOffset() in utilities.js
-         */
-
-        if (!hasHeaderSection || !header?.hasAttribute('transparent')) {
-          document.body.style.setProperty('--transparent-header-offset-boolean', '0');
-          return;
-        }
-
-        const hasImmediateSection = hasHeaderSection.nextElementSibling?.classList.contains('shopify-section');
-
-        const shouldApplyOffset = !hasImmediateSection ? '1' : '0';
-        document.body.style.setProperty('--transparent-header-offset-boolean', shouldApplyOffset);
-      })();
-
-      (function setHeaderMenuStyle() {
-        const headerComponent = document.querySelector('#header-component');
-        if (headerComponent) {
-          const isTouchDevice = 'ontouchstart' in window && navigator.maxTouchPoints > 0;
-          const overflowList = headerComponent?.querySelector('overflow-list');
-          const hasReachedMinimum = overflowList && overflowList.hasAttribute('minimum-reached');
-          headerComponent.dataset.menuStyle = isTouchDevice || hasReachedMinimum ? 'drawer' : 'menu';
-        }
-      })();
-    </script>
+    <script
+      src="{{ 'critical.js' | asset_url }}"
+      type="module"
+      async
+      blocking="render"
+    ></script>
+    {% comment %} <script async src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script> {% endcomment %}
 
     <main
       id="MainContent"
@@ -125,14 +77,372 @@
       {{ content_for_layout }}
     </main>
 
-    <footer>
-      {% sections 'footer-group' %}
-    </footer>
+    {% sections 'footer-group' %}
 
     {% render 'search-modal' %}
 
     {% if settings.quick_add or settings.mobile_quick_add %}
       {% render 'quick-add-modal' %}
     {% endif %}
+    <script>
+      {%- if customer -%}
+        window.customer = {
+          id: `{{ customer.id }}`,
+          firstName: `{{ customer.first_name }}`,
+          lastName: `{{ customer.last_name }}`,
+          email: `{{ customer.email }}`,
+          orders: [
+            {%- for order in customer.orders limit: 10 -%}
+                {%- for item in order.line_items -%}
+                  {{ item.options_with_values | json }}
+                  {%- unless forloop.last -%},{%- endunless -%}
+                {%- endfor -%}
+              {%- unless forloop.last -%},{%- endunless -%}
+            {%- endfor -%}
+          ]
+        };
+
+        // Function to handle heap.identify
+        {% comment %} (function handleHeapUserIdentify() {
+          var identifyInterval = setInterval(function () {
+            if (window.heap && window.customer && window.customer.email) {
+              heap.identify(window.customer.email);
+              clearInterval(identifyInterval);
+            }
+          }, 1000);
+        })(); {% endcomment %}
+      {%- endif -%}
+
+      // Function to handle heap.addUserProperties
+      {% comment %} function handleAddUserProperties() {
+        var interval = setInterval(function() {
+          if (StatusInitData.customer && StatusInitData.customer.email) {
+            heap.addUserProperties({ "email": StatusInitData.customer.email });
+            clearInterval(interval);
+          }
+        }, 2000);
+      } {% endcomment %}
+
+      // Attach click event listeners directly
+      document.addEventListener('DOMContentLoaded', function() {
+        const loginButtonDesktop = document.querySelector('[data-bww-id="header-account-login-desktop"]');
+        const loginButtonMobile = document.querySelector('[data-bww-id="header-account-login-mobile"]');
+
+        if (loginButtonDesktop) {
+          loginButtonDesktop.addEventListener('click', handleAddUserProperties);
+        }
+
+        if (loginButtonMobile) {
+          loginButtonMobile.addEventListener('click', handleAddUserProperties);
+        }
+      });
+    </script>
+
+    {% if settings.enable_chat_with_us %}
+      <!-- Gorgias Chat Widget Start -->
+      <script>
+        window.GORGIASCHAT_DISABLE_AUTO_OPEN = true;
+      </script>
+      <script
+        id="gorgias-chat-widget-install-v3"
+        defer
+        src="https://config.gorgias.chat/bundle-loader/01J6YYWNFJ4DGRN2W7SKRNHY9W"
+      ></script>
+      <script id="gorgias-chat-shopify-install">
+        !(function (_) {
+          (_.SHOPIFY_PERMANENT_DOMAIN = '{{shop.permanent_domain}}'),
+            (_.SHOPIFY_CUSTOMER_ID = '{{customer.id}}'),
+            (_.SHOPIFY_CUSTOMER_EMAIL = '{{customer.email}}');
+        })(window || {});
+
+        const initGorgiasChatPromise = window.GorgiasChat
+          ? window.GorgiasChat.init()
+          : new Promise(function (resolve) {
+              window.addEventListener('gorgias-widget-loaded', function () {
+                resolve();
+              });
+            });
+
+        initGorgiasChatPromise.then(function () {
+          const iframe = document.getElementById('chat-button');
+          iframe.onload = function () {
+            const iframeDoc = iframe.contentWindow.document;
+            const styleElement = iframeDoc.createElement('style');
+            styleElement.textContent = '#gorgias-chat-messenger-button[aria-expanded="false"] { display: none; }';
+            iframeDoc.head.appendChild(styleElement);
+          };
+        });
+      </script>
+      <!-- Gorgias Chat Widget End -->
+    {% endif %}
+
+    <script>
+      // ============================================
+      // BWW STATE GLOBAL ACCESS SYSTEM
+      // ============================================
+
+      // Initialize state
+      function initBWWState() {
+        // Early guard: If state instance already exists, return immediately
+        // Prevents duplicate instances and duplicate cart:update listeners
+        if (
+          window.bwwState &&
+          ((window.BWWState && window.bwwState instanceof window.BWWState) ||
+            typeof window.bwwState.setState === 'function')
+        ) {
+          return; // Already initialized, no-op
+        }
+
+        if (window.BWWState) {
+          try {
+            // Create state instance with minimal initial state
+            // Cart state will be loaded via initCartState()
+            const state = new window.BWWState(
+              {}, // Empty initial state - add values only if needed
+              {
+                debug: false, // Enable debug mode for development
+                // batchUpdates: true is the default, so not needed
+              }
+            );
+
+            // Make state globally available
+            window.bwwState = state;
+
+            // Initialize cart state (loads cart from Shopify)
+            state.initCartState();
+
+            return;
+          } catch (error) {
+            console.error('[BWW State] Error:', error);
+          }
+        }
+
+        // Retry if BWWState not loaded yet
+        setTimeout(initBWWState, 100);
+      }
+
+      // Start initialization
+      initBWWState();
+
+      // Also try when DOM is ready as fallback
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initBWWState);
+      }
+
+      // ====================================================
+      // Global access utilities
+      // ====================================================
+      window.BWW = {
+        // Internal helper to get state
+        _getStateInternal: function () {
+          return window.bwwState || null;
+        },
+
+        getState: function () {
+          return this._getStateInternal();
+        },
+
+        getStateAsync: function () {
+          const state = this._getStateInternal();
+          if (state) {
+            return Promise.resolve(state);
+          }
+
+          return new Promise(resolve => {
+            const checkInterval = setInterval(() => {
+              const state = this._getStateInternal();
+              if (state) {
+                clearInterval(checkInterval);
+                resolve(state);
+              }
+            }, 50);
+          });
+        },
+
+        ready: function (callback) {
+          const state = this._getStateInternal();
+          if (state) {
+            return Promise.resolve(callback(state));
+          }
+          return this.getStateAsync().then(callback);
+        },
+
+        get: function (key, defaultValue = null) {
+          const state = this._getStateInternal();
+          return !state ? defaultValue : state.state[key] !== undefined ? state.state[key] : defaultValue;
+        },
+
+        set: function (key, value) {
+          const state = this._getStateInternal();
+          if (!state) return false;
+          return state.setState(key, value);
+        },
+
+        watch: function (key, callback, options = {}) {
+          return this.ready(state => {
+            return state.watch(key, callback, options);
+          });
+        },
+
+        isReady: function () {
+          return !!this._getStateInternal();
+        },
+
+        getCart: function () {
+          const state = this._getStateInternal();
+          return state ? state.state.cartState || null : null;
+        },
+
+        getCartCount: function () {
+          const state = this._getStateInternal();
+          const cart = state ? state.state.cartState || null : null;
+          return cart ? cart.item_count : 0;
+        },
+
+        getCartTotal: function () {
+          const state = this._getStateInternal();
+          const cart = state ? state.state.cartState || null : null;
+          return cart ? cart.total_price : 0;
+        },
+
+        shopify: function () {
+          return this.ready(state => {
+            return state.shopify();
+          });
+        },
+
+        updateCartSections: function (sectionIds = null) {
+          return this.ready(state => {
+            return state.updateCartSections(sectionIds);
+          });
+        },
+      };
+
+      // Test: Add item to cart - cart will automatically re-render using morphSection
+      // BWW.ready(async (state) => {
+      //   try {
+      //     const shopify = state.shopify();
+      //     await shopify.addToCart(44334885142664, 1);
+      //     console.log('✅ Item added! Cart sections re-rendered automatically via morphSection.');
+      //   } catch (error) {
+      //     console.error('❌ Failed to add item:', error);
+      //   }
+      // });
+
+      // ====================================================
+      // Global Utility Helpers
+      // ====================================================
+      // Helper function equivalent to onDocumentLoaded from @theme/utilities
+      // Use this in regular script tags (not ES6 modules)
+      window.onDocumentLoaded = function (callback) {
+        if (document.readyState === 'complete') {
+          callback();
+        } else {
+          window.addEventListener('load', callback);
+        }
+      };
+
+      // Helper function equivalent to onDocumentReady from @theme/utilities
+      window.onDocumentReady = function (callback) {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', callback);
+        } else {
+          callback();
+        }
+      };
+
+      // Example usage:
+      onDocumentLoaded(function () {
+        console.log('All resources loaded');
+        // Initialize analytics, trackers, etc.
+      });
+    </script>
+
+    {% comment %}
+      Example: Using ES6 Module to Load Functions from Documentation
+      This demonstrates how to properly use ES6 modules to import and use functions
+      from the JavaScript Functions Documentation.
+
+      Create a new file in assets/ folder (e.g., my-custom-script.js) with:
+    {% endcomment %}
+    <script type="module">
+      // Example: Import and use utilities from @theme/utilities
+      // This is an ES6 module example - you can use any function from the docs
+
+      import {
+        debounce,
+        throttle,
+        onDocumentReady,
+        isClickedOutside,
+        getVisibleElements,
+        clamp,
+        formatMoney,
+      } from '@theme/utilities';
+
+      // Example: Use debounce for search input
+      const searchInput = document.querySelector('#search-input');
+      if (searchInput) {
+        const debouncedSearch = debounce(function (event) {
+          console.log('Searching:', event.target.value);
+          // Perform search operation
+        }, 300);
+
+        searchInput.addEventListener('input', debouncedSearch);
+      }
+
+      // Example: Use throttle for scroll handler
+      // const throttledScroll = throttle(function () {
+      //   console.log('Scrolled:', window.scrollY);
+      //   // Perform scroll-based operations
+      // }, 100);
+
+      // window.addEventListener('scroll', throttledScroll);
+
+      // Example: Use onDocumentReady
+      onDocumentReady(function () {
+        console.log('DOM ready - ES6 module example');
+        // Initialize components
+      });
+
+      // Example: Use isClickedOutside for modal
+      document.addEventListener('click', function (event) {
+        const modal = document.querySelector('.modal');
+        if (modal && isClickedOutside(event, modal)) {
+          console.log('Clicked outside modal');
+          // Close modal
+        }
+      });
+
+      // Example: Use getVisibleElements
+      const container = document.querySelector('.product-grid');
+      if (container) {
+        const cards = Array.from(container.querySelectorAll('.product-card'));
+        const visibleCards = getVisibleElements(container, cards);
+        console.log('Visible cards:', visibleCards.length);
+      }
+
+      // Example: Use clamp
+      const value = clamp(window.scrollY, 0, 1000);
+      console.log('Clamped scroll value:', value);
+
+      // Example: Use formatMoney
+      const formatted = formatMoney('$1,234.56');
+      console.log('Formatted money:', formatted);
+    </script>
+
+    <div class="loop"></div>
+    {% comment %} <script src="https://unpkg.com/@loophq/onstore-sdk@latest/dist/loop-onstore-sdk.js" defer></script> {% endcomment %}
+    {% comment %}
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          LoopOnstore.init({
+            key: 'e7c848b5ba749695f5c74bb43e63b26894631c4b', # gitleaks:allow
+            attach: '.cart__submit',
+          });
+        });
+      </script>
+    {% endcomment %}
+    {% comment %} <script src="https://bigsur.ai/plugin/js/static.js" defer></script> {% endcomment %}
+
   </body>
 </html>

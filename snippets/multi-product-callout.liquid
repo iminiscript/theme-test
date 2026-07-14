@@ -1,0 +1,103 @@
+{% liquid
+  assign title = metaobject.title.value
+  assign description = metaobject.description.value
+  assign text_color = metaobject.text_color.value
+  assign background_color = metaobject.background_color.value
+  assign background_image = metaobject.background_image.value
+  assign featured_products = metaobject.featured_products.value
+  assign in_grid_card_callout_reference = metaobject.in_grid_callout_card_feature_callout
+%}
+
+<div class="multi-product-callout">
+  {% if title != blank or description != blank %}
+    <div
+      class="multi-product-callout__header py-6 px-3 lg:py-8 lg:px-6 relative"
+      style="background-color: {{ background_color | default: '#FFFFFF' }};"
+    >
+      {% if background_image != blank %}
+        <img
+          src="{{ background_image | image_url: width: background_image.width }}"
+          alt="{{ title }}"
+          width="{{ background_image.width }}"
+          height="{{ background_image.height }}"
+          class="w-full h-full object-cover absolute top-0 left-0 z-0"
+        >
+      {% endif %}
+
+      <div class="relative z-10" style="color: {{ text_color | default: '#000000' }};">
+        {% if title != blank %}
+          <h2 class="multi-product-callout__title text-heading-4">
+            {{ title }}
+          </h2>
+        {% endif %}
+        {% if description != blank %}
+          <p class="multi-product-callout__description text-14-regular mt-2">
+            {{ description }}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if featured_products.size > 0 %}
+    <ul
+      class="product-list-grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:gap-x-6 lg:gap-y-10 mt-10"
+      role="list"
+    >
+      {% for product in featured_products %}
+        {%- assign current_product_index = forloop.index -%}
+
+        {%- comment -%} Check if referenced in-grid-card-callout should be inserted at this position {%- endcomment -%}
+        {% if in_grid_card_callout_reference != blank %}
+          {%- assign ref_callout_position = in_grid_card_callout_reference.value.position.value -%}
+          {% if ref_callout_position == current_product_index %}
+            <li
+              id="{{ section.id }}-multi-{{ block_id }}-ref-{{ forloop.index }}"
+              class="product-grid__item product-grid__item--callout"
+            >
+              {% render 'in-grid-card-callout', metaobject: in_grid_card_callout_reference.value, block_id: block_id %}
+            </li>
+          {% endif %}
+        {% endif %}
+
+        <li
+          id="{{ section.id }}-multi-{{ block_id }}-{{ product.id }}"
+          class="product-grid__item product-grid__item--{{ forloop.index0 }}"
+          data-product-id="{{ product.id }}"
+        >
+          {% render 'product-card', product: product, section_name: title %}
+        </li>
+      {% endfor %}
+
+      {%- comment -%} Render in-grid-card-callout at the end if position is greater than product count {%- endcomment -%}
+      {% if in_grid_card_callout_reference != blank %}
+        {%- assign ref_callout_position = in_grid_card_callout_reference.value.position.value -%}
+        {% if ref_callout_position > featured_products.size %}
+          <li
+            id="{{ section.id }}-multi-{{ block_id }}-ref-end"
+            class="product-grid__item product-grid__item--callout"
+          >
+            {% render 'in-grid-card-callout', metaobject: in_grid_card_callout_reference.value, block_id: block_id %}
+          </li>
+        {% endif %}
+      {% endif %}
+    </ul>
+  {% endif %}
+</div>
+
+{% stylesheet %}
+  .product-list-grid {
+    display: grid;
+  }
+
+  .multi-product-callout__header {
+    text-align: left;
+  }
+
+  .multi-product-callout__empty {
+    padding: 2rem;
+    background-color: #f3f4f6;
+    text-align: center;
+    border-radius: 0.5rem;
+  }
+{% endstylesheet %}

@@ -1,147 +1,104 @@
 {%- doc -%}
-  This snippet is used to render a product card.
-  It is used in the product block,featured product block, and the product card block.
+  Renders product pricing with support for price ranges, compare-at prices, and currency formatting.
+  
+  Displays the current price (or price range if prices vary) and optionally shows the compare-at
+  price when the product is on sale. Prices are formatted with currency symbols and split into
+  whole dollars and cents (displayed as superscript).
 
-  @param {product} product_resource - The product to render
-  @param {boolean} [show_unit_price] - Whether to show the unit price
-  @param {boolean} [show_sale_price_first] - Whether to show the sale price first
+  @param {object} product_resource - The product object containing price information
+  @param {boolean} show_price_range - Whether to display price range (min-max) when prices vary (default: false)
+  @param {string} price_class - CSS classes for the price element (default: 'text-16-bold')
+  @param {string} compare_at_price_class - CSS classes for the compare-at price element (default: 'text-(--color-gray-accessible) text-12-regular line-through')
+  @param {string} class - Alternative class parameter (default: 'text-16-bold')
+
+  Output includes data attributes (data-product-id) for JavaScript price updates.
 {%- enddoc -%}
 
-{%- liquid
-  assign show_unit_price = show_unit_price | default: false
-  assign show_sale_price_first = show_sale_price_first | default: false
-  assign selected_variant = product_resource.selected_or_first_available_variant
-  assign price = selected_variant.price
-  assign compare_at_price = selected_variant.compare_at_price
-
-  assign show_compare_price = false
-  if compare_at_price > price
-    assign show_compare_price = true
+{% liquid
+  assign show_price_range = show_price_range | default: false
+  assign class = class | default: 'text-16-bold'
+  assign product_id = product_resource.id | default: blank
+  # Price calculations
+  assign on_sale_class = blank
+  if product_resource.price < product_resource.compare_at_price
+    assign on_sale_class = 'text-(--color-brunt-orange)'
   endif
-
-  if product_resource == blank
-    assign price = 1999
-  endif
-
-  # Check if variant has volume pricing
-  assign has_volume_pricing = null
-  assign price_min = null
-  assign price_max = null
-
-  # For product cards (collection/search pages), calculate min/max across all variants
-  # For product pages, only use the selected variant's pricing
-  assign is_product_card = false
-  if template.name != 'product'
-    assign is_product_card = true
-  endif
-
-  if is_product_card
-    assign price_min = product_resource.price_min
-    assign price_max = product_resource.price_max
-    assign has_volume_pricing = product_resource.quantity_price_breaks_configured? | default: false
+  assign price_varies = product_resource.price_varies | default: false
+  if price_varies
+    assign price_min_floor = product_resource.price_min | divided_by: 100 | floor | prepend: localization.country.currency.symbol | strip
+    assign price_min_sup = product_resource.price_min | modulo: 100
+    assign price_min = blank | default: floor: price_min_floor, sup: price_min_sup
+    assign price_max_floor = product_resource.price_max | divided_by: 100 | floor | prepend: localization.country.currency.symbol | strip
+    assign price_max_sup = product_resource.price_max | modulo: 100
+    assign price_max = blank | default: floor: price_max_floor, sup: price_max_sup
   else
-    # Product page: only use selected variant's pricing
-    if selected_variant.quantity_price_breaks.size > 0
-      assign has_volume_pricing = true
-      assign price_min = selected_variant.quantity_price_breaks.last.price
-      assign price_max = selected_variant.price
-    endif
+    assign price_floor = product_resource.price | divided_by: 100 | floor | prepend: localization.country.currency.symbol | strip
+    assign price_sup = product_resource.price | modulo: 100
+    assign price = blank | default: floor: price_floor, sup: price_sup
   endif
-
-  # Determine if currency code should be shown
-  assign use_currency = false
-  if product.handle == product_resource.handle
-    if settings.currency_code_enabled_product_pages
-      assign use_currency = true
-    endif
-  elsif settings.currency_code_enabled_product_cards
-    assign use_currency = true
-  endif
-
-  # Format all prices
-  if use_currency
-    assign price = price | money_with_currency
-    assign compare_at_price = compare_at_price | money_with_currency
-    assign price_min = price_min | money_with_currency
-    assign price_max = price_max | money_with_currency
+  # Compare at price - get max compare_at_price if there are multiple
+  assign compare_at_price_varies = product_resource.compare_at_price_varies
+  if compare_at_price_varies
+    assign compare_at_price_min_floor = product_resource.compare_at_price_min | divided_by: 100 | floor | prepend: localization.country.currency.symbol | strip
+    assign compare_at_price_min_sup = product_resource.compare_at_price_min | modulo: 100
+    assign compare_at_price_min = blank | default: floor: compare_at_price_min_floor, sup: compare_at_price_min_sup
+    assign compare_at_price_max_floor = product_resource.compare_at_price_max | divided_by: 100 | floor | prepend: localization.country.currency.symbol | strip
+    assign compare_at_price_max_sup = product_resource.compare_at_price_max | modulo: 100
+    assign compare_at_price_max = blank | default: floor: compare_at_price_max_floor, sup: compare_at_price_max_sup
   else
-    assign price = price | money
-    assign compare_at_price = compare_at_price | money
-    assign price_min = price_min | money
-    assign price_max = price_max | money
+    assign compare_at_price_floor = product_resource.compare_at_price | divided_by: 100 | floor | prepend: localization.country.currency.symbol | strip
+    assign compare_at_price_sup = product_resource.compare_at_price | modulo: 100
+    assign compare_at_price = blank | default: floor: compare_at_price_floor, sup: compare_at_price_sup
   endif
--%}
+%}
 
-<div ref="priceContainer">
-  {% if has_volume_pricing %}
-    {% comment %} Volume pricing display {% endcomment %}
-    {% if show_compare_price %}
-      <span class="price-item__group">
-        <span class="visually-hidden">{{ 'content.price_regular' | t }}&nbsp;</span>
-        <span class="compare-at-price">{{- compare_at_price -}}</span>
-      </span>
-    {% endif %}
-    <span class="price-item__group">
-      <span class="visually-hidden">{{ 'content.price_range' | t }}&nbsp;</span>
-      <span class="price">{{ price_min }} - {{ price_max }}</span>
+<p class="{{ price_class | default: 'text-16-bold' }} {{ on_sale_class }} priceRange">
+  {%- if price_varies and show_price_range -%}
+    <span class="igPriceMin" data-product-id="{{ product_resource.id }}">
+      {{- price_min.floor -}}
+      {%- if price_min.sup > 0 -%}
+        <sup class="top-[-0.2em]">{{- price_min.sup -}}</sup>
+      {%- endif -%}
     </span>
-  {% else %}
-    {% comment %} Standard pricing display {% endcomment %}
-    <div
-      class="
-        price__regular
-        {% if show_compare_price %}
-          price__hidden
-        {% endif %}
-      "
-    >
-      <span class="price">{{ price | default: '&nbsp;' }}</span>
-    </div>
-    <div
-      class="
-        price__sale
-        {% unless show_compare_price %}
-          price__hidden
-        {% endunless %}
-      "
-    >
-      {% if show_sale_price_first %}
-        <span class="price-item__group">
-          <span class="visually-hidden">{{ 'content.price_sale' | t }}&nbsp;</span>
-          <span class="price-item--sale price">{{ price | default: '&nbsp;' }}</span>
-        </span>
-        <span class="price-item__group">
-          <span class="visually-hidden">{{ 'content.price_regular' | t }}&nbsp;</span>
-          <span class="price-item--regular compare-at-price">{{- compare_at_price -}}</span>
-        </span>
-      {% else %}
-        <span class="price-item__group">
-          <span class="visually-hidden">{{ 'content.price_regular' | t }}&nbsp;</span>
-          <span class="price-item--regular compare-at-price">{{- compare_at_price -}}</span>
-        </span>
-        <span class="price-item__group">
-          <span class="visually-hidden">{{ 'content.price_sale' | t }}&nbsp;</span>
-          <span class="price-item--sale price">{{ price | default: '&nbsp;' }}</span>
-        </span>
-      {% endif %}
-    </div>
-  {% endif %}
-  {%- if selected_variant.unit_price and show_unit_price %}
-    {%- liquid
-      if use_currency
-        assign unit_price = selected_variant.unit_price | money_with_currency
-      else
-        assign unit_price = selected_variant.unit_price | money
-      endif
-    -%}
-    {% render 'unit-price', price: unit_price, measurement: selected_variant.unit_price_measurement %}
+    -
+    <span class="igPriceMax" data-product-id="{{ product_id }}">
+      {{- price_max.floor -}}
+      {%- if price_max.sup > 0 -%}
+        <sup class="top-[-0.2em]">{{- price_max.sup -}}</sup>
+      {%- endif -%}
+    </span>
+  {%- else -%}
+    <span class="igPrice" data-product-id="{{ product_id }}">
+      {{- price.floor -}}
+      {%- if price.sup > 0 -%}
+        <sup class="top-[-0.2em]">{{- price.sup -}}</sup>
+      {%- endif -%}
+    </span>
   {%- endif -%}
-</div>
-{%- if has_volume_pricing -%}
-  <small
-    ref="volumePricingNote"
-    class="volume-pricing-note"
-  >
-    {{- 'content.volume_pricing_available' | t -}}
-  </small>
+</p>
+{%- if on_sale_class != blank -%}
+  <p class="{{ compare_at_price_class | default: 'text-(--color-gray-accessible) text-12-regular line-through' }} compareAtPrice">
+    {%- if compare_at_price_varies and product_resource.compare_at_price_max > product_resource.compare_at_price_min -%}
+      <span class="igComparePriceMin" data-product-id="{{ product_id }}">
+        {{- compare_at_price_min.floor -}}
+        {%- if compare_at_price_min.sup > 0 -%}
+          <sup class="top-[-0.3em]">{{- compare_at_price_min.sup -}}</sup>
+        {%- endif -%}
+      </span>
+      -
+      <span class="igComparePriceMax" data-product-id="{{ product_id }}">
+        {{- compare_at_price_max.floor -}}
+        {%- if compare_at_price_max.sup > 0 -%}
+          <sup class="top-[-0.3em]">{{- compare_at_price_max.sup -}}</sup>
+        {%- endif -%}
+      </span>
+    {%- else -%}
+      <span class="igComparePrice" data-product-id="{{ product_id }}">
+        {{- compare_at_price.floor -}}
+        {%- if compare_at_price.sup > 0 -%}
+          <sup class="top-[-0.3em]">{{- compare_at_price.sup -}}</sup>
+        {%- endif -%}
+      </span>
+    {%- endif -%}
+  </p>
 {%- endif -%}

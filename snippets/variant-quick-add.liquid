@@ -1,0 +1,512 @@
+{%- doc -%}
+  Renders a quick-add variant picker, used to display the variant picker in the quick-add modal.
+
+  @param {object} product_resource - The product object.
+  @param {string} [section_id] - Optional section ID for variant updates.
+  @param {string} [context] - Optional context (e.g., 'pdp', 'cart'). Used to determine styling.
+{%- enddoc -%}
+
+{%- liquid
+  # Build width class - only apply md:w-62 on PDP
+  assign context_value = context | strip | downcase
+  assign width_class = 'w-full'
+  if context_value == 'pdp'
+    assign width_class = 'w-full md:w-62'
+  endif
+  
+  # Check if product has reviews
+  # Note: StarRatingSnippet returns <span></span> when empty, so we need to check if it has actual content
+  assign has_reviews = false
+  assign review_snippet = product_resource.metafields.okendo.StarRatingSnippet
+  if review_snippet != blank
+    # Remove HTML tags and check if there's actual content
+    assign review_text = review_snippet | strip_html | strip
+    if review_text != blank
+      assign has_reviews = true
+    endif
+  endif
+-%}
+
+<variant-picker
+  data-product-id="{{ product_resource.id }}"
+  data-product-url="{{ product_resource.url }}"
+  {% if section_id %}data-section-id="{{ section_id }}"{% endif %}
+  data-cart-upsell="true"
+  class="variant-picker"
+>
+  {%- comment -%} PART 1: COLOR SWATCHES {%- endcomment -%}
+  {%- liquid
+    # Check if product has color option
+    assign has_color_swatches = false
+    for product_option in product_resource.options_with_values
+      assign option_name_lower = product_option.name | downcase
+      if option_name_lower contains 'color'
+        assign has_color_swatches = true
+        break
+      endif
+    endfor
+  -%}
+  {%- for product_option in product_resource.options_with_values -%}
+    {%- liquid
+      # Check if this is a color option
+      assign option_name_lower = product_option.name | downcase
+      assign is_color_option = false
+      if option_name_lower contains 'color'
+        assign is_color_option = true
+      endif
+    -%}
+
+    {%- if is_color_option -%}
+      <fieldset class="variant-option variant-option--color-swatches mb-4 ml-25.5">
+        <legend id="color-legend-{{ product_resource.id }}-{{ product_option.position }}" class="visually-hidden">
+          {{ product_option.name | escape }}: <span data-selected-color-value>{{ product_option.selected_value | escape }}</span>
+        </legend>
+        
+        <div 
+          class="variant-swatches__colors flex flex-row gap-2 w-full"
+          role="radiogroup"
+          aria-labelledby="color-legend-{{ product_resource.id }}-{{ product_option.position }}"
+        >
+          {%- for product_option_value in product_option.values -%}
+            {% liquid
+              assign featured_media = product_option_value.variant.featured_media
+
+              # If the variant has no featured media, and we have a combined listing product, then fall back to using the
+              # featured media of the child product that is linked to this option value.
+              if featured_media == blank and product_option_value.product_url
+                assign featured_media = product_option_value.variant.product.featured_media
+              endif
+              
+              # Get swatch data from metafields
+              assign swatch_image = blank
+              assign swatch_color = blank
+              assign swatch_name = product_option_value.name
+
+              for swatch in product_resource.metafields.custom.color.value
+                if swatch.admin_name.value == product_option_value
+                  assign swatch_image = swatch.image.value
+                  assign swatch_color = swatch.value.value
+                  assign swatch_name = swatch.name.value | default: product_option_value.name
+                endif
+              endfor
+              
+              # Find a variant with this color that has an image
+              assign color_variant_image = blank
+              for variant in product_resource.variants
+                if variant.option1 == product_option_value and variant.image != blank
+                  assign color_variant_image = variant.image | image_url: width: 400
+                  break
+                endif
+              endfor
+              
+              # If no variant image found, use the variant's featured_media if available
+              if color_variant_image == blank and product_option_value.variant.image != blank
+                assign color_variant_image = product_option_value.variant.image | image_url: width: 400
+              endif
+            %}
+            <label
+              data-media-id="{{ featured_media.id }}"
+              {% if color_variant_image != blank %}data-color-image="{{ color_variant_image }}"{% endif %}
+              class="variant-swatch__label relative w-[26px] h-[26px] md:w-[26px] md:h-[26px] min-w-[26px] max-w-[26px] md:min-w-[26px] md:max-w-[26px] flex-none flex-shrink-0 p-0 border-0 rounded-full overflow-hidden flex items-center justify-center cursor-pointer"
+              on:pointerenter="product-card/previewVariant/{{ featured_media.id }}"
+              on:pointerleave="product-card/resetVariant"
+              title="{{ swatch_name }}{% unless product_option_value.available %} (Out of Stock){% endunless %}"
+            >
+              <input
+                type="radio"
+                name="{{ product_option.name | escape }}-cart-upsell-{{ product_resource.id }}"
+                value="{{ product_option_value | escape }}"
+                aria-label="{{ swatch_name }}{% if product_option_value.available == false %} (Out of Stock){% endif %}"
+                data-input-id="{{ product_option.position }}-{{ forloop.index0 }}"
+                data-option-value-id="{{ product_option_value.id }}"
+                data-option-media-id="{{ featured_media.id }}"
+                data-option-available="{{ product_option_value.available }}"
+                data-connected-product-url="{{ product_option_value.product_url }}"
+                {% if color_variant_image != blank %}data-color-image="{{ color_variant_image }}"{% endif %}
+                {% if product_option_value.variant.id %}
+                  data-variant-id="{{ product_option_value.variant.id }}"
+                {% endif %}
+                {% if product_option_value.selected %}
+                  checked
+                {% endif %}
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              >
+              <span class="productCard__swatch relative w-full h-full shrink-0 flex items-center justify-center{% if product_option_value.selected %} swatch-selected{% endif %}{% if product_option_value.available == false %} swatch-unavailables{% endif %}">
+                {%- if product_option_value.available == false -%}
+                  <span class="swatch-unavailable"></span>
+                {%- endif -%}
+
+                {%- if swatch_image != blank or swatch_color != blank -%}
+                  <span
+                    class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 md:w-[20px] md:h-[20px] rounded-full flex-shrink-0"
+                    style="background-color: {{ swatch_color }} !important;{% if swatch_image != blank %} background-image: url({{ swatch_image | image_url: width: 40 }}); background-size: contain; background-position: center; background-repeat: no-repeat;{% endif %}"
+                  ></span>
+                {%- else -%}
+                  <span
+                    class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 md:w-[20px] md:h-[20px] rounded-full flex-shrink-0"
+                    style="background-color: {{ product_option_value.name | split: ' ' | last | downcase  }} !important;"
+                  ></span>
+                {%- endif -%}
+              </span>
+        
+            </label>
+          {%- endfor -%}
+        </div>
+      </fieldset>
+    {%- endif -%}
+  {%- endfor -%}
+
+  {%- comment -%} Add to Cart Form - Separate from variant picker (like Horizon quick-add) {%- endcomment -%}
+  {%- liquid
+  # Check if default product (first option value contains "default")
+  assign is_default_product = false
+  if product_resource.options.first.values.first
+    assign first_value_lower = product_resource.options.first.values.first | downcase
+    if first_value_lower contains 'default'
+      assign is_default_product = true
+    endif
+  endif
+  
+  assign product_form_id = 'CartUpsell-ProductForm-' | append: product_resource.id
+  assign variant_to_use = product_resource.selected_or_first_available_variant
+  assign can_add_to_cart = variant_to_use.available
+  assign add_to_cart_text = 'actions.add_to_cart' | t
+  
+  if variant_to_use.available == false
+    assign add_to_cart_text = 'products.product.sold_out' | t
+  endif
+-%}
+{%- comment -%} Check if product has more than 1 variant and has non-color options {%- endcomment -%}
+{%- liquid
+  # Check if product has more than 1 variant
+  assign has_multiple_variants = false
+  if product_resource.variants.size > 1
+    assign has_multiple_variants = true
+  endif
+  
+  # Check if there are non-color options to show
+  assign has_non_color_options = false
+  for product_option in product_resource.options_with_values
+    assign option_name_lower = product_option.name | downcase
+    unless option_name_lower contains 'color'
+      assign has_non_color_options = true
+      break
+    endunless
+  endfor
+  
+  # Only show button if product has multiple variants AND has non-color options AND is not a default product
+  assign show_slide_down_button = false
+  if has_multiple_variants and has_non_color_options and is_default_product == false
+    assign show_slide_down_button = true
+  endif
+-%}
+
+
+<div class="cartUpsell__size flex justify-end {% if has_reviews == false or has_color_swatches == false %}mt-15{% else %}mt-10{% endif %} pt-3 border-t border-medium-smoke">
+  <div class="cartUpsell__add-to-cart {{ width_class }} {% if show_slide_down_button %}hidden{% else %}cartUpsell__single{% endif %}" data-variant-add-to-cart>
+    <product-form-component
+      data-section-id="{{ section_id }}"
+      data-product-id="{{ product_resource.id }}"
+      on:submit="/handleSubmit"
+      class="cartUpsell__product-form"
+    >
+      <div
+        class="visually-hidden"
+        aria-live="assertive"
+        role="status"
+        aria-atomic="true"
+        ref="liveRegion"
+      ></div>
+      {%- form 'product', product_resource, id: product_form_id, novalidate: 'novalidate', data-type: 'add-to-cart-form', class: 'cartUpsell__form' -%}
+        <input
+          type="hidden"
+          name="id"
+          ref="variantId"
+          value="{{ variant_to_use.id }}"
+          data-variant-id-input
+          {% if variant_to_use.available == false %}
+            disabled
+          {% endif %}
+        >
+        {% comment %} <input
+          type="hidden"
+          name="properties[_enable_safety_rating]"
+          value="true"
+        >
+        <input
+          type="hidden"
+          name="properties[_women_size_selected]"
+          value="true"
+        > {% endcomment %}
+        <input
+          type="hidden"
+          name="quantity"
+          value="1"
+        >
+        {% render 'add-to-cart-button',
+          add_to_cart_text: add_to_cart_text,
+          class: 'btn btn-primary-asphalt relative text-uppercase text-center text-12-bold cartUpsell__add-to-cart-btn w-full',
+          can_add_to_cart: can_add_to_cart,
+          icon_only_on_mobile: false,
+          product: product_resource
+        %}
+      {%- endform -%}
+  </product-form-component>
+</div>
+  {%- comment -%} Only show button if product has multiple variants AND has non-color options {%- endcomment -%}
+  {%- if show_slide_down_button -%}
+    <div class="variant-slide-down {{ width_class }}">
+      <button
+        type="button"
+        class="btn btn-primary-asphalt w-full variant-slide-down__button text-12-bold"
+        data-variant-slide-down-button
+        data-target-fieldsets="[data-variant-options-fieldsets]"
+        data-target-add-to-cart="[data-variant-add-to-cart]"
+        aria-expanded="false"
+        aria-controls="variant-options-fieldsets"
+        {% unless can_add_to_cart %}
+          disabled
+        {% endunless %}
+      >
+        {% if can_add_to_cart %}
+          Select A Size
+          {% render 'icon', icon: 'caret-down', class: 'fill-white', path-class: 'fill-white' %}
+        {% else %}
+          Sold Out
+        {% endif %}
+      </button>
+    </div>
+  {%- endif -%}
+</div>
+
+{% if product_resource.type == 'Boot' %}
+<div class="cartUpsell__boot hidden mt-4" data-product-id="{{ product_resource.id }}" data-variant-options-fieldsets>
+    <fieldset class="flex flex-wrap gap-2 mb-4">
+      <legend id="boot-width-legend-{{ product_resource.id }}" class="mt-2 mb-1 text-12-bold uppercase">
+        Boot Width: <span bww-model="bootWidth_{{ product_resource.id }}">Regular</span>
+      </legend>
+      <div 
+        class="flex grow-1 gap-2"
+        role="radiogroup"
+        aria-labelledby="boot-width-legend-{{ product_resource.id }}"
+      >
+        <button 
+          type="button" 
+          class="btn btn-primary-asphalt w-full boot-width-btn text-12-light"
+          data-boot-width="Regular"
+          aria-pressed="true"
+          aria-label="Boot Width: Regular"
+        >
+          Regular
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-secondary-asphalt w-full boot-width-btn text-12-light"
+          data-boot-width="Wide"
+          aria-pressed="false"
+          aria-label="Boot Width: Wide"
+        >
+          Wide
+        </button>
+      </div>
+    </fieldset>
+  </div>
+
+  <script>
+   (function() {
+
+      function waitForBWW() {
+        return new Promise(resolve => {
+          if (typeof BWW !== 'undefined' && typeof BWW.ready === 'function') {
+            return resolve();
+          }
+          const interval = setInterval(() => {
+            if (typeof BWW !== 'undefined' && typeof BWW.ready === 'function') {
+              clearInterval(interval);
+              resolve();
+            }
+          }, 50);
+        });
+      }
+
+      function initBootWidth(container) {
+        const productId = container.dataset.productId;
+        const stateKey = `bootWidth_${productId}`;
+        const buttons = container.querySelectorAll('.boot-width-btn');
+
+        waitForBWW().then(() => {
+          BWW.ready(state => {
+
+            // Set default value once
+            if (!state[stateKey]) state[stateKey] = "Regular";
+
+            // Bind elements once globally
+            state.bindElements?.();
+
+            /** --- Render UI based on current state --- */
+            function render() {
+              const current = state[stateKey];
+
+              buttons.forEach(btn => {
+                const isActive = btn.dataset.bootWidth === current;
+                btn.classList.toggle("btn-primary-asphalt", isActive);
+                btn.classList.toggle("btn-secondary-asphalt", !isActive);
+                // Update aria-pressed for accessibility
+                btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+              });
+            }
+
+            // Initial render
+            render();
+
+            // Watch for changes
+            state.watch?.(stateKey, render);
+
+            // Event Delegation (single listener)
+            container.addEventListener("click", e => {
+              const target = e.target.closest(".boot-width-btn");
+              if (!target) return;
+              state[stateKey] = target.dataset.bootWidth;
+            });
+          });
+        });
+      }
+
+      function initAllBootWidths() {
+        document.querySelectorAll('.cartUpsell__boot[data-product-id]')
+          .forEach(el => initBootWidth(el));
+      }
+
+      document.readyState === "loading"
+        ? document.addEventListener("DOMContentLoaded", initAllBootWidths)
+        : initAllBootWidths();
+
+      })();
+</script>
+{% endif %}
+
+
+  {%- comment -%} PART 2: ALL OTHER OPTIONS (Size, Waist, Height, etc.) {%- endcomment -%}
+  {%- for product_option in product_resource.options_with_values -%}
+    {%- liquid
+      # Check if this is a color option
+      assign option_name_lower = product_option.name | downcase
+      assign is_color_option = false
+      if option_name_lower contains 'color'
+        assign is_color_option = true
+      endif
+      
+      # Skip color options in this loop
+      if is_color_option
+        continue
+      endif
+      
+      # For non-color options, set up regular variant option rendering
+      assign swatch_count = product_option.values | map: 'swatch' | compact | size
+      assign variant_style = ''
+      
+      if swatch_count > 0
+        assign variant_style = 'swatch'
+      else
+        assign fieldset_id = section.id | append: '-' | append: product_resource.id | append: '-' | append: product_option.name | handleize
+        assign option_id_attribute = 'data-option-id="' | append: fieldset_id | append: '"'
+        assign longest_value = 0
+      endif
+    -%}
+
+    <fieldset
+      class="variant-option variant-option--buttons hidden flex flex-wrap gap-2 mb-4 {% if variant_style == 'swatch' %}variant-option--swatches{% endif %}"
+      {{ option_id_attribute }}
+      data-variant-options-fieldsets
+      id="variant-options-fieldsets"
+    >
+      <legend id="option-legend-{{ product_resource.id }}-{{ product_option.position }}" class="mt-2 mb-1 text-12-bold uppercase">
+        {{ product_option.name }}: <span data-selected-option-value>{{ product_option.selected_value }}</span>
+      </legend>
+      
+      {%- for product_option_value in product_option.values -%}
+        {% if product_option_value.size > longest_value and option_id_attribute %}
+          {% assign longest_value = product_option_value.size %}
+        {% endif %}
+
+        {% liquid
+          assign featured_media = product_option_value.variant.featured_media
+
+          # If the variant has no featured media, and we have a combined listing product, then fall back to using the
+          # featured media of the child product that is linked to this option value.
+          if featured_media == blank and product_option_value.product_url
+            assign featured_media = product_option_value.variant.product.featured_media
+          endif
+        %}
+
+        <label
+          data-media-id="{{ featured_media.id }}"
+          class="variant-option__button-label {% if product_option_value.available == false %}variant-option__button-disabled bg-[#F2F2F2] {% endif %}"
+        >
+          <input
+            type="radio"
+            name="{{ product_option.name | escape }}-cart-upsell-{{ product_resource.id }}"
+            value="{{ product_option_value | escape }}"
+            aria-label="{{ product_option_value.name }}{% unless product_option_value.available %} (Out of Stock){% endunless %}"
+            data-input-id="{{ product_option.position }}-{{ forloop.index0 }}"
+            data-option-value-id="{{ product_option_value.id }}"
+            data-option-media-id="{{ featured_media.id }}"
+            data-option-available="{{ product_option_value.available }}"
+            data-connected-product-url="{{ product_option_value.product_url }}"
+            {% if product_option_value.available == false %}
+              disabled
+            {% endif %}
+            {% if product_option_value.variant.id %}
+              data-variant-id="{{ product_option_value.variant.id }}"
+            {% endif %}
+            {% if product_option_value.selected %}
+              checked
+            {% endif %}
+            class="text-14-light"
+          >
+          <span class="variant-option__button-value">{{ product_option_value | escape }}</span>
+          {% render 'strikethrough-variant', product_option: product_option_value %}
+        </label>
+      {%- endfor -%}
+      {% if option_id_attribute %}
+        {% style %}
+          [data-option-id="{{ fieldset_id }}"] {
+            --variant-ch: {{ longest_value }}ch;
+          }
+        {% endstyle %}
+      {% endif %}
+    </fieldset>
+  {%- endfor -%}
+
+  {%- comment -%} Product Price for variant updates {%- endcomment -%}
+  <product-price
+    class="hidden"
+    data-product-id="{{ product_resource.id }}"
+  >
+    <div ref="priceContainer">
+      {%- liquid
+        assign variant = product_resource.selected_or_first_available_variant
+        assign price_floor = variant.price | divided_by: 100 | floor | prepend: localization.country.currency.symbol | strip
+        assign price_sup = variant.price | modulo: 100
+        assign compare_price_floor = blank
+        assign compare_price_sup = 0
+        if variant.compare_at_price != blank and variant.compare_at_price > variant.price
+          assign compare_price_floor = variant.compare_at_price | divided_by: 100 | floor | prepend: localization.country.currency.symbol | strip
+          assign compare_price_sup = variant.compare_at_price | modulo: 100
+        endif
+      -%}
+      <span class="upsell-price text-16-bold">
+        {{ price_floor }}{% if price_sup > 0 %}<sup class="top-[-0.2em]">{{ price_sup }}</sup>{% endif %}
+      </span>
+      {%- if compare_price_floor != blank -%}
+        <span class="upsell-price-compare text-12-regular line-through text-gray-accessible ml-1">
+          {{ compare_price_floor }}{% if compare_price_sup > 0 %}<sup class="top-[-0.3em]">{{ compare_price_sup }}</sup>{% endif %}
+        </span>
+      {%- endif -%}
+    </div>
+  </product-price>
+
+  <script type="application/json">
+    {{ product_resource.selected_or_first_available_variant | json }}
+  </script>
+</variant-picker>

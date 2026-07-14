@@ -1,0 +1,246 @@
+<script src="{{ 'product-add-to-cart.js' | asset_url }}" defer="defer" type="module"></script>
+
+{% liquid
+  assign product = closest.product
+  assign is_us = false
+  if localization.country.iso_code == 'US'
+    assign is_us = true
+  endif
+
+  # Determine initial state for properties
+  assign initial_properties = '{}'
+  assign current_variant = product.selected_or_first_available_variant
+
+  # Check if product has "sold_out" tag (case-insensitive)
+  assign has_sold_out_tag = false
+  for tag in product.tags
+    assign tag_lower = tag | downcase
+    if tag_lower == 'sold_out'
+      assign has_sold_out_tag = true
+      break
+    endif
+  endfor
+
+  # Handle Mode (Single vs Bundle)
+  assign cart_mode = block.settings.cart_mode | default: 'single'
+  assign bundle_attr = ''
+  if cart_mode == 'bundle'
+    # Initializing with empty array tells JS to enter "Bundle Mode"
+    assign bundle_attr = 'data-items="[]"'
+  endif
+%}
+
+<product-add-to-cart
+  class="product__addToCart flex flex-col gap-4 w-full"
+  data-section-id="{{ section.id }}"
+  data-block-id="{{ block.id }}"
+  data-product-id="{{ product.id }}"
+
+  {% comment %}
+    Output single variant data as primary source for 'single' mode
+    and as a fallback for 'bundle' mode before items are populated.
+  {% endcomment %}
+  data-selected-variant-id="{{ current_variant.id }}"
+  data-price="{{ current_variant.price }}"
+  data-compare-at-price="{{ current_variant.compare_at_price | default: '' }}"
+  data-inventory-policy="{{ current_variant.inventory_policy }}"
+  data-inventory-quantity="{{ current_variant.inventory_quantity }}"
+  {% if has_sold_out_tag %}
+    data-sold-out="true"
+  {% endif %}
+
+  {{ bundle_attr }}
+
+  data-cart-properties="{{ initial_properties | escape }}"
+  data-is-us="{{ is_us }}"
+  data-postscript-id="{{ block.settings.postscript_id | escape }}"
+  data-klaviyo-id="{{ block.settings.klaviyo_id | escape }}"
+  data-klaviyo-form-id="{{ block.settings.klaviyo_form_id | escape }}"
+  data-button-text-default="{{ block.settings.button_text_default | default: 'Add to Cart' | escape }}"
+  data-button-text-pre-order="{{ block.settings.button_text_pre_order | default: 'Pre-Order' | escape }}"
+  data-button-text-subscribe="{{ block.settings.button_text_subscribe | default: 'Subscribe' | escape }}"
+  data-button-text-out-of-stock-us="{{ block.settings.button_text_out_of_stock_us | default: 'Notify me via text' | escape }}"
+  data-button-text-out-of-stock-international="{{ block.settings.button_text_out_of_stock_international | default: 'Notify me via email' | escape }}"
+  data-button-text-sold-out="{{ block.settings.button_text_sold_out | default: 'Sold Out' | escape }}"
+  {{ block.shopify_attributes }}
+>
+  <script type="application/json" data-currency-symbol="{{ localization.country.currency.symbol | escape }}">
+    {{ localization.country.currency.symbol | json }}
+  </script>
+
+  {%- comment -%} Top Copy {%- endcomment -%}
+  {% if block.settings.top_copy != blank %}
+    <p class="product__addToCartTopCopy text-12-regular text-center" data-top-copy>
+      {{ block.settings.top_copy }}
+    </p>
+  {% endif %}
+
+  {%- comment -%} Out of Stock Message {%- endcomment -%}
+  <p class="product__addToCartOutOfStockMessage text-12-regular text-center" data-out-of-stock-message hidden>
+    {{ block.settings.out_of_stock_message | default: 'Out of stock!' }}
+  </p>
+
+  {%- comment -%} Button {%- endcomment -%}
+  <button
+    type="button"
+    class="product__addToCartButton btn btn-md btn-primary-orange w-full md:w-auto h-[56px] md:h-auto"
+    data-add-to-cart-button
+    aria-label="{{ block.settings.button_text_default | default: 'Add to Cart' }}"
+  >
+    <span class="product__addToCartButtonText text-14-bold uppercase text-white whitespace-nowrap" data-button-text>
+      {{ block.settings.button_text_default | default: 'Add to Cart' }}
+    </span>
+    <span class="product__addToCartButtonPrice text-14-bold uppercase text-white whitespace-nowrap" data-button-price>
+      {%- comment -%} Price will be populated by JavaScript {%- endcomment -%}
+    </span>
+  </button>
+
+  {%- comment -%} Bottom Copy {%- endcomment -%}
+  {% if block.settings.bottom_copy != blank %}
+    <p class="product__addToCartBottomCopy text-12-regular text-center" data-bottom-copy>
+      {{ block.settings.bottom_copy }}
+    </p>
+  {% endif %}
+</product-add-to-cart>
+
+{%- comment -%} Pre-order Modal {%- endcomment -%}
+{% liquid
+  assign pre_order_content = product.metafields.custom.pre_order_content.value | default: ''
+%}
+{% render 'pre-order-modal', pre_order_content: pre_order_content %}
+
+{%- comment -%} Notify Me Via Email Modal {%- endcomment -%}
+{% render 'notify-me-email-modal' %}
+
+{% stylesheet %}
+  .product__addToCartButton:disabled .product__addToCartButtonText,
+  .product__addToCartButton:disabled .product__addToCartButtonPrice {
+    color: var(--color-medium-asphalt);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Product Add to Cart",
+  "tag": "div",
+  "class": "product__AddToCart",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Mode"
+    },
+    {
+      "type": "select",
+      "id": "cart_mode",
+      "label": "Cart Mode",
+      "options": [
+        {
+          "value": "single",
+          "label": "Single Product (Standard)"
+        },
+        {
+          "value": "bundle",
+          "label": "Bundle (Multiple Items)"
+        }
+      ],
+      "default": "single",
+      "info": "Set to 'Bundle' if multiple option selectors on this page should all add to this single button."
+    },
+    {
+      "type": "header",
+      "content": "Copy"
+    },
+    {
+      "type": "textarea",
+      "id": "top_copy",
+      "label": "Top Copy",
+      "default": "Orders Typically Process Within 1-2 Business Days"
+    },
+    {
+      "type": "textarea",
+      "id": "bottom_copy",
+      "label": "Bottom Copy",
+      "default": "Free Shipping & Exchanges | Try Risk-Free On The Job"
+    },
+    {
+      "type": "header",
+      "content": "Button Text - Default State"
+    },
+    {
+      "type": "text",
+      "id": "button_text_default",
+      "label": "Default Button Text",
+      "default": "Add to Cart"
+    },
+    {
+      "type": "text",
+      "id": "button_text_pre_order",
+      "label": "Pre-Order Button Text",
+      "default": "Pre-Order"
+    },
+    {
+      "type": "text",
+      "id": "button_text_subscribe",
+      "label": "Subscribe Button Text",
+      "default": "Subscribe"
+    },
+    {
+      "type": "header",
+      "content": "Button Text - Out of Stock State"
+    },
+    {
+      "type": "text",
+      "id": "out_of_stock_message",
+      "label": "Out of Stock Message",
+      "default": "Out of stock!"
+    },
+    {
+      "type": "text",
+      "id": "button_text_out_of_stock_us",
+      "label": "Out of Stock Button Text (US)",
+      "default": "Notify me via text"
+    },
+    {
+      "type": "text",
+      "id": "button_text_out_of_stock_international",
+      "label": "Out of Stock Button Text (International)",
+      "default": "Notify me via email"
+    },
+    {
+      "type": "header",
+      "content": "Button Text - Sold Out State"
+    },
+    {
+      "type": "text",
+      "id": "button_text_sold_out",
+      "label": "Sold Out Button Text",
+      "default": "Sold Out"
+    },
+    {
+      "type": "header",
+      "content": "Integrations"
+    },
+    {
+      "type": "text",
+      "id": "postscript_id",
+      "label": "Postscript ID"
+    },
+    {
+      "type": "text",
+      "id": "klaviyo_id",
+      "label": "Klaviyo ID"
+    },
+    {
+      "type": "text",
+      "id": "klaviyo_form_id",
+      "label": "Klaviyo Form ID",
+      "info": "Form ID for back-in-stock email subscriptions"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product Add to Cart"
+    }
+  ]
+}
+{% endschema %}

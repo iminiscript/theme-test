@@ -1,0 +1,52 @@
+<div class="product__bottom pt-6 flex flex-col gap-8 md:gap-10 lg:pt-0 lg:pl-10" {{ block.shopify_attributes }}>
+  <div class="product__bottomTitlePrice {% if block.settings.hide_title_on_mobile %} hidden lg:block{% endif %}">
+    {% content_for 'block', type: '_product-title-price', id: 'product-title-price', closest.product: closest.product %}
+  </div>
+  {% content_for 'blocks' %}
+</div>
+
+{% schema %}
+{
+  "name": "Product Buy Box",
+  "tag": null,
+  "blocks": [
+    {
+      "type": "_product-option-selectors"
+    },
+    {
+      "type": "_product-style-selector"
+    },
+    {
+      "type": "_product-add-to-cart"
+    },
+    {
+      "type": "_product-featured-review"
+    },
+    {
+      "type": "_product-features"
+    },
+    {
+      "type": "_product-ugc-gallery"
+    },
+    {
+      "type": "_product-accordion"
+    },
+    {
+      "type": "_complete-your-uniform"
+    }
+  ],
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "hide_title_on_mobile",
+      "label": "Hide Title on Mobile",
+      "default": true
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product Buy Box"
+    }
+  ]
+}
+{% endschema %}

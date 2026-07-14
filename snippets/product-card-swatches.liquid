@@ -1,0 +1,67 @@
+{%- doc -%}
+  Renders product color swatches for product cards.
+  
+  Usage:
+  {% render 'product-card-swatches',
+    product: product,
+    color_option: color_option,
+    has_color_option: has_color_option
+  %}
+  
+  Parameters:
+  @param {object} product - The product object
+  @param {object} color_option - The color option object from product.options_with_values
+  @param {boolean} has_color_option - Whether the product has a color option
+{%- enddoc -%}
+
+{%- liquid
+  # Only render if product has color option
+  if has_color_option == false or color_option == blank
+    echo ''
+    break
+  endif
+-%}
+
+<div
+  class="productCard__swatches flex flex-wrap items-center gap-[2px] lg:pt-2"
+  role="list"
+  aria-label="Color options"
+>
+  {%- assign option_index = 0 -%}
+  {%- comment -%} Show ALL color option values, regardless of availability {%- endcomment -%}
+  {%- for option_value in color_option.values -%}
+    {% liquid
+      assign swatch_image = blank
+      assign swatch_color = blank
+      assign swatch_name = option_value.name
+
+      # Get swatch data from metafields
+      for swatch in product.metafields.custom.color.value
+        if swatch.admin_name.value == option_value
+          assign swatch_image = swatch.image.value
+          assign swatch_color = swatch.value.value
+          assign swatch_name = swatch.name.value | default: option_value.name
+        endif
+      endfor
+    %}
+    {%- comment -%} Render swatch for all colors, even if unavailable - using same structure as variant-quick-add {%- endcomment -%}
+    <div class="productCard__swatch relative w-[26px] h-[26px] md:w-[32px] md:h-[32px] shrink-0 flex items-center justify-center{% if option_value.selected %} swatch-selected{% endif %}{% if option_value.available == false %} swatch-unavailable{% endif %}">
+      {%- if option_value.available == false -%}
+        <span class="swatch-unavailable absolute inset-0"></span>
+      {%- endif -%}
+      {%- if swatch_image != blank or swatch_color != blank -%}
+        <span
+          class="w-5 h-5 md:w-[24px] md:h-[24px] rounded-full flex-shrink-0{% if option_value.available == false %} opacity-50{% endif %}"
+          style="background-color: {{ swatch_color }} !important; background-image: url({{ swatch_image | image_url: width: 40 }}); background-size: contain; background-position: center; background-repeat: no-repeat;"
+        ></span>
+      {%- else -%}
+        <span
+          class="w-5 h-5 md:w-[24px] md:h-[24px] rounded-full flex-shrink-0{% if option_value.available == false %} opacity-50{% endif %}"
+          style="background-color: {{ option_value.name | split: ' ' | last | downcase  }} !important;"
+        ></span>
+      {%- endif -%}
+    </div>
+    {%- assign option_index = option_index | plus: 1 -%}
+  {%- endfor -%}
+</div>
+

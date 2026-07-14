@@ -1,0 +1,93 @@
+<div class='sidebarMenu__contact pt-10 px-3 pb-[4.25rem] bg-[#121212] text-white lg:px-4 lg:pb-28 lg:hidden'>
+  <div class='sidebarMenu__contactTop'>
+    <p class='sidebarMenu__contactTitle mb-4 ir text-base leading-[1.375rem] text-medium-asphalt'>Need Help?</p>
+    {% if shop.customer_accounts_enabled %}
+      {% if customer %}
+        <a
+          href='/account/logout'
+          aria-label='Logout'
+          class='flex items-center gap-3 mb-5 font-bold text-base leading-[1.375rem] no-underline [&_svg]:w-5 [&_svg]:h-5 [&_span]:text-white'
+          data-bww-id='main-nav-account-logout-mobile'
+        >
+          {% render 'icons', icon: 'login' %}
+          <span>Logout</span>
+        </a>
+      {% else %}
+        <a
+          href='#rivo'
+          aria-label='Login'
+          class='flex items-center gap-3 mb-5 font-bold text-base leading-[1.375rem] no-underline [&_svg]:w-5 [&_svg]:h-5 [&_span]:text-white'
+          data-bww-id='main-nav-account-login-mobile'
+        >
+          {% render 'icons', icon: 'login' %}
+          <span>Login</span>
+        </a>
+      {% endif %}
+    {% endif %}
+    <a
+      href='https://bruntworkwear.mymalomo.com/s8kjw_/'
+      aria-label='Track Orders'
+      class='flex items-center gap-3 mb-5 font-bold text-base leading-[1.375rem] no-underline [&_svg]:w-5 [&_svg]:h-5 [&_span]:text-white'
+      data-bww-id='main-nav-page-track-mobile'
+    >
+      {%- render 'icons', icon: 'track' %}
+      <span>Track Orders</span>
+    </a>
+    <a
+      href='/pages/returns'
+      aria-label='Returns + Exchanges'
+      class='flex items-center gap-3 mb-5 font-bold text-base leading-[1.375rem] no-underline [&_svg]:w-5 [&_svg]:h-5 [&_span]:text-white'
+      data-bww-id='main-nav-page-returns-mobile'
+    >
+      {%- render 'icons', icon: 'exchange' %}
+      <span>Returns + Exchanges</span>
+    </a>
+    <a href='/pages/faqs' aria-label='FAQs' class='flex items-center gap-3 mb-5 font-bold text-base leading-[1.375rem] no-underline [&_svg]:w-5 [&_svg]:h-5 [&_span]:text-white' data-bww-id='main-nav-page-faq-mobile'>
+      {%- render 'icons', icon: 'faq' %}
+      <span>FAQs</span>
+    </a>
+    {%- if disable_email == false -%}
+      <a
+        href='mailto:crew@bruntworkwear.com'
+        aria-label='Email Us'
+        class='flex items-center gap-3 mb-5 font-bold text-base leading-[1.375rem] no-underline [&_svg]:w-5 [&_svg]:h-5 [&_span]:text-white'
+        data-bww-id='main-nav-contact-email-mobile'
+      >
+        {%- render 'icons', icon: 'email' %}
+        <span>E-mail Us</span>
+      </a>
+    {%- endif -%}
+    {%- if disable_call_us == false -%}
+      <a
+        href='tel:888-719-6687'
+        aria-label='Call Us'
+        class='flex items-center gap-3 mb-5 font-bold text-base leading-[1.375rem] no-underline [&_svg]:w-5 [&_svg]:h-5 [&_span]:text-white'
+        data-bww-id='main-nav-contact-sms-mobile'
+      >
+        {%- render 'icons', icon: 'call' %}
+        <span>Call Us</span>
+      </a>
+    {%- endif -%}
+    
+    {%- if disable_chat == false -%}
+      <a
+        href='javascript:void(0);'
+        aria-label='Chat With Us'
+        class='js-sidebarMenu__contactTopItem--chat{{ chat_class }} flex items-center gap-3 mb-5 font-bold text-base leading-[1.375rem] no-underline [&_svg]:w-5 [&_svg]:h-5 [&_span]:text-white'
+        data-bww-id='main-nav-chat-mobile'
+      >
+        {%- render 'icons', icon: 'chat' %}
+        <span>Chat With Us</span>
+      </a>
+    {%- endif -%} 
+    <a
+      href='/pages/store-locator'
+      aria-label='Store Locator'
+      class='flex items-center gap-3 mb-5 font-bold text-base leading-[1.375rem] no-underline [&_svg]:w-5 [&_svg]:h-5 [&_span]:text-white'
+      data-bww-id='main-nav-Store-locator-mobile'
+    >
+      {%- render 'icons', icon: 'locator' %}
+      <span>Store Locator</span>
+    </a>
+  </div>
+</div>

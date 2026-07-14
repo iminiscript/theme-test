@@ -1,0 +1,85 @@
+{%- liquid
+  assign image = block.settings.image
+  assign title = block.settings.title
+  assign card_color = section.settings.card_color
+  assign text_color = section.settings.text_color
+  assign description = block.settings.description
+-%}
+
+<div
+  class="swiper-slide"
+  data-block-id="{{ block.id }}"
+  data-track-slideid="{{ title | downcase | replace: ' ', '-'  }}"
+>
+  <div class="flex flex-col h-full w-full {{ card_color | default: 'bg-white' }} p-4">
+    <div class="aspect-square w-full mb-3">
+    {%- if image != blank -%}
+      {% render 'image',
+        imageData: image,
+        class: 'w-full h-full object-cover',
+        alt_text: title,
+        fit: 'cover'
+      %}
+    {%- else -%}
+      <div class="w-full h-full flex items-center justify-center">
+        {{ 'image' | placeholder_svg_tag: 'w-full h-full object-cover' }}
+      </div>
+    {%- endif -%}
+  </div>
+
+    <div class="flex flex-col gap-2 mb-5">
+      {%- if title != blank -%}
+        <h3 class="text-subheading-1 {{ text_color }}">
+          {{ title }}
+        </h3>
+      {%- endif -%}
+
+      {%- if description != blank -%}
+        <p class="text-16-regular {{ text_color }}">
+          {{ description }}
+        </p>
+      {%- endif -%}
+    </div>
+
+    <div class="mt-auto">
+      {% content_for 'blocks' %}
+    </div>
+  </div>
+</div>
+
+
+{% schema %}
+{
+  "name": "Promo Card",
+  "tag": null,
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "Promotional Title"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Description",
+      "default": "Add a compelling description for your promotional content."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "button"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Card"
+    }
+  ]
+}
+{% endschema %}

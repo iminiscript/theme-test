@@ -1,0 +1,94 @@
+{% comment %}
+  Renders an announcement slide with message, optional timer, and optional button
+
+  Accepts:
+  - slide_type: string - 'timer' or 'block'
+  - slide_id: string - unique identifier for the slide
+  - message: string - the announcement message text
+  - show_timer: boolean - whether to show the countdown timer
+  - timer_start: string - timer start date/time
+  - timer_end: string - timer end date/time
+  - button_text: string - button text
+  - button_link: string - button URL
+
+  Note: Background color, text color, and padding are now applied at the parent container level
+  for consistency across all slides.
+
+  Usage:
+  {% render 'announcement-slide',
+    slide_type: 'timer',
+    slide_id: 'timer-slide',
+    message: section.settings.timer_message,
+    show_timer: true,
+    timer_start: section.settings.timer_start,
+    timer_end: section.settings.timer_end,
+    button_text: section.settings.timer_btn,
+    button_link: section.settings.timer_btn_link
+  %}
+{% endcomment %}
+
+<div
+  class="swiper-slide"
+  {% if slide_type == 'timer' %}
+    data-slide-type="timer"
+  {% else %}
+    data-block-id="{{ slide_id }}"
+  {% endif %}
+>
+  <div
+    class="announcement-slide flex items-center justify-center gap-[3px] md:gap-[6px] px-3  lg:px-5 py-2 lg:py-3"
+  >
+    {% if message != blank %}
+      <span class="announcement-message text-b12 uppercase">{{ message }}</span>
+    {% endif %}
+
+    {% if show_timer %}
+      <div class="flex items-center gap-[6px]">
+        <countdown-timer
+          data-start="{{ timer_start }}"
+          data-end="{{ timer_end }}"
+          data-location="header"
+          data-timezone="America/New_York"
+          class="text-b12 uppercase font-bold text-neon-orange"
+        ></countdown-timer>
+
+        {% if button_link != blank %}
+          <a
+            href="{{ button_link }}"
+            class="announcement-button text-b12 uppercase underline font-bold flex items-baseline gap-[6px] cursor-pointer "
+          >
+            <span class="h-[10px] w-[1.5px] bg-white"></span>
+            {{ button_text }}
+          </a>
+        {% endif %}
+      </div>
+    {% elsif button_link != blank %}
+      <a
+        href="{{ button_link }}"
+        class="announcement-button text-b12 uppercase underline font-bold flex items-baseline gap-[6px] cursor-pointer "
+      >
+        <span class="h-[10px] w-[1.5px] bg-white"></span>
+        {{ button_text }}
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+{% stylesheet %}
+  /* Writing in style tag for better understanding */
+  /* When timer is hidden (display: none), force row layout */
+  .announcement-slide {
+    flex-direction: row !important;
+  }
+
+  /* When timer is explicitly visible */
+  .announcement-slide:has(countdown-timer[data-timer-visible='true']) {
+    flex-direction: column !important;
+  }
+
+  @media (min-width: 768px) {
+    .announcement-slide:has(countdown-timer[data-timer-visible='true']) {
+      flex-direction: row !important;
+    }
+  }
+{% endstylesheet %}

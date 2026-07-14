@@ -1,0 +1,39 @@
+{%- for item in linklists['sitemap'].links -%}
+  <div class="flex flex-col gap-4">
+      <h2 class="text-heading-4 text-center w-full py-2 border-b-1 border-medium-smoke {% if forloop.index != 1 %}mt-6{% endif %} ">
+        {{ item.title }}
+      </h2>
+      {% if item.links != empty %}
+        <div class="p-2 lg:p-6 columns-1 md:columns-2 lg:columns-3">
+          {% for subitem in item.links %}
+            <div class="w-full px-2 lg:px-4 pb-3">
+              {%- if subitem.url == '#group' -%}
+                <h3 class="text-heading-5 pb-2">
+                  {{ subitem.title }}
+                </h3>
+                {% if subitem.links != empty %}
+                  <div class="flex flex-col gap-3 lg:gap-4 pb-6">
+                    {% for supersubitem in subitem.links %}
+                        {% if supersubitem.url == '#label' %}
+                          <h4  class="pt-4 pb-2 text-16-bold-caps border-b-1 border-medium-smoke">
+                            {{ supersubitem.title }}
+                          </h4>
+                        {% else %}
+                          <a class="" href="{{ supersubitem.url }}">
+                            {{ supersubitem.title }}
+                          </a>
+                        {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              {% else %}
+                <a class="" href="{{ subitem.url }}">
+                  {{ subitem.title }}
+                </a>
+              {%- endif -%}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+  </div>
+{% endfor %}

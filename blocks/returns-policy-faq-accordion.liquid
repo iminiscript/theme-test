@@ -1,0 +1,138 @@
+<accordion-custom
+  {% if block.settings.default_open == true %}
+    open-by-default-on-desktop
+    open-by-default-on-mobile
+  {% endif %}
+>
+  <details
+    class="border-medium-smoke border-b-1 text-lg py-4 md:py-5 lg:py-6"
+    data-testid="accordion-details"
+  >
+    <summary
+      id="faq-trigger-{{ block.id }}"
+      class="flex p-0 font-bold cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-12 focus-visible:outline-brunt-orange"
+      aria-expanded="{% if block.settings.default_open == true %}true{% else %}false{% endif %}"
+      aria-controls="faq-content-{{ block.id }}"
+      role="button"
+      tabindex="0"
+      aria-describedby="faq-description-{{ block.id }}"
+    >
+      <h5 class="text-18-bold m-0 p-0 normal-case">
+        {{ block.settings.heading }}
+      </h5>
+      <span
+        id="faq-description-{{ block.id }}"
+        class="svg-wrapper icon-caret icon-animated w-6 h-6"
+        aria-hidden="true"
+      >
+        {{- 'icon-caret.svg' | inline_asset_content -}}
+      </span>
+    </summary>
+
+    <div
+      id="faq-content-{{ block.id }}"
+      class="details-content pt-4 md:pt-5 text-16-light"
+      role="region"
+      aria-labelledby="faq-trigger-{{ block.id }}"
+    >
+      {{ block.settings.content }}
+
+      {% if block.settings.shopify_video != blank %}
+        <div class="relative aspect-video js-video__container shadow-lg bg-black mt-5" data-no-autoplay="true">
+          <button
+            tabindex="0"
+            class="absolute inset-0 js-video__trigger cursor-pointer w-full h-full border-0 p-0 bg-transparent focus-visible:outline-2 focus-visible:outline-brunt-orange"
+            aria-label="Play video{% if block.settings.title != blank %}: {{ block.settings.title }}{% endif %}"
+            type="button"
+            style="display: block;"
+          >
+            {% if block.settings.thumbnail %}
+              {% render 'image',
+                imageData: block.settings.thumbnail,
+                class: 'w-full h-full object-cover',
+                alt_text: 'Video thumbnail',
+                fit: 'cover'
+              %}
+            {% elsif block.settings.shopify_video.preview_image %}
+              {% render 'image',
+                imageData: block.settings.shopify_video.preview_image,
+                class: 'w-full h-full object-cover',
+                alt_text: 'Video thumbnail',
+                fit: 'cover'
+              %}
+            {% else %}
+              <div class="w-full h-full bg-gray-900 flex items-center justify-center">
+                <span class="text-gray-500 text-sm">Video Preview</span>
+              </div>
+            {% endif %}
+            <div
+              class="absolute inset-0 flex items-center justify-center transition-all duration-300 pointer-events-none"
+              aria-hidden="true"
+            >
+              <div class="transform group-hover:scale-110 group-focus-visible:scale-110 transition-all duration-300">
+                {% render 'icon', icon: 'video' %}
+              </div>
+            </div>
+          </button>
+          <div class="absolute inset-0 js-video__native" style="display: none;">
+            {{
+              block.settings.shopify_video
+              | video_tag:
+              controls: true,
+              autoplay: false,
+              loop: false,
+              muted: false,
+              preload: 'auto',
+              class: 'w-full h-full object-cover js-video__nativePlayer'
+            }}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </details>
+</accordion-custom>
+
+{% schema %}
+{
+  "name": "Returns FAQ Accordion",
+  "blocks": [],
+  "presets": [
+    {
+      "name": "Accordion",
+      "category": "t:categories.storytelling"
+    }
+  ],
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Question",
+      "default": "Question?"
+    },
+    {
+      "type": "richtext",
+      "id": "content",
+      "label": "Answer",
+      "default": "<p>Answer to the question</p>"
+    },
+    {
+      "type": "video",
+      "id": "shopify_video",
+      "label": "Shopify Video",
+      "info": "Upload or select a video from your media library"
+    },
+    {
+      "type": "image_picker",
+      "id": "thumbnail",
+      "label": "Video Thumbnail (Optional)",
+      "info": "Overrides the default thumbnail for the video."
+    },
+    {
+      "type":"checkbox",
+      "id": "default_open",
+      "label": "Default Open",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

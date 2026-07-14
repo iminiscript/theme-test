@@ -1,0 +1,815 @@
+{% comment %}
+  Multi-Product Bundle Section
+  Displays multiple products with custom properties that can all be added to cart with one button
+{% endcomment %}
+
+<div class="container mx-auto px-4 py-8 md:py-12" data-multi-product-bundle>
+  
+  {% if section.settings.title != blank %}
+    <div class="text-center mb-8">
+      <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">
+        {{ section.settings.title }}
+      </h2>
+      {% if section.settings.description != blank %}
+        <div class="text-base md:text-lg text-gray-600 max-w-3xl mx-auto">
+          {{ section.settings.description }}
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <form id="multi-product-form-{{ section.id }}" class="multi-product-form">
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-{{ section.settings.products_per_row }} gap-4 md:gap-6 mb-8">
+      
+      {% for block in section.blocks %}
+        {% if block.type == 'product' %}
+          {% assign product = block.settings.product %}
+          
+          {% if product != blank %}
+            <div class="relative group" {{ block.shopify_attributes }}>
+              
+              {%- comment -%} Product Card Container {%- endcomment -%}
+              <div class="border rounded-lg overflow-hidden transition-shadow hover:shadow-lg">
+                
+                {%- comment -%} Render Product Card Snippet {%- endcomment -%}
+                <div class="product-card-wrapper" data-product-id="{{ product.id }}">
+                  {% capture product_card_children %}
+                    {%- comment -%} Product Image {%- endcomment -%}
+                    <div class="aspect-square overflow-hidden bg-gray-100">
+                      {% if product.featured_media %}
+                        <img 
+                          src="{{ product.featured_media | image_url: width: 500 }}" 
+                          alt="{{ product.featured_media.alt | escape }}"
+                          class="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          loading="lazy"
+                        >
+                      {% else %}
+                        {{ 'product-1' | placeholder_svg_tag: 'w-full h-full object-cover' }}
+                      {% endif %}
+                    </div>
+
+                    {%- comment -%} Product Info {%- endcomment -%}
+                    <div class="p-4">
+                      <h3 class="text-lg font-semibold mb-2 line-clamp-2">
+                        {{ product.title }}
+                      </h3>
+                      
+                      <div class="text-xl font-bold mb-4">
+                        {{ product.price | money }}
+                      </div>
+
+                      {%- comment -%} Variant Selector {%- endcomment -%}
+                      {% if product.has_only_default_variant == false %}
+                        <div class="mb-3">
+                          <label class="block text-sm font-medium mb-1" for="variant-{{ block.id }}">
+                            Variant
+                          </label>
+                          <select 
+                            name="items[{{ forloop.index0 }}][id]"
+                            id="variant-{{ block.id }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                            data-product-variant-select
+                            data-product-options="{{ product.options_with_values | json | url_encode }}"
+                          >
+                            {% for variant in product.variants %}
+                              {%- comment -%} Build options_with_values from variant options and product option names {%- endcomment -%}
+                              {%- liquid
+                                assign variant_options_with_values = ''
+                                for option in product.options_with_values
+                                  assign option_index = forloop.index0
+                                  assign option_value = variant.options[option_index]
+                                  assign option_pair = option.name | append: ':' | append: option_value
+                                  if variant_options_with_values == ''
+                                    assign variant_options_with_values = option_pair
+                                  else
+                                    assign variant_options_with_values = variant_options_with_values | append: '||' | append: option_pair
+                                  endif
+                                endfor
+                              -%}
+                              <option 
+                                value="{{ variant.id }}"
+                                {% unless variant.available %}disabled{% endunless %}
+                                data-price="{{ variant.price }}"
+                                data-product-type="{{ product.type | escape }}"
+                                data-variant-options="{{ variant.options | join: ' / ' | escape }}"
+                                data-options-json="{{ variant_options_with_values | url_encode }}"
+                              >
+                                {{ variant.title }} - {{ variant.price | money }}
+                                {% unless variant.available %} (Sold Out){% endunless %}
+                              </option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                      {% else %}
+                        {%- comment -%} Build options_with_values for default variant {%- endcomment -%}
+                        {%- liquid
+                          assign default_variant = product.selected_or_first_available_variant
+                          assign variant_options_with_values = ''
+                          for option in product.options_with_values
+                            assign option_index = forloop.index0
+                            assign option_value = default_variant.options[option_index]
+                            assign option_pair = option.name | append: ':' | append: option_value
+                            if variant_options_with_values == ''
+                              assign variant_options_with_values = option_pair
+                            else
+                              assign variant_options_with_values = variant_options_with_values | append: '||' | append: option_pair
+                            endif
+                          endfor
+                        -%}
+                        <input 
+                          type="hidden" 
+                          name="items[{{ forloop.index0 }}][id]" 
+                          value="{{ default_variant.id }}"
+                          data-product-type="{{ product.type | escape }}"
+                          data-variant-options="{{ default_variant.options | join: ' / ' | escape }}"
+                          data-options-json="{{ variant_options_with_values | url_encode }}"
+                          data-product-options="{{ product.options_with_values | json | url_encode }}"
+                        >
+                      {% endif %}
+
+                      {%- comment -%} Quantity Input {%- endcomment -%}
+                      <div class="mb-3">
+                        <label class="block text-sm font-medium mb-1" for="quantity-{{ block.id }}">
+                          Quantity
+                        </label>
+                        <div class="flex items-center">
+                          <button 
+                            type="button" 
+                            class="px-3 py-2 border border-gray-300 rounded-l-md hover:bg-gray-100 transition-colors"
+                            onclick="this.nextElementSibling.stepDown(); this.nextElementSibling.dispatchEvent(new Event('change'));"
+                          >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                            </svg>
+                          </button>
+                          <input 
+                            type="number" 
+                            name="items[{{ forloop.index0 }}][quantity]" 
+                            id="quantity-{{ block.id }}"
+                            value="1" 
+                            min="0" 
+                            max="99"
+                            class="w-16 px-2 py-2 text-center border-t border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            data-product-quantity
+                          >
+                          <button 
+                            type="button" 
+                            class="px-3 py-2 border border-gray-300 rounded-r-md hover:bg-gray-100 transition-colors"
+                            onclick="this.previousElementSibling.stepUp(); this.previousElementSibling.dispatchEvent(new Event('change'));"
+                          >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {%- comment -%} Custom Properties Input {%- endcomment -%}
+                      {% comment %} {% if block.settings.enable_custom_properties %}
+                        <div class="mb-3">
+                          <label class="block text-sm font-medium mb-1" for="custom-{{ block.id }}">
+                            {{ block.settings.custom_property_label | default: "Custom Note" }}
+                          </label>
+                          <input 
+                            type="text" 
+                            name="items[{{ forloop.index0 }}][properties][{{ block.settings.custom_property_name | default: "Custom Note" }}]"
+                            id="custom-{{ block.id }}"
+                            placeholder="{{ block.settings.custom_property_placeholder }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            {% if block.settings.custom_property_required %}required{% endif %}
+                          >
+                        </div>
+                      {% endif %} {% endcomment %}
+
+                      {%- comment -%} Additional Custom Property 2 {%- endcomment -%}
+                      {% comment %} {% if block.settings.enable_custom_properties_2 %}
+                        <div class="mb-3">
+                          <label class="block text-sm font-medium mb-1" for="custom2-{{ block.id }}">
+                            {{ block.settings.custom_property_label_2 | default: "Additional Note" }}
+                          </label>
+                          <input 
+                            type="text" 
+                            name="items[{{ forloop.index0 }}][properties][{{ block.settings.custom_property_name_2 | default: "Additional Note" }}]"
+                            id="custom2-{{ block.id }}"
+                            placeholder="{{ block.settings.custom_property_placeholder_2 }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            {% if block.settings.custom_property_required_2 %}required{% endif %}
+                          >
+                        </div>
+                      {% endif %} {% endcomment %}
+
+                      {%- comment -%} Availability Badge {%- endcomment -%}
+                      {% unless product.available %}
+                        <div class="mt-2">
+                          <span class="inline-block px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">
+                            Out of Stock
+                          </span>
+                        </div>
+                      {% endunless %}
+                    </div>
+                  {% endcapture %}
+                  
+                  {% render 'product-card', 
+                    children: product_card_children, 
+                    product: product, 
+                    block: block,
+                    product_card_gap: 8 
+                  %}
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {%- comment -%} Total Price Display {%- endcomment -%}
+    {% if section.settings.show_total %}
+      <div class="bg-gray-50 rounded-lg p-6 mb-6 text-center">
+        <div class="text-sm text-gray-600 mb-1">Estimated Total</div>
+        <div class="text-3xl font-bold" id="bundle-total-{{ section.id }}">
+          {{ 0 | money }}
+        </div>
+      </div>
+    {% endif %}
+
+    {%- comment -%} Add All to Cart Button {%- endcomment -%}
+    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+      <button 
+        type="submit" 
+        class="w-full sm:w-auto px-8 py-4 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[250px]"
+        id="add-all-button-{{ section.id }}"
+      >
+        <span class="button-text">{{ section.settings.button_text | default: "Add All to Cart" }}</span>
+        <svg class="w-5 h-5 hidden button-spinner animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </button>
+      
+      {% if section.settings.show_clear_button %}
+        <button 
+          type="button" 
+          class="w-full sm:w-auto px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+          onclick="clearAllQuantities()"
+        >
+          Clear All
+        </button>
+      {% endif %}
+    </div>
+
+    {%- comment -%} Success Message {%- endcomment -%}
+    <div 
+      id="success-message-{{ section.id }}" 
+      class="hidden mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg text-center"
+      role="alert"
+    >
+      <p class="font-semibold">✓ Products added to cart successfully!</p>
+    </div>
+
+    {%- comment -%} Error Message {%- endcomment -%}
+    <div 
+      id="error-message-{{ section.id }}" 
+      class="hidden mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-center"
+      role="alert"
+    >
+      <p class="font-semibold">⚠ Error adding products to cart. Please try again.</p>
+    </div>
+
+  </form>
+</div>
+
+<script type="module">
+import { CartAddEvent } from '@theme/events';
+(function() {
+  const sectionId = '{{ section.id }}';
+  const form = document.getElementById('multi-product-form-' + sectionId);
+  const addButton = document.getElementById('add-all-button-' + sectionId);
+  const successMessage = document.getElementById('success-message-' + sectionId);
+  const errorMessage = document.getElementById('error-message-' + sectionId);
+  const showTotal = {{ section.settings.show_total | json }};
+  
+  // Calculate and update total price
+  function updateTotal() {
+    if (!showTotal) return;
+    
+    let total = 0;
+    const quantities = form.querySelectorAll('[data-product-quantity]');
+    
+    quantities.forEach(input => {
+      const quantity = parseInt(input.value) || 0;
+      const productCard = input.closest('[data-product-id]');
+      const variantSelect = productCard.querySelector('[data-product-variant-select]');
+      
+      if (variantSelect) {
+        const selectedOption = variantSelect.options[variantSelect.selectedIndex];
+        const price = parseFloat(selectedOption.dataset.price) || 0;
+        total += price * quantity;
+      } else {
+        // For products with only default variant, get price from hidden input or data attribute
+        const productId = productCard.dataset.productId;
+        const priceElement = productCard.querySelector('[data-product-price]');
+        if (priceElement) {
+          const price = parseFloat(priceElement.dataset.productPrice) || 0;
+          total += price * quantity;
+        }
+      }
+    });
+    
+    const totalDisplay = document.getElementById('bundle-total-' + sectionId);
+    if (totalDisplay) {
+      totalDisplay.textContent = formatMoney(total);
+    }
+  }
+  
+  // Format money (basic implementation - adjust based on your shop's currency settings)
+  function formatMoney(cents) {
+    return '{{ shop.money_format }}'.replace('{{amount}}', (cents / 100).toFixed(2));
+  }
+  
+  // Clear all quantities
+  window.clearAllQuantities = function() {
+    const quantities = form.querySelectorAll('[data-product-quantity]');
+    quantities.forEach(input => {
+      input.value = 0;
+    });
+    updateTotal();
+  };
+  
+  // Listen for quantity and variant changes
+  form.addEventListener('change', function(e) {
+    if (e.target.matches('[data-product-quantity]') || e.target.matches('[data-product-variant-select]')) {
+      updateTotal();
+    }
+  });
+  
+  // Initial total calculation
+  updateTotal();
+  
+  // Handle form submission
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Hide messages
+    successMessage.classList.add('hidden');
+    errorMessage.classList.add('hidden');
+    
+    // Show loading state
+    addButton.disabled = true;
+    addButton.querySelector('.button-text').textContent = 'Adding...';
+    addButton.querySelector('.button-spinner').classList.remove('hidden');
+    
+    // Collect form data
+    const formData = new FormData(form);
+    const items = [];
+    
+    // Parse form data into items array
+    for (let [key, value] of formData.entries()) {
+      const match = key.match(/items\[(\d+)\]\[(\w+)\](?:\[(.+)\])?/);
+      if (match) {
+        const index = parseInt(match[1]);
+        const field = match[2];
+        const propertyName = match[3];
+        
+        // Initialize item if not exists
+        if (!items[index]) {
+          items[index] = { quantity: 0 };
+        }
+        
+        if (field === 'id') {
+          items[index].id = value;
+        } else if (field === 'quantity') {
+          items[index].quantity = parseInt(value) || 0;
+        } else if (field === 'properties') {
+          if (!items[index].properties) {
+            items[index].properties = {};
+          }
+          if (value.trim() !== '') {
+            items[index].properties[propertyName] = value;
+          }
+        }
+      }
+    }
+    
+    // Filter out items with 0 quantity
+    const itemsToAdd = items.filter(item => item.quantity > 0);
+    
+    if (itemsToAdd.length === 0) {
+      errorMessage.querySelector('p').textContent = '⚠ Please select at least one product with quantity greater than 0.';
+      errorMessage.classList.remove('hidden');
+      addButton.disabled = false;
+      addButton.querySelector('.button-text').textContent = '{{ section.settings.button_text | default: "Add All to Cart" }}';
+      addButton.querySelector('.button-spinner').classList.add('hidden');
+      return;
+    }
+    
+    // Calculate bundle properties
+    function calculateBundleProperties(items) {
+      const bundleIds = [];
+      const bundleTitles = [];
+      const bundleItemsData = []; // Array to store product type and options
+      let totalRegularPrice = 0;
+      
+      items.forEach((item, index) => {
+        // Get variant ID from the item itself (it's the 'id' field)
+        const variantId = item.id;
+        bundleIds.push(variantId);
+        
+        // Get product info from the form - find the product card for this specific item
+        const productCards = form.querySelectorAll('[data-product-id]');
+        const productCard = productCards[index];
+        
+        if (!productCard) return;
+        
+        const productTitle = productCard.querySelector('h3')?.textContent?.trim() || '';
+        bundleTitles.push(productTitle.toLowerCase().replace(/\s+/g, '_'));
+        
+        // Get product type and options from variant select or hidden input
+        let productType = '';
+        let optionsJson = '';
+        let optionsWithValues = [];
+        
+        const variantSelect = productCard.querySelector('[data-product-variant-select]');
+        if (variantSelect) {
+          const selectedOption = variantSelect.options[variantSelect.selectedIndex];
+          const price = parseFloat(selectedOption.dataset.price) || 0;
+          totalRegularPrice += price * item.quantity;
+          
+          // Get product type and options from selected option
+          productType = selectedOption.dataset.productType || '';
+          optionsJson = selectedOption.dataset.optionsJson || '';
+          
+          // Get product options structure from select element
+          const productOptionsJson = variantSelect.dataset.productOptions || '';
+          
+          // Parse options if available
+          if (optionsJson && productOptionsJson) {
+            try {
+              // Decode the options JSON (format: "Option Name:Value||Option Name:Value")
+              const decodedOptions = decodeURIComponent(optionsJson);
+              const productOptions = JSON.parse(decodeURIComponent(productOptionsJson));
+              
+              // Parse the variant options string (format: "Name:Value||Name:Value")
+              const optionPairs = decodedOptions.split('||');
+              optionsWithValues = optionPairs.map((pair, idx) => {
+                const [name, value] = pair.split(':');
+                return {
+                  name: name || (productOptions[idx]?.name || `Option ${idx + 1}`),
+                  value: value || ''
+                };
+              });
+            } catch (e) {
+              console.error('Error parsing options JSON:', e);
+              // Fallback: use product options structure with variant option values
+              if (productOptionsJson) {
+                try {
+                  const productOptions = JSON.parse(decodeURIComponent(productOptionsJson));
+                  const variantOptions = selectedOption.dataset.variantOptions || '';
+                  const optionValues = variantOptions ? variantOptions.split(' / ') : [];
+                  
+                  optionsWithValues = productOptions.map((opt, idx) => ({
+                    name: opt.name || `Option ${idx + 1}`,
+                    value: optionValues[idx] || ''
+                  }));
+                } catch (e2) {
+                  console.error('Error in fallback parsing:', e2);
+                }
+              }
+            }
+          } else if (optionsJson) {
+            // Simple fallback if only optionsJson is available
+            try {
+              const decodedOptions = decodeURIComponent(optionsJson);
+              const optionPairs = decodedOptions.split('||');
+              optionsWithValues = optionPairs.map((pair) => {
+                const [name, value] = pair.split(':');
+                return { name: name || '', value: value || '' };
+              });
+            } catch (e) {
+              console.error('Error parsing simple options:', e);
+            }
+          }
+        } else {
+          // For products with only default variant, get data from hidden input
+          const hiddenInput = productCard.querySelector('input[type="hidden"][name*="[id]"]');
+          if (hiddenInput) {
+            productType = hiddenInput.dataset.productType || '';
+            optionsJson = hiddenInput.dataset.optionsJson || '';
+            const productOptionsJson = hiddenInput.dataset.productOptions || '';
+            
+            if (optionsJson && productOptionsJson) {
+              try {
+                // Decode the options JSON (format: "Option Name:Value||Option Name:Value")
+                const decodedOptions = decodeURIComponent(optionsJson);
+                const productOptions = JSON.parse(decodeURIComponent(productOptionsJson));
+                
+                // Parse the variant options string (format: "Name:Value||Name:Value")
+                const optionPairs = decodedOptions.split('||');
+                optionsWithValues = optionPairs.map((pair, idx) => {
+                  const [name, value] = pair.split(':');
+                  return {
+                    name: name || (productOptions[idx]?.name || `Option ${idx + 1}`),
+                    value: value || ''
+                  };
+                });
+              } catch (e) {
+                console.error('Error parsing options JSON:', e);
+                // Fallback
+                try {
+                  const productOptions = JSON.parse(decodeURIComponent(productOptionsJson));
+                  const variantOptions = hiddenInput.dataset.variantOptions || '';
+                  const optionValues = variantOptions ? variantOptions.split(' / ') : [];
+                  
+                  optionsWithValues = productOptions.map((opt, idx) => ({
+                    name: opt.name || `Option ${idx + 1}`,
+                    value: optionValues[idx] || ''
+                  }));
+                } catch (e2) {
+                  console.error('Error in fallback parsing:', e2);
+                }
+              }
+            }
+          }
+          
+          // For products with only default variant, get price from the product data
+          const priceText = productCard.querySelector('.text-xl.font-bold')?.textContent || '';
+          const priceMatch = priceText.match(/[\d,]+\.?\d*/);
+          if (priceMatch) {
+            const price = parseFloat(priceMatch[0].replace(/,/g, '')) * 100; // Convert to cents
+            totalRegularPrice += price * item.quantity;
+          }
+        }
+        
+        // Build item data object with product type and options
+        const itemData = {
+          product_type: productType,
+          options_with_values: optionsWithValues
+        };
+        
+        bundleItemsData.push(itemData);
+      });
+      
+      // Static values
+      const bundleDiscountPercentage = 10;
+      const bundleType = 'kit';
+      const enableSafetyRating = false;
+      const womenSizeSelected = false;
+      
+      // Dynamic values
+      const bundleImage = "https://cdn.shopify.com/s/files/1/0700/0529/3192/files/bundle_cart_icon_87cddaa4-5341-4154-8757-aadbf13fa118.avif"; // Using existing cart icon as placeholder
+      const bundleLink = '{{ section.settings.bundle_builder_url | default: "/pages/bundle-builder" }}';
+      const bundleRegularPrice = Math.round(totalRegularPrice);
+      const bundleDiscountedPrice = Math.round(totalRegularPrice * 0.9); // 10% discount
+      
+      return {
+        _bundle_ids: bundleIds.join(','),
+        _bundle_title: "The Marin Waterproof (Soft Toe) + The Torra Pants",
+        _bundle_type: bundleType,
+        _bundle_discount_percentage: bundleDiscountPercentage,
+        _bundle_regular_price: bundleRegularPrice,
+        _bundle_discounted_price: bundleDiscountedPrice,
+        _bundle_image: bundleImage,
+        _bundle_link: bundleLink,
+        cart_titles: bundleTitles.join(','),
+        _enable_safety_rating: enableSafetyRating,
+        _women_size_selected: womenSizeSelected,
+        _bundle_items_data: JSON.stringify(bundleItemsData) // Array of objects with product_type and options_with_values
+      };
+    }
+    
+    // Calculate bundle properties
+    const bundleProperties = calculateBundleProperties(itemsToAdd);
+    
+    // Add bundle properties to each item
+    itemsToAdd.forEach(item => {
+      if (!item.properties) {
+        item.properties = {};
+      }
+      
+      // Add all bundle properties to each item
+      Object.assign(item.properties, bundleProperties);
+    });
+    
+    try {
+      // Add items to cart using Shopify Cart API
+      const response = await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items: itemsToAdd })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Show success message
+        successMessage.classList.remove('hidden');
+        
+        // Dispatch CartAddEvent to trigger cart drawer auto-open
+        const cartAddEvent = new CartAddEvent(data, sectionId, {
+          source: 'bundle',
+          itemCount: data.item_count,
+          sections: {}
+        });
+        document.dispatchEvent(cartAddEvent);
+        
+        // Trigger cart drawer/update if your theme has one
+        if (window.theme && window.theme.cart && typeof window.theme.cart.refresh === 'function') {
+          window.theme.cart.refresh();
+        }
+        
+        // Dispatch custom event for cart update (keep existing code)
+        document.dispatchEvent(new CustomEvent('cart:updated', { detail: data }));
+        
+        // ... rest of existing success handler ...
+      } else {
+        throw new Error('Cart add failed');
+      }
+      
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      errorMessage.classList.remove('hidden');
+    } finally {
+      // Reset button state
+      addButton.disabled = false;
+      addButton.querySelector('.button-text').textContent = '{{ section.settings.button_text | default: "Add All to Cart" }}';
+      addButton.querySelector('.button-spinner').classList.add('hidden');
+    }
+  });
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Multi-Product Bundle",
+  "tag": "section",
+  "class": "section-multi-product-bundle",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "Complete Your Bundle"
+    },
+    {
+      "type": "richtext",
+      "id": "description",
+      "label": "Section Description",
+      "default": "<p>Select products and add them all to cart with one click</p>"
+    },
+    {
+      "type": "range",
+      "id": "products_per_row",
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "label": "Products per row (desktop)",
+      "default": 3
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button Text",
+      "default": "Add All to Cart"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_total",
+      "label": "Show Total Price",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_clear_button",
+      "label": "Show Clear All Button",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "redirect_to_cart",
+      "label": "Redirect to cart after adding",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "reset_after_add",
+      "label": "Reset quantities after adding",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "bundle_builder_url",
+      "label": "Bundle Builder URL",
+      "default": "pages/bundle-builder"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "Color Scheme",
+      "default": "scheme-1"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "product",
+      "name": "Product",
+      "settings": [
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Product"
+        },
+        {
+          "type": "header",
+          "content": "Custom Property 1"
+        },
+        {
+          "type": "checkbox",
+          "id": "enable_custom_properties",
+          "label": "Enable Custom Property",
+          "default": false
+        },
+        {
+          "type": "text",
+          "id": "custom_property_label",
+          "label": "Custom Property Label",
+          "default": "Custom Note",
+          "info": "Label shown above the input field"
+        },
+        {
+          "type": "text",
+          "id": "custom_property_name",
+          "label": "Custom Property Name",
+          "default": "Custom Note",
+          "info": "This will be the property key sent to checkout"
+        },
+        {
+          "type": "text",
+          "id": "custom_property_placeholder",
+          "label": "Placeholder Text",
+          "default": "Enter custom note..."
+        },
+        {
+          "type": "checkbox",
+          "id": "custom_property_required",
+          "label": "Make this field required",
+          "default": false
+        },
+        {
+          "type": "header",
+          "content": "Custom Property 2"
+        },
+        {
+          "type": "checkbox",
+          "id": "enable_custom_properties_2",
+          "label": "Enable Second Custom Property",
+          "default": false
+        },
+        {
+          "type": "text",
+          "id": "custom_property_label_2",
+          "label": "Custom Property Label 2",
+          "default": "Additional Note"
+        },
+        {
+          "type": "text",
+          "id": "custom_property_name_2",
+          "label": "Custom Property Name 2",
+          "default": "Additional Note"
+        },
+        {
+          "type": "text",
+          "id": "custom_property_placeholder_2",
+          "label": "Placeholder Text 2",
+          "default": "Enter additional note..."
+        },
+        {
+          "type": "checkbox",
+          "id": "custom_property_required_2",
+          "label": "Make this field required",
+          "default": false
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Multi-Product Bundle - 1",
+      "blocks": [
+        {
+          "type": "product"
+        },
+        {
+          "type": "product"
+        },
+        {
+          "type": "product"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

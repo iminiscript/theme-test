@@ -1,0 +1,328 @@
+{%- liquid
+  assign block_id = block.id
+  assign heading = block.settings.heading | default: "Latest episodes"
+  assign blog_handle = block.settings.blog
+  assign blog_object = blogs[blog_handle]
+  assign show_all_button_text = block.settings.show_all_button_text | default: "Show All Episodes"
+  assign show_all_button_url = block.settings.show_all_button_url
+  assign config_id = block.id | replace: '-', '_' | replace: '--', '_'
+  
+  if block.settings.override_theme_swiper_settings
+    assign autoplay_enabled = block.settings.autoplay_enabled
+    assign autoplay_interval = block.settings.autoplay_interval | times: 1000
+    assign animation_speed = block.settings.animation_speed
+  else
+    assign autoplay_enabled = settings.autoplay_enabled
+    assign autoplay_interval = settings.autoplay_interval | times: 1000
+    assign animation_speed = settings.animation_speed
+  endif
+-%}
+
+<div class="bucket-talk-carousel-wrapper bg-asphalt py-12 md:py-16" data-block-id="{{ block.id }}">
+  <div class="max-w-[1440px] mx-auto flex flex-col gap-5 md:gap-8 overflow-hidden">
+    {%- if heading != blank -%}
+      <h2 class="text-white text-heading-4 text-center px-3 md:px-8 lg:px-12">{{ heading }}</h2>
+    {%- endif -%}
+    
+    {%- if blog_object and blog_object.articles.size > 0 -%}
+      {%- comment -%} Carousel Container {%- endcomment -%}
+      <div class="relative">
+        <div class="swiper__carousel bucket-talk-episodes" data-config="BucketTalkCarouselConfig_{{ config_id }}">
+          <div class="swiper-wrapper">
+            {%- for article in blog_object.articles limit: block.settings.limit -%}
+              {% render 'podcast-article-card', article: article, card_type: 'slide' %}
+            {%- endfor -%}
+          </div>
+        </div>
+
+        <button
+          class="bucket-talk-nav-prev absolute left-3 md:left-8 lg:left-12 top-1/2 z-20 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-[#1e1b1c] flex items-center justify-center hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brunt-orange disabled:hidden"
+          aria-label="Previous episode"
+        >
+          {% render 'icon', icon: 'pointer-arrow-left' %}
+        </button>
+
+        <button
+          class="bucket-talk-nav-next absolute right-3 md:right-8 lg:right-12 top-1/2 z-20 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-[#1e1b1c] flex items-center justify-center hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brunt-orange disabled:hidden"
+          aria-label="Next episode"
+        >
+          {% render 'icon', icon: 'pointer-arrow-right' %}
+        </button>
+
+        <div class="bucket-talk-pagination flex justify-center gap-2 mt-5"></div>
+      </div>
+      
+      {%- comment -%} Show All Button {%- endcomment -%}
+      {%- if show_all_button_url != blank -%}
+        <div class="flex justify-center mt-5 px-3 md:px-8 lg:px-12">
+          {% capture label %}{{ show_all_button_text}} {{ blog_object.articles_count }} Episodes {% endcapture %}
+          {% render 'button',
+            label: label,
+            url: show_all_button_url,
+            style: 'primary',
+            color: 'white',
+            size: 'large',
+            width_small: 'fill',
+            width_medium: 'custom',
+            custom_width_medium: 250,
+            width_large: 'custom',
+            custom_width_large: 300
+          %}
+        </div>
+      {%- endif -%}
+    {%- else -%}
+      <div class="text-white text-center py-8  px-3 md:px-8 lg:px-12">
+        <p>No episodes found. Please select a blog in the block settings.</p>
+      </div>
+    {%- endif -%}
+  </div>
+</div>
+
+<script>
+  // Bucket Talk Carousel Configuration for {{ block.id }}
+  window.BucketTalkCarouselConfig_{{ config_id }} = {
+    breakpoints: {
+      320: {
+        slidesPerGroup: 1,
+        slidesPerView: 'auto',
+        spaceBetween: 16,
+        centeredSlides: true,
+      },
+      768: {
+        slidesPerGroup: 1,
+        slidesPerView: 'auto',
+        spaceBetween: 16,
+        centeredSlides: true,
+      },
+      1280: {
+        slidesPerGroup: 1,
+        slidesPerView: 'auto',
+        spaceBetween: 16,
+        centeredSlides: true,
+      },
+    },
+    loop: true,
+    resizeObserver: false,
+    speed: {{ animation_speed }},
+    autoplay: {{ autoplay_enabled }} && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? {
+      delay: {{ autoplay_interval }},
+      disableOnInteraction: false,
+      pauseOnMouseEnter: true,
+    } : false,
+    navigation: {
+      nextEl: "[data-block-id='{{ block.id }}'] .bucket-talk-nav-next",
+      prevEl: "[data-block-id='{{ block.id }}'] .bucket-talk-nav-prev",
+    },
+    pagination: {
+      el: "[data-block-id='{{ block.id }}'] .bucket-talk-pagination",
+      clickable: true,
+      type: 'bullets',
+      renderBullet: function (index, className) {
+        return `<span class="${className}" role="button" aria-label="Go to slide ${index + 1}">
+          <span class="bucket-talk-progress-bar"></span>
+        </span>`;
+      }
+    },
+    on: {
+      init: function(swiper) {
+        if (typeof window.attachPaginationHandlers === 'function') {
+          window.attachPaginationHandlers(swiper, "[data-block-id='{{ block.id }}'] .bucket-talk-pagination");
+        }
+      },
+      autoplayTimeLeft: function(swiper, time, progress) {
+        if (typeof window.updateProgressBar === 'function') {
+          window.updateProgressBar(
+            swiper,
+            progress,
+            ".bucket-talk-carousel-wrapper",
+            ".bucket-talk-pagination",
+            ".bucket-talk-progress-bar"
+          );
+        }
+      }
+    }
+  };
+</script>
+
+{{ 'carousel.js' | asset_url | script_tag }}
+
+<script>
+  // Initialize this carousel after config is defined
+  (function() {
+    function initBucketTalkCarousel() {
+      const element = document.querySelector('[data-config="BucketTalkCarouselConfig_{{ config_id }}"]');
+      if (element && !element.classList.contains('swiper-initialized')) {
+        if (typeof window.initCarousel === 'function') {
+          window.initCarousel(element);
+        } else {
+          // Wait for carousel.js to load
+          setTimeout(initBucketTalkCarousel, 100);
+        }
+      }
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initBucketTalkCarousel);
+    } else {
+      initBucketTalkCarousel();
+    }
+    
+    // Re-initialize when block is loaded in theme editor
+    document.addEventListener("shopify:block:load", function(event) {
+      const blockElement = event.target;
+      if (blockElement && blockElement.querySelector('[data-block-id="{{ block.id }}"]')) {
+        setTimeout(initBucketTalkCarousel, 100);
+      }
+    });
+  })();
+</script>
+
+<style>
+  /* Swiper pagination custom styles */
+  .bucket-talk-pagination {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .bucket-talk-pagination .swiper-pagination-bullet {
+    width: 16px;
+    height: 8px;
+    background: var(--color-medium-asphalt);
+    border-radius: 100px;
+    opacity: 1;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: width 0.3s ease, background 0.3s ease;
+    margin: 0 !important;
+  }
+  
+  .bucket-talk-pagination .swiper-pagination-bullet-active {
+    width: 36px;
+    {% if autoplay_enabled %}
+      background: var(--color-medium-asphalt);
+    {% else %}
+      background: var(--color-brunt-orange);
+    {% endif %}
+  }
+  
+  .bucket-talk-progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--color-brunt-orange);
+    border-radius: inherit;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+  
+  .bucket-talk-pagination .swiper-pagination-bullet:not(.swiper-pagination-bullet-active) .bucket-talk-progress-bar {
+    width: 0% !important;
+    display: none;
+  }
+  
+  /* Slide styles */
+  [data-block-id="{{ block.id }}"] .swiper-slide {
+    height: auto;
+    width: auto;
+    display: flex;
+  }
+  
+  /* Navigation arrow visibility transitions */
+  .bucket-talk-nav-prev,
+  .bucket-talk-nav-next {
+    transition: opacity 0.3s ease, transform 0.2s ease;
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Latest Episodes",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Latest episodes"
+    },
+    {
+      "type": "blog",
+      "id": "blog",
+      "label": "Blog",
+      "info": "Select the blog to display episodes from"
+    },
+    {
+      "type": "range",
+      "id": "limit",
+      "label": "Limit",
+      "min": 4,
+      "max": 20,
+      "step": 1,
+      "default": 10,
+      "info": "The amount of blog posts shown"
+    },
+    {
+      "type": "text",
+      "id": "show_all_button_text",
+      "label": "Show All Button Text",
+      "default": "Show All"
+    },
+    {
+      "type": "url",
+      "id": "show_all_button_url",
+      "label": "Show All Button URL",
+      "info": "Link to the full blog listing page"
+    },
+    {
+      "type": "header",
+      "content": "Carousel Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "override_theme_swiper_settings",
+      "label": "Override Theme Swiper Settings",
+      "default": false,
+      "info": "Override the default swiper theme settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "autoplay_enabled",
+      "label": "Enable Autoplay",
+      "default": false,
+      "info": "Automatically advances slides",
+      "visible_if": "{{ block.settings.override_theme_swiper_settings }}"
+    },
+    {
+      "type": "range",
+      "id": "autoplay_interval",
+      "label": "Autoplay Interval (seconds)",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "default": 5,
+      "info": "Time between slide transitions",
+      "visible_if": "{{ block.settings.override_theme_swiper_settings }}"
+    },
+    {
+      "type": "range",
+      "id": "animation_speed",
+      "label": "Animation Speed (ms)",
+      "min": 200,
+      "max": 1000,
+      "step": 100,
+      "default": 500,
+      "info": "Speed of slide transitions",
+      "visible_if": "{{ block.settings.override_theme_swiper_settings }}"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Latest Episodes",
+      "category": "Bucket Talk"
+    }
+  ]
+}
+{% endschema %}
+

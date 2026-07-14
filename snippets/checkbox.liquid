@@ -1,5 +1,5 @@
 {%- doc -%}
-  Renders a checkbox input and label
+  Renders a checkbox input and label with Tailwind styling
 
   @param {string} id - input id attribute
   @param {string} name - input name attribute
@@ -13,17 +13,16 @@
   @param {string} [inputRef] - input ref attribute for use with component framework
   @param {string} [labelRef] - label ref attribute for use with component framework
   @param {boolean} [autofocus] - whether the input should be autofocused
+  @param {boolean} [show_label] - whether to show the label
 {%- enddoc -%}
-<div
-  class="checkbox{% if disabled %} checkbox--disabled{% endif %}"
-  {{ events }}
->
+
+<div class="inline-flex items-center my-auto" {{ events }}>
   <input
     type="checkbox"
     name="{{ name }}"
     value="{{ value }}"
     id="{{ id }}"
-    class="checkbox__input"
+    class="peer sr-only"
     data-label="{{ label }}"
     {% if checked %}
       checked
@@ -45,13 +44,31 @@
     {% endif %}
   >
   <label
-    class="checkbox__label"
     for="{{ id }}"
+    class="
+      peer-disabled:cursor-not-allowed
+      relative inline-block w-5 h-5 cursor-pointer
+      before:content-[''] before:inline-block before:w-5 before:h-5
+      before:border before:border-[#cecec1] before:rounded-[2px]
+      before:bg-white
+      peer-checked:before:bg-black peer-checked:before:border-black
+      peer-disabled:before:bg-[#f5f5f0] peer-disabled:before:border-[#e4e4de]
+      peer-disabled:before:cursor-not-allowed
+      after:content-[''] after:absolute after:top-[57%] after:left-1/2
+      after:w-[10px] after:h-[6px] after:border-l-2 after:border-b-2
+      after:border-white after:-rotate-45 after:-translate-y-full
+      after:translate-x-[-50%] after:opacity-0
+      peer-checked:after:opacity-100
+      peer-disabled:after:cursor-not-allowed
+    "
     {% if labelRef != blank %}
       ref="{{ labelRef }}"
     {% endif %}
   >
-    {{ 'icon-checkmark.svg' | inline_asset_content }}
-    <span class="checkbox__label-text">{{- label -}}</span>
+    {% if label != blank %}
+      <span class="ml-2 checkbox__label-text peer-disabled:cursor-not-allowed {% if show_label != true %}sr-only{% endif %}">
+        {{- label -}}
+      </span>
+    {% endif %}
   </label>
 </div>
